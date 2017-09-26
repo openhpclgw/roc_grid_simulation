@@ -1,4 +1,5 @@
 from sys import stdout
+import itertools as it
 
 
 class SpiceGenerator(object):
@@ -21,37 +22,30 @@ class SpiceGenerator(object):
             self.file = open('{}.cir'.format(filename), 'w')
 
     def __call__(self, mesh, conductance):
+        # mesh size
         self.mesh_size = len(mesh)
+        full_range = range(self.mesh_size)
+        short_range = range(self.mesh_size-1)
 
         # generate row resistors
         self.add_block_comment("Row Resistors")
-        for i in range(self.mesh_size):
-            self.add_comment("Row " + str(i) + " resistors")
-            for j in range(self.mesh_size-1):
-                self.add_r((i, j), (i, j+1), conductance)
+        for i, j in it.product(full_range, short_range):
+            self.add_r((i, j), (i, j+1), conductance)
 
         # generate column resistors
         self.add_block_comment("Column Resistors")
-        for i in range(self.mesh_size-1):
-            self.add_comment("Column " + str(i) + " resistors")
-            for j in range(self.mesh_size):
-                self.add_r((i, j), (i+1, j), conductance)
+        for i, j in it.product(short_range, full_range):
+            self.add_r((i, j), (i+1, j), conductance)
 
         # generate row voltages
         self.add_block_comment("Row Voltage Sources")
-        for i in range(self.mesh_size):
-            self.add_comment("Row " + str(i) + " voltage sources")
-            for j in range(self.mesh_size-1):
-                self.add_v((i, j), (i, j+1),
-                           (mesh[i][j]-mesh[i][j+1]))
+        for i, j in it.product(full_range, short_range):
+            self.add_v((i, j), (i, j+1), (mesh[i][j]-mesh[i][j+1]))
 
         # generate row voltages
         self.add_block_comment("Column Voltage Sources")
-        for i in range(self.mesh_size-1):
-            self.add_comment("Row " + str(i) + " voltage sources")
-            for j in range(self.mesh_size):
-                self.add_v((i, j), (i+1, j),
-                           (mesh[i][j]-mesh[i+1][j]))
+        for i, j in it.product(short_range, full_range):
+            self.add_v((i, j), (i+1, j), (mesh[i][j]-mesh[i+1][j]))
 
         # self.generate measurement/analysis components
 
