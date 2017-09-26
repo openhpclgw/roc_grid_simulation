@@ -1,5 +1,6 @@
 from sys import stdout
 import itertools as it
+import numpy as np
 
 
 class SpiceGenerator(object):
@@ -8,8 +9,10 @@ class SpiceGenerator(object):
         # define necessary spice grammar
         self.__commentfrmt = '* {c}'
         self.__bcommentfrmt = '\n*\n* {c}\n*\n'
-        self.__rfrmt = 'R{i}{uname} {n1} {n2} {r}'
-        self.__vfrmt = 'V{i}{uname} {n1} {n2} PWL(0, {v})'
+
+        # these two are set once we know how much to pad
+        self.__rfrmt = ''
+        self.__vfrmt = ''
 
         # init component counters
         self.r_counter = 0
@@ -24,6 +27,8 @@ class SpiceGenerator(object):
     def __call__(self, mesh, conductance):
         # mesh size
         self.mesh_size = len(mesh)
+        self.set_id_pads(int(np.log10(self.mesh_size**2)+1))
+
         full_range = range(self.mesh_size)
         short_range = range(self.mesh_size-1)
 
@@ -95,3 +100,8 @@ class SpiceGenerator(object):
 
     def gen(self, s):
         self.file.write('{}\n'.format(s))
+
+    def set_id_pads(self, width):
+        ps = str(width)
+        self.__rfrmt = 'R{i:0>'+ps+'}{uname} {n1:>'+ps+'} {n2:>'+ps+'} {r}'
+        self.__vfrmt = 'V{i:0>'+ps+'}{uname} {n1:>'+ps+'} {n2:>'+ps+'} PWL(0, {v})'
