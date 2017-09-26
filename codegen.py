@@ -1,4 +1,6 @@
 import numpy as np
+import itertools as it
+
 
 class ROCModel(object):
     def __init__(self, N):
@@ -14,36 +16,36 @@ class ROCModel(object):
             self.mesh = grid.copy()
 
         def interpolate_copy(grid):
-            grid_size = len(grid) # number of cells
-            mesh_size = self.w # number of nodes
+            grid_size = len(grid)  # number of cells
+            mesh_size = self.w  # number of nodes
 
             # establish grid indices and coords
-            grid_x = np.arange(0,grid_size,1)
-            grid_y = np.arange(0,grid_size,1)
-            grid_x_coords = grid_x+.5
-            grid_y_coords = grid_x+.5
+            grid_x = np.arange(0, grid_size, 1)
+            grid_y = np.arange(0, grid_size, 1)
+            # grid_x_coords = grid_x + .5
+            # grid_y_coords = grid_x + .5
 
             # ditto for mesh
-            mesh_x = np.arange(0, mesh_size, 1)
-            mesh_y = np.arange(0, mesh_size, 1)
+            # mesh_x = np.arange(0, mesh_size, 1)
+            # mesh_y = np.arange(0, mesh_size, 1)
 
             # calculate necessary scaling/offset constants
             extrp_factor = float(grid_size)/float(mesh_size)
             phys_offset = extrp_factor/2.
-            
+
             # establish cell bounds
-            g_bnds = np.arange(0,grid_size+1, 1)
+            g_bnds = np.arange(0, grid_size+1, 1)
             m_bnds = np.arange(0, grid_size+1, extrp_factor)
 
             # for a given cell return it's bounds
-            def cell_to_bound(i,j,bounds):
-               return (bounds[j+1], bounds[i], bounds[j] , bounds[i+1]) 
+            def cell_to_bound(i, j, bounds):
+                return (bounds[j+1], bounds[i], bounds[j], bounds[i+1])
 
             # intesect two bounds objects. any negativity means
             # rectangles don't have an intersection
             def intersect(b1, b2):
-                return (min(b1[0],b2[0]), max(b1[1],b2[1]),
-                        max(b1[2],b2[2]), min(b1[3],b2[3]))
+                return (min(b1[0], b2[0]), max(b1[1], b2[1]),
+                        max(b1[2], b2[2]), min(b1[3], b2[3]))
 
             # calcute area of an intersection
             def area(b):
@@ -58,28 +60,28 @@ class ROCModel(object):
                     yield (int(np.floor(g_io/extrp_factor))-1,
                            int(np.floor(g_jo/extrp_factor))-1)
                     yield (int(np.floor(g_io/extrp_factor))-1,
-                           int(np.floor(g_jo/extrp_factor))  )
-                    yield (int(np.floor(g_io/extrp_factor))  ,
+                           int(np.floor(g_jo/extrp_factor)))
+                    yield (int(np.floor(g_io/extrp_factor)),
                            int(np.floor(g_jo/extrp_factor))-1)
-                    yield (int(np.floor(g_io/extrp_factor))  ,
-                           int(np.floor(g_jo/extrp_factor))  )
+                    yield (int(np.floor(g_io/extrp_factor)),
+                           int(np.floor(g_jo/extrp_factor)))
 
                 g_io = g_i+phys_offset
                 g_jo = g_j+phys_offset
 
-                for tmp_cell in __nmc(g_io,g_jo):
+                for tmp_cell in __nmc(g_io, g_jo):
                     if tmp_cell[0] >= 0 and tmp_cell[0] < mesh_size:
                         if tmp_cell[1] >= 0 and tmp_cell[1] < mesh_size:
                             yield tmp_cell
 
             # iterate over the grid and calculate weighted sums
-            for g_i in grid_x:
-                for g_j in grid_y:
-                    for (m_i, m_j) in nearest_mesh_cells(g_i, g_j):
-                        self.mesh[m_i][m_j] += (grid[g_i][g_j]
-                                * area(intersect(
-                                    cell_to_bound(g_i,g_j,g_bnds),
-                                    cell_to_bound(m_i,m_j,m_bnds))))
+            # for g_i in grid_x:
+                # for g_j in grid_y:
+            for (g_i, g_j) in it.product(grid_x, grid_y):
+                for (m_i, m_j) in nearest_mesh_cells(g_i, g_j):
+                    self.mesh[m_i][m_j] += (grid[g_i][g_j]*area(intersect(
+                                            cell_to_bound(g_i, g_j, g_bnds),
+                                            cell_to_bound(m_i, m_j, m_bnds))))
 
             # average the mesh
             # self.mesh = [m/(extrp_factor**2) for m in self.mesh]
@@ -90,13 +92,13 @@ class ROCModel(object):
         #
         # end of interpolate
         #
-        
-        grid_h = len(grid)
+
+        # grid_h = len(grid)
         grid_w = len(grid[0])
 
         if grid_w <= self.w:
             direct_copy(grid)
-        else: # problem is larger than the mesh
+        else:  # problem is larger than the mesh
             interpolate_copy(grid)
     #
     # end of create_mesh
@@ -112,7 +114,7 @@ class ROCModel(object):
         for i in range(self.w):
             self.add_comment("Row " + str(i) + " resistors")
             for j in range(self.w-1):
-                self.add_r((i,j), (i,j+1), conductance, str(self.r_counter))
+                self.add_r((i, j), (i, j+1), conductance, str(self.r_counter))
                 self.r_counter += 1
 
         # generate column resistors
@@ -120,7 +122,7 @@ class ROCModel(object):
         for i in range(self.w-1):
             self.add_comment("Column " + str(i) + " resistors")
             for j in range(self.w):
-                self.add_r((i,j), (i+1,j), conductance, str(self.r_counter))
+                self.add_r((i, j), (i+1, j), conductance, str(self.r_counter))
                 self.r_counter += 1
 
         # generate row voltages
@@ -128,7 +130,7 @@ class ROCModel(object):
         for i in range(self.w):
             self.add_comment("Row " + str(i) + " voltage sources")
             for j in range(self.w-1):
-                self.add_v((i,j), (i,j+1),
+                self.add_v((i, j), (i, j+1),
                            (self.mesh[i][j]-self.mesh[i][j+1]),
                            str(self.v_counter))
                 self.v_counter += 1
@@ -138,13 +140,12 @@ class ROCModel(object):
         for i in range(self.w-1):
             self.add_comment("Row " + str(i) + " voltage sources")
             for j in range(self.w):
-                self.add_v((i,j), (i+1,j),
+                self.add_v((i, j), (i+1, j),
                            (self.mesh[i][j]-self.mesh[i+1][j]),
                            str(self.v_counter))
                 self.v_counter += 1
 
         # generate measurement/analysis components
-
 
     def add_r(self, grid_idx1, grid_idx2, r, name):
         print("R"+name,
@@ -155,15 +156,14 @@ class ROCModel(object):
     def add_v(self, grid_idx1, grid_idx2, v, name):
         if v > 0:
             print("V"+name,
-                    self.flatten_idx(grid_idx1),
-                    self.flatten_idx(grid_idx2),
-                    "PWL(0, "+str(v)+")")
+                  self.flatten_idx(grid_idx1),
+                  self.flatten_idx(grid_idx2),
+                  "PWL(0, "+str(v)+")")
         elif v < 0:
             print("V"+name,
-                    self.flatten_idx(grid_idx2),
-                    self.flatten_idx(grid_idx1),
-                    "PWL(0, "+str(-v)+")")
-
+                  self.flatten_idx(grid_idx2),
+                  self.flatten_idx(grid_idx1),
+                  "PWL(0, "+str(-v)+")")
 
     def flatten_idx(self, idx):
         return idx[0]*self.w+idx[1]
@@ -180,4 +180,3 @@ class ROCModel(object):
 
     def add_comment(self, comment):
         print("* "+comment)
-
