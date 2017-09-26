@@ -8,7 +8,7 @@ class SpiceGenerator(object):
     def __init__(self, filename=''):
         # define necessary spice grammar
         self.__commentfrmt = '* {c}'
-        self.__bcommentfrmt = '\n*\n* {c}\n*\n'
+        self.__bcommentfrmt = '\n*\n* {c}\n*'
 
         # these two are set once we know how much to pad
         self.__rfrmt = ''
