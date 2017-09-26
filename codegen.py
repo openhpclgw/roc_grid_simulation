@@ -76,9 +76,10 @@ class ROCModel(object):
             for g_i in grid_x:
                 for g_j in grid_y:
                     for (m_i, m_j) in nearest_mesh_cells(g_i, g_j):
-                        self.mesh[m_i][m_j] += grid[g_i][g_j] * area(intersect(cell_to_bound(g_i,g_j,g_bnds),
-                                           cell_to_bound(m_i,m_j,m_bnds)))
-
+                        self.mesh[m_i][m_j] += (grid[g_i][g_j]
+                                * area(intersect(
+                                    cell_to_bound(g_i,g_j,g_bnds),
+                                    cell_to_bound(m_i,m_j,m_bnds))))
 
             # average the mesh
             # self.mesh = [m/(extrp_factor**2) for m in self.mesh]
