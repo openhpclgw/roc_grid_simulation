@@ -55,10 +55,16 @@ class SpiceModel(object):
               r)
 
     def add_v(self, grid_idx1, grid_idx2, v, name):
-        print("V"+name,
-              self.flatten_idx(grid_idx1),
-              self.flatten_idx(grid_idx2),
-              "PWL(0, "+str(v)+")")
+        if v > 0:
+            print("V"+name,
+                    self.flatten_idx(grid_idx1),
+                    self.flatten_idx(grid_idx2),
+                    "PWL(0, "+str(v)+")")
+        elif v < 0:
+            print("V"+name,
+                    self.flatten_idx(grid_idx2),
+                    self.flatten_idx(grid_idx1),
+                    "PWL(0, "+str(-v)+")")
 
 
     def flatten_idx(self, idx):
