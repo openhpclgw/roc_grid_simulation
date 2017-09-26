@@ -106,38 +106,6 @@ class ROCModel(object):
     #
 
     def to_spice(self, grid, conductance):
-
-        # print(grid)
         self.create_mesh(grid)
-        sg = SpiceGenerator(self.w)
-
-        # generate row resistors
-        sg.add_block_comment("Row Resistors")
-        for i in range(self.w):
-            sg.add_comment("Row " + str(i) + " resistors")
-            for j in range(self.w-1):
-                sg.add_r((i, j), (i, j+1), conductance)
-
-        # generate column resistors
-        sg.add_block_comment("Column Resistors")
-        for i in range(self.w-1):
-            sg.add_comment("Column " + str(i) + " resistors")
-            for j in range(self.w):
-                sg.add_r((i, j), (i+1, j), conductance)
-
-        # generate row voltages
-        sg.add_block_comment("Row Voltage Sources")
-        for i in range(self.w):
-            sg.add_comment("Row " + str(i) + " voltage sources")
-            for j in range(self.w-1):
-                sg.add_v((i, j), (i, j+1),
-                           (self.mesh[i][j]-self.mesh[i][j+1]))
-
-        # generate row voltages
-        sg.add_block_comment("Column Voltage Sources")
-        for i in range(self.w-1):
-            sg.add_comment("Row " + str(i) + " voltage sources")
-            for j in range(self.w):
-                sg.add_v((i, j), (i+1, j),
-                           (self.mesh[i][j]-self.mesh[i+1][j]))
-        # generate measurement/analysis components
+        sg = SpiceGenerator('test')
+        sg(self.mesh, conductance)

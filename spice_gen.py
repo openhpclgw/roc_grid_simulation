@@ -1,13 +1,47 @@
 class SpiceGenerator(object):
 
-    def __init__(self, mesh_size):
+    def __init__(self, filename):
         self.r_counter = 0
         self.v_counter = 0
-        self.mesh_size = mesh_size
         self.__commentfrmt = '* {c}'
         self.__bcommentfrmt = '\n*\n* {c}\n*\n'
         self.__rfrmt = 'R{i}{uname} {n1} {n2} {r}'
         self.__vfrmt = 'V{i}{uname} {n1} {n2} PWL(0, {v})'
+
+    def __call__(self, mesh, conductance):
+        self.mesh_size = len(mesh)
+
+        # generate row resistors
+        self.add_block_comment("Row Resistors")
+        for i in range(self.mesh_size):
+            self.add_comment("Row " + str(i) + " resistors")
+            for j in range(self.mesh_size-1):
+                self.add_r((i, j), (i, j+1), conductance)
+
+        # generate column resistors
+        self.add_block_comment("Column Resistors")
+        for i in range(self.mesh_size-1):
+            self.add_comment("Column " + str(i) + " resistors")
+            for j in range(self.mesh_size):
+                self.add_r((i, j), (i+1, j), conductance)
+
+        # generate row voltages
+        self.add_block_comment("Row Voltage Sources")
+        for i in range(self.mesh_size):
+            self.add_comment("Row " + str(i) + " voltage sources")
+            for j in range(self.mesh_size-1):
+                self.add_v((i, j), (i, j+1),
+                           (mesh[i][j]-mesh[i][j+1]))
+
+        # generate row voltages
+        self.add_block_comment("Column Voltage Sources")
+        for i in range(self.mesh_size-1):
+            self.add_comment("Row " + str(i) + " voltage sources")
+            for j in range(self.mesh_size):
+                self.add_v((i, j), (i+1, j),
+                           (mesh[i][j]-mesh[i+1][j]))
+
+        # generate measurement/analysis components
 
     #
     # codegen Functions
