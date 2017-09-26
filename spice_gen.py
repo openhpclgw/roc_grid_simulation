@@ -60,25 +60,25 @@ class SpiceGenerator(object):
     #
     def add_r(self, grid_idx1, grid_idx2, r, name=''):
         self.gen(self.__rfrmt.format(i=self.r_counter,
-                                  uname=self.concat_name(name),
-                                  n1=self.flatten_idx(grid_idx1),
-                                  n2=self.flatten_idx(grid_idx2),
-                                  r=r))
+                                     uname=self.concat_name(name),
+                                     n1=self.flatten_idx(grid_idx1),
+                                     n2=self.flatten_idx(grid_idx2),
+                                     r=r))
         self.r_counter += 1
 
     def add_v(self, grid_idx1, grid_idx2, v, name=''):
         if v > 0:
             self.gen(self.__vfrmt.format(i=self.v_counter,
-                                      uname=self.concat_name(name),
-                                      n1=self.flatten_idx(grid_idx1),
-                                      n2=self.flatten_idx(grid_idx2),
-                                      v=v))
+                                         uname=self.concat_name(name),
+                                         n1=self.flatten_idx(grid_idx1),
+                                         n2=self.flatten_idx(grid_idx2),
+                                         v=v))
         elif v < 0:
             self.gen(self.__vfrmt.format(i=self.v_counter,
-                                      uname=self.concat_name(name),
-                                      n1=self.flatten_idx(grid_idx2),
-                                      n2=self.flatten_idx(grid_idx1),
-                                      v=-v))
+                                         uname=self.concat_name(name),
+                                         n1=self.flatten_idx(grid_idx2),
+                                         n2=self.flatten_idx(grid_idx1),
+                                         v=-v))
         self.v_counter += 1
 
     def add_block_comment(self, comment):
