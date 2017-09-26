@@ -13,8 +13,9 @@ grid = [[0. for i in range(N)] for j in range(N)]
 grid[2][3] = 1.
 
 # initialize conductance table
-conductance = [[1. for i in range(N-1)] for j in range(N-1)]
+# conductance = [[1. for i in range(N-1)] for j in range(N-1)]
+conductance = 1.
 
-print(grid)
-m = SpiceModel(grid, conductance)
-m.to_spice()
+# print(grid)
+m = ROCModel(N)
+m.to_spice(grid, conductance)

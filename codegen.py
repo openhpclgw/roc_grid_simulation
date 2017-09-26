@@ -1,20 +1,18 @@
-class SpiceModel(object):
-    def __init__(self, grid, cond_table):
-        self.grid = grid
-        self.cond_table = cond_table
-        self.h= len(self.grid)
-        self.w = len(self.grid[0])
+class ROCModel(object):
+    def __init__(self, N):
+        self.h = N
+        self.w = N
         self.r_counter = 0
         self.v_counter = 0
 
-    def to_spice(self):
+    def to_spice(self, grid, conductance):
 
         # generate row resistors
         self.add_block_comment("Row Resistors")
         for i in range(self.w):
             self.add_comment("Row " + str(i) + " resistors")
             for j in range(self.w-1):
-                self.add_r((i,j), (i,j+1), 1, str(self.r_counter))
+                self.add_r((i,j), (i,j+1), conductance, str(self.r_counter))
                 self.r_counter += 1
 
         # generate column resistors
@@ -22,7 +20,7 @@ class SpiceModel(object):
         for i in range(self.w-1):
             self.add_comment("Column " + str(i) + " resistors")
             for j in range(self.w):
-                self.add_r((i,j), (i+1,j), 1, str(self.r_counter))
+                self.add_r((i,j), (i+1,j), conductance, str(self.r_counter))
                 self.r_counter += 1
 
         # generate row voltages
@@ -31,7 +29,7 @@ class SpiceModel(object):
             self.add_comment("Row " + str(i) + " voltage sources")
             for j in range(self.w-1):
                 self.add_v((i,j), (i,j+1),
-                           (self.grid[i][j]-self.grid[i][j+1]),
+                           (grid[i][j]-grid[i][j+1]),
                            str(self.v_counter))
                 self.v_counter += 1
 
@@ -41,7 +39,7 @@ class SpiceModel(object):
             self.add_comment("Row " + str(i) + " voltage sources")
             for j in range(self.w):
                 self.add_v((i,j), (i+1,j),
-                           (self.grid[i][j]-self.grid[i+1][j]),
+                           (grid[i][j]-grid[i+1][j]),
                            str(self.v_counter))
                 self.v_counter += 1
 
