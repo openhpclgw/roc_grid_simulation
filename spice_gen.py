@@ -104,4 +104,4 @@ class SpiceGenerator(object):
     def set_id_pads(self, width):
         ps = str(width)
         self.__rfrmt = 'R{i:0>'+ps+'}{uname} {n1:>'+ps+'} {n2:>'+ps+'} {r}'
-        self.__vfrmt = 'V{i:0>'+ps+'}{uname} {n1:>'+ps+'} {n2:>'+ps+'} PWL(0, {v})'
+        self.__vfrmt = 'V{i:0>'+ps+'}{uname} {n1:>'+ps+'} {n2:>'+ps+'} DC {v}'
