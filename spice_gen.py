@@ -43,14 +43,9 @@ class SpiceGenerator(object):
             self.add_r((i, j), (i+1, j), conductance)
 
         # generate row voltages
-        self.add_block_comment("Row Voltage Sources")
-        for i, j in it.product(full_range, short_range):
-            self.add_v((i, j), (i, j+1), (mesh[i][j]-mesh[i][j+1]))
-
-        # generate row voltages
-        self.add_block_comment("Column Voltage Sources")
-        for i, j in it.product(short_range, full_range):
-            self.add_v((i, j), (i+1, j), (mesh[i][j]-mesh[i+1][j]))
+        self.add_block_comment("Voltage Sources")
+        for i, j in it.product(full_range, full_range):
+            self.add_point_v((i, j), mesh[i][j])
 
         # self.generate measurement/analysis components
 
@@ -80,6 +75,14 @@ class SpiceGenerator(object):
                                          v=-v))
         self.v_counter += 1
 
+    def add_point_v(self, grid_idx, v, name=''):
+        self.gen(self.__pvfrmt.format(i=self.v_counter,
+                                      uname=self.concat_name(name),
+                                      n=grid_idx,
+                                      v=v))
+        self.v_counter += 1
+
+
     def add_block_comment(self, comment):
         self.gen(self.__bcommentfrmt.format(c=comment))
 
@@ -105,3 +108,4 @@ class SpiceGenerator(object):
         ps = str(width)
         self.__rfrmt = 'R{i:0>'+ps+'}{uname} N{n1[0]:}_{n1[1]:} N{n2[0]:}_{n2[1]:} {r}'
         self.__vfrmt = 'V{i:0>'+ps+'}{uname} N{n1[0]:}_{n1[1]:} N{n2[0]:}_{n2[1]:} DC {v}'
+        self.__pvfrmt = 'V{i:0>'+ps+'}{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
