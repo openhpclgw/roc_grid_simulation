@@ -48,10 +48,20 @@ class SpiceGenerator(object):
             self.add_point_v((i, j), mesh[i][j])
 
         # self.generate measurement/analysis components
+        self.add_block_comment("Analysis code")
+        self.add_transtmt()
+        for i in range(self.v_counter):
+            self.add_printstmt(i)
 
     #
     # codegen Functions
     #
+    def add_transtmt(self):
+        self.gen(self.__tranfrmt.format())
+
+    def add_printstmt(self, i):
+        self.gen(self.__printfrmt.format(i=i))
+
     def add_r(self, grid_idx1, grid_idx2, r, name=''):
         self.gen(self.__rfrmt.format(i=self.r_counter,
                                      uname=self.concat_name(name),
@@ -109,3 +119,5 @@ class SpiceGenerator(object):
         self.__rfrmt = 'R{i:0>'+ps+'}{uname} N{n1[0]:}_{n1[1]:} N{n2[0]:}_{n2[1]:} {r}'
         self.__vfrmt = 'V{i:0>'+ps+'}{uname} N{n1[0]:}_{n1[1]:} N{n2[0]:}_{n2[1]:} DC {v}'
         self.__pvfrmt = 'V{i:0>'+ps+'}{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
+        self.__tranfrmt = '.TRAN 1NS 11NS 10NS 10NS'
+        self.__printfrmt = '.PRINT TRAN I(V{i:0>'+ps+'})'
