@@ -60,8 +60,8 @@ class SpiceGenerator(object):
     def add_r(self, grid_idx1, grid_idx2, r, name=''):
         self.gen(self.__rfrmt.format(i=self.r_counter,
                                      uname=self.concat_name(name),
-                                     n1=self.flatten_idx(grid_idx1),
-                                     n2=self.flatten_idx(grid_idx2),
+                                     n1=grid_idx1,
+                                     n2=grid_idx2,
                                      r=r))
         self.r_counter += 1
 
@@ -69,14 +69,14 @@ class SpiceGenerator(object):
         if v > 0:
             self.gen(self.__vfrmt.format(i=self.v_counter,
                                          uname=self.concat_name(name),
-                                         n1=self.flatten_idx(grid_idx1),
-                                         n2=self.flatten_idx(grid_idx2),
+                                         n1=grid_idx1,
+                                         n2=grid_idx2,
                                          v=v))
         elif v < 0:
             self.gen(self.__vfrmt.format(i=self.v_counter,
                                          uname=self.concat_name(name),
-                                         n1=self.flatten_idx(grid_idx2),
-                                         n2=self.flatten_idx(grid_idx1),
+                                         n1=grid_idx2,
+                                         n2=grid_idx1,
                                          v=-v))
         self.v_counter += 1
 
@@ -103,5 +103,5 @@ class SpiceGenerator(object):
 
     def set_id_pads(self, width):
         ps = str(width)
-        self.__rfrmt = 'R{i:0>'+ps+'}{uname} {n1:>'+ps+'} {n2:>'+ps+'} {r}'
-        self.__vfrmt = 'V{i:0>'+ps+'}{uname} {n1:>'+ps+'} {n2:>'+ps+'} DC {v}'
+        self.__rfrmt = 'R{i:0>'+ps+'}{uname} N{n1[0]:}_{n1[1]:} N{n2[0]:}_{n2[1]:} {r}'
+        self.__vfrmt = 'V{i:0>'+ps+'}{uname} N{n1[0]:}_{n1[1]:} N{n2[0]:}_{n2[1]:} DC {v}'

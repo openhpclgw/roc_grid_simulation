@@ -107,5 +107,5 @@ class ROCModel(object):
 
     def to_spice(self, grid, conductance):
         self.create_mesh(grid)
-        sg = SpiceGenerator()
+        sg = SpiceGenerator('test')
         sg(self.mesh, conductance)
