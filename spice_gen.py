@@ -63,6 +63,8 @@ class SpiceGenerator(object):
         for a in ammeters:
             self.add_printstmt(a)
 
+        self.file.close()
+
     #
     # codegen Functions
     #
