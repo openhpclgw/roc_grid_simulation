@@ -11,12 +11,13 @@ N = 4
 grid = np.zeros((N,N))
 
 # heat up an arbitrary point
-# grid[2][2] = 1.
+grid[2][2] = 1.
 
 # heat up in gradient from the right
-for (i,j) in it.product(range(N), range(N)):
-    grid[i][j] = j*0.5
+# for (i,j) in it.product(range(N), range(N)):
+    # grid[i][j] = j*0.5
 
+print(grid)
 # initialize conductance table
 # conductance = [[1. for i in range(N-1)] for j in range(N-1)]
 conductance = 0.1
