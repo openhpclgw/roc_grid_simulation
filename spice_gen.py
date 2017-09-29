@@ -142,15 +142,15 @@ class SpiceGenerator(object):
         w = self.mesh_size
         h = self.mesh_size
         results = np.zeros((h,w))
-        grep_cmd = 'grep v{:0>2} test.out -A2 | tail -n1 | tr "\t" " " | cut -d" " -f"3"'
+        grep_cmd = 'grep v'+self.nid_gr+' test.out -A2 | tail -n1 | tr "\t" " " | cut -d" " -f"3"'
         vid = 0
         for i, j in it.product(range(h), range(w)):
             for _, d in zip(range(4), ['E', 'W', 'N', 'S']):
                 tmp_val = float(subprocess.check_output(
-                                       grep_cmd.format(vid),
+                                       grep_cmd.format(i=vid),
                                        shell=True))
-                print((i,j,d), tmp_val)
-                results[i][j] += tmp_val
+                if tmp_val > 0:
+                    results[i][j] += tmp_val
                 vid += 1
 
         return results
@@ -175,9 +175,11 @@ class SpiceGenerator(object):
 
     def set_id_pads(self, width):
         ps = str(width)
-        self.__hrfrmt = 'R{i:0>'+ps+'}{uname} N{n1[0]:}_{n1[1]:}E N{n2[0]:}_{n2[1]:}W {r}'
-        self.__vrfrmt = 'R{i:0>'+ps+'}{uname} N{n1[0]:}_{n1[1]:}S N{n2[0]:}_{n2[1]:}N {r}'
-        self.__vfrmt = 'V{i:0>'+ps+'}{uname} N{n1[0]:}_{n1[1]:}{d1} N{n2[0]:}_{n2[1]:}{d2} DC {v}'
-        self.__pvfrmt = 'V{i:0>'+ps+'}{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
+        self.nid_gr = '{i:0>'+ps+'}'
+        ng = self.nid_gr
+        self.__hrfrmt = 'R'+ng+'{uname} N{n1[0]:}_{n1[1]:}E N{n2[0]:}_{n2[1]:}W {r}'
+        self.__vrfrmt = 'R'+ng+'{uname} N{n1[0]:}_{n1[1]:}S N{n2[0]:}_{n2[1]:}N {r}'
+        self.__vfrmt = 'V'+ng+'{uname} N{n1[0]:}_{n1[1]:}{d1} N{n2[0]:}_{n2[1]:}{d2} DC {v}'
+        self.__pvfrmt = 'V'+ng+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
         self.__tranfrmt = '.TRAN 1NS 11NS 10NS 10NS'
         self.__printfrmt = '.PRINT TRAN I({symbol})'
