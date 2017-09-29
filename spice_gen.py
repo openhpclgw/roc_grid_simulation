@@ -43,15 +43,23 @@ class SpiceGenerator(object):
         for i, j in it.product(short_range, full_range):
             self.add_r((i, j), (i+1, j), conductance, horizontal=False)
 
+        # I wanted to avoid adding external voltages that goes outside
+        # the boundary and doesn't attach to anything. But spice seems
+        # to go haywire if I do that
+        add_extra_ammeters = True
         ammeters = []
         # generate nodes with 4 0V sources
         self.add_block_comment("Node subcircuits")
         for i, j in it.product(full_range, full_range):
             self.add_comment("Node " + str((i,j)))
-            ammeters.append(self.add_v((i, j), (i, j), v=0, dir1='E'))
-            ammeters.append(self.add_v((i, j), (i, j), v=0, dir1='W'))
-            ammeters.append(self.add_v((i, j), (i, j), v=0, dir1='N'))
-            ammeters.append(self.add_v((i, j), (i, j), v=0, dir1='S'))
+            if add_extra_ammeters or j > 0:
+                ammeters.append(self.add_v((i, j), (i, j), v=0, dir1='E'))
+            if add_extra_ammeters or j < self.mesh_size-1:
+                ammeters.append(self.add_v((i, j), (i, j), v=0, dir1='W'))
+            if add_extra_ammeters or i > 0:
+                ammeters.append(self.add_v((i, j), (i, j), v=0, dir1='N'))
+            if add_extra_ammeters or i < self.mesh_size-1:
+                ammeters.append(self.add_v((i, j), (i, j), v=0, dir1='S'))
 
         # generate row voltages
         self.add_block_comment("Voltage Sources")
@@ -131,10 +139,22 @@ class SpiceGenerator(object):
         subprocess.run('ngspice -b test.cir -o test.out', shell=True)
 
     def get_results(self):
+        w = self.mesh_size
+        h = self.mesh_size
+        results = np.zeros((h,w))
         grep_cmd = 'grep v{:0>2} test.out -A2 | tail -n1 | tr "\t" " " | cut -d" " -f"3"'
-        for i in range(64):
-            print(float(subprocess.check_output(grep_cmd.format(i),
-                shell=True)))
+        vid = 0
+        for i, j in it.product(range(h), range(w)):
+            for _, d in zip(range(4), ['E', 'W', 'N', 'S']):
+                tmp_val = float(subprocess.check_output(
+                                       grep_cmd.format(vid),
+                                       shell=True))
+                print((i,j,d), tmp_val)
+                results[i][j] += tmp_val
+                vid += 1
+
+        return results
+
 
 
     #

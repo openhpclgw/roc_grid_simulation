@@ -5,13 +5,13 @@ from codegen import *
 # I am using python 3.6.1
 
 # assume square grid
-N = 4
+N = 10
 
 # initialize grid
 grid = np.zeros((N,N))
 
 # heat up an arbitrary point
-grid[2][2] = 1.
+grid[1][1] = 10.
 
 # heat up in gradient from the right
 # for (i,j) in it.product(range(N), range(N)):
@@ -20,9 +20,9 @@ grid[2][2] = 1.
 print(grid)
 # initialize conductance table
 # conductance = [[1. for i in range(N-1)] for j in range(N-1)]
-conductance = 0.1
+conductance = .1
 
 # print(grid)
-m = ROCModel(4)
+m = ROCModel(10)
 m.load_problem(grid, conductance)
-m.run_spice_solver()
+print(m.run_spice_solver())
