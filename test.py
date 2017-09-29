@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import sys
 import numpy as np
-from codegen import *
+from roc_model import *
 import matplotlib.pyplot as plt
 
 # I am using python 3.6.1

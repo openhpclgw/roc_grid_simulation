@@ -7,14 +7,6 @@ import subprocess
 class SpiceGenerator(object):
 
     def __init__(self, filename=''):
-        # define necessary spice grammar
-        self.__commentfrmt = '* {c}'
-        self.__bcommentfrmt = '\n*\n* {c}\n*'
-
-        # these two are set once we know how much to pad
-        self.__rfrmt = ''
-        self.__vfrmt = ''
-
         # init component counters
         self.r_counter = 0
         self.v_counter = 0
@@ -24,6 +16,28 @@ class SpiceGenerator(object):
             self.file = stdout
         else:
             self.file = open('{}.cir'.format(filename), 'w')
+
+    def set_id_pads(self, width):
+        ps = str(width)
+
+        # parametrized component id and node id rules
+        self.cid_gr = '{i:0>'+ps+'}'  # set component id rule
+        self.nid_gr = lambda i:\
+            'N{n'+str(i)+'[0]:}_{n'+str(i)+'[1]:}{d'+str(i)+'}'
+
+        # convenience names
+        cg = self.cid_gr
+        ng = self.nid_gr
+
+        # define necessary spice grammar
+        self.__commentfrmt = '* {c}'
+        self.__bcommentfrmt = '\n*\n* {c}\n*'
+
+        self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
+        self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
+        self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
+        self.__tranfrmt = '.TRAN 1NS 11NS 10NS 10NS'
+        self.__printfrmt = '.PRINT TRAN I({symbol})'
 
     def create_script(self, mesh, conductance):
         # mesh size
@@ -85,14 +99,16 @@ class SpiceGenerator(object):
 
     def add_r(self, grid_idx1, grid_idx2, r, horizontal, name=''):
         if horizontal:
-            format_str = self.__hrfrmt
+            d1, d2 = 'E', 'W'
         else:
-            format_str = self.__vrfrmt
-        self.gen(format_str.format(i=self.r_counter,
-                                   uname=self.concat_name(name),
-                                   n1=grid_idx1,
-                                   n2=grid_idx2,
-                                   r=r))
+            d1, d2 = 'N', 'S'
+        self.gen(self.__rfrmt.format(i=self.r_counter,
+                                     uname=self.concat_name(name),
+                                     n1=grid_idx1,
+                                     d1=d1,
+                                     n2=grid_idx2,
+                                     d2=d2,
+                                     r=r))
 
         self.r_counter += 1
 
@@ -142,7 +158,7 @@ class SpiceGenerator(object):
         w = self.mesh_size
         h = self.mesh_size
         results = np.zeros((h,w))
-        grep_cmd = 'grep v'+self.nid_gr+' test.out -A2 | tail -n1 | tr "\t" " " | cut -d" " -f"3"'
+        grep_cmd = 'grep v'+self.cid_gr+' test.out -A2 | tail -n1 | tr "\t" " " | cut -d" " -f"3"'
         vid = 0
         for i, j in it.product(range(h), range(w)):
             for _, d in zip(range(4), ['E', 'W', 'N', 'S']):
@@ -172,14 +188,3 @@ class SpiceGenerator(object):
     def gen(self, s):
         self.file.write('{}\n'.format(s))
         return s.split()[0]
-
-    def set_id_pads(self, width):
-        ps = str(width)
-        self.nid_gr = '{i:0>'+ps+'}'
-        ng = self.nid_gr
-        self.__hrfrmt = 'R'+ng+'{uname} N{n1[0]:}_{n1[1]:}E N{n2[0]:}_{n2[1]:}W {r}'
-        self.__vrfrmt = 'R'+ng+'{uname} N{n1[0]:}_{n1[1]:}S N{n2[0]:}_{n2[1]:}N {r}'
-        self.__vfrmt = 'V'+ng+'{uname} N{n1[0]:}_{n1[1]:}{d1} N{n2[0]:}_{n2[1]:}{d2} DC {v}'
-        self.__pvfrmt = 'V'+ng+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
-        self.__tranfrmt = '.TRAN 1NS 11NS 10NS 10NS'
-        self.__printfrmt = '.PRINT TRAN I({symbol})'
