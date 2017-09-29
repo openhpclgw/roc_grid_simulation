@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import sys
 import numpy as np
-from roc_model import *
+from roc_model import ROCModel
 import matplotlib.pyplot as plt
 
 # I am using python 3.6.1
@@ -12,7 +12,7 @@ mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
 
 # initialize grid
-grid = np.zeros((N,N))
+grid = np.zeros((N, N))
 
 # heat up an arbitrary point
 grid[5][5] = 10.
@@ -38,4 +38,3 @@ if debug:
 
 plt.imshow(result, cmap='hot', interpolation='nearest')
 plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
-

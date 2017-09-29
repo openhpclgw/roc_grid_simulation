@@ -65,15 +65,19 @@ class SpiceGenerator(object):
         # generate nodes with 4 0V sources
         self.add_block_comment("Node subcircuits")
         for i, j in it.product(full_range, full_range):
-            self.add_comment("Node " + str((i,j)))
+            self.add_comment("Node " + str((i, j)))
             if add_extra_ammeters or j > 0:
-                self.ammeters[i][j].append(self.add_v((i, j), (i, j), v=0, dir1='E'))
+                self.ammeters[i][j].append(
+                        self.add_v((i, j), (i, j), v=0, dir1='E'))
             if add_extra_ammeters or j < self.mesh_size-1:
-                self.ammeters[i][j].append(self.add_v((i, j), (i, j), v=0, dir1='W'))
+                self.ammeters[i][j].append(
+                        self.add_v((i, j), (i, j), v=0, dir1='W'))
             if add_extra_ammeters or i > 0:
-                self.ammeters[i][j].append(self.add_v((i, j), (i, j), v=0, dir1='N'))
+                self.ammeters[i][j].append(
+                        self.add_v((i, j), (i, j), v=0, dir1='N'))
             if add_extra_ammeters or i < self.mesh_size-1:
-                self.ammeters[i][j].append(self.add_v((i, j), (i, j), v=0, dir1='S'))
+                self.ammeters[i][j].append(
+                        self.add_v((i, j), (i, j), v=0, dir1='S'))
 
         # generate row voltages
         self.add_block_comment("Voltage Sources")
@@ -116,21 +120,23 @@ class SpiceGenerator(object):
     def add_v(self, grid_idx1, grid_idx2, v, dir1='', dir2='', name=''):
         ret = ''
         if v >= 0:
-            ret = self.gen(self.__vfrmt.format(i=self.v_counter,
-                                         uname=self.concat_name(name),
-                                         n1=grid_idx1,
-                                         d1=dir1,
-                                         n2=grid_idx2,
-                                         d2=dir2,
-                                         v=v))
+            ret = self.gen(
+                    self.__vfrmt.format(i=self.v_counter,
+                                        uname=self.concat_name(name),
+                                        n1=grid_idx1,
+                                        d1=dir1,
+                                        n2=grid_idx2,
+                                        d2=dir2,
+                                        v=v))
         elif v < 0:
-            ret = self.gen(self.__vfrmt.format(i=self.v_counter,
-                                         uname=self.concat_name(name),
-                                         n1=grid_idx2,
-                                         d1=dir1,
-                                         n2=grid_idx1,
-                                         d2=dir2,
-                                         v=-v))
+            ret = self.gen(
+                    self.__vfrmt.format(i=self.v_counter,
+                                        uname=self.concat_name(name),
+                                        n1=grid_idx2,
+                                        d1=dir1,
+                                        n2=grid_idx1,
+                                        d2=dir2,
+                                        v=-v))
         self.v_counter += 1
         return ret
 
@@ -141,7 +147,6 @@ class SpiceGenerator(object):
                                           n=grid_idx,
                                           v=v))
             self.v_counter += 1
-
 
     def add_block_comment(self, comment):
         self.gen(self.__bcommentfrmt.format(c=comment))
@@ -158,9 +163,12 @@ class SpiceGenerator(object):
     def get_results(self):
         w = self.mesh_size
         h = self.mesh_size
-        results = np.zeros((h,w))
+        results = np.zeros((h, w))
         # FIXME parse in a more pythonic way
-        grep_cmd = 'grep -i {sym} test.out -A2 | tail -n1 | tr "\t" " " | cut -d" " -f"3"'
+        grep_cmd = 'grep -i {sym} test.out -A2 \
+                    | tail -n1 \
+                    | tr "\t" " " \
+                    | cut -d" " -f"3"'
         vid = 0
         for i, j in it.product(range(h), range(w)):
             for a in self.ammeters[i][j]:
@@ -173,8 +181,6 @@ class SpiceGenerator(object):
                 vid += 1
 
         return results
-
-
 
     #
     # Utility Functions
