@@ -24,4 +24,5 @@ conductance = 0.1
 
 # print(grid)
 m = ROCModel(4)
-m.to_spice(grid, conductance)
+m.load_problem(grid, conductance)
+m.run_spice_solver()

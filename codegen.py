@@ -1,6 +1,5 @@
 import numpy as np
 import itertools as it
-import subprocess
 from spice_gen import SpiceGenerator
 
 
@@ -106,12 +105,12 @@ class ROCModel(object):
     # end of create_mesh
     #
 
-    def to_spice(self, grid, conductance):
+    def load_problem(self, grid, conductance):
         self.create_mesh(grid)
+        self.prob_conductance = conductance
+
+    def run_spice_solver(self):
         sg = SpiceGenerator('test')
-        sg(self.mesh, conductance)
-        subprocess.run('ngspice -b test.cir -o test.out', shell=True)
-        grep_cmd = 'grep v{:0>2} test.out -A2 | tail -n1 | tr "\t" " " | cut -d" " -f"3"'
-        for i in range(64):
-            print(float(subprocess.check_output(grep_cmd.format(i),
-                shell=True)))
+        sg.create_script(self.mesh, self.prob_conductance)  # FIXME
+        sg.run()
+        return sg.get_results()

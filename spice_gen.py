@@ -1,6 +1,7 @@
 from sys import stdout
 import itertools as it
 import numpy as np
+import subprocess
 
 
 class SpiceGenerator(object):
@@ -24,7 +25,7 @@ class SpiceGenerator(object):
         else:
             self.file = open('{}.cir'.format(filename), 'w')
 
-    def __call__(self, mesh, conductance):
+    def create_script(self, mesh, conductance):
         # mesh size
         self.mesh_size = len(mesh)
         self.set_id_pads(int(np.log10(self.mesh_size**2)+1))
@@ -122,6 +123,19 @@ class SpiceGenerator(object):
 
     def add_comment(self, comment):
         self.gen(self.__commentfrmt.format(c=comment))
+
+    #
+    # simulator utils
+    #
+    def run(self):
+        subprocess.run('ngspice -b test.cir -o test.out', shell=True)
+
+    def get_results(self):
+        grep_cmd = 'grep v{:0>2} test.out -A2 | tail -n1 | tr "\t" " " | cut -d" " -f"3"'
+        for i in range(64):
+            print(float(subprocess.check_output(grep_cmd.format(i),
+                shell=True)))
+
 
     #
     # Utility Functions
