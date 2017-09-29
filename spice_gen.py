@@ -158,6 +158,7 @@ class SpiceGenerator(object):
     # simulator utils
     #
     def run(self):
+        # FIXME set file names/hierarchy better
         subprocess.run('ngspice -b test.cir -o test.out', shell=True)
 
     def get_results(self):
