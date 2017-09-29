@@ -159,6 +159,7 @@ class SpiceGenerator(object):
         w = self.mesh_size
         h = self.mesh_size
         results = np.zeros((h,w))
+        # FIXME parse in a more pythonic way
         grep_cmd = 'grep -i {sym} test.out -A2 | tail -n1 | tr "\t" " " | cut -d" " -f"3"'
         vid = 0
         for i, j in it.product(range(h), range(w)):
