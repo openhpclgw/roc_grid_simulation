@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 # assume square grid
 N = 100
+num_iters = 1
 mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
 
@@ -20,10 +21,15 @@ grid[5][5] = 10.
 cond_exp = -1
 conductance = 10**cond_exp
 
+sum_result = np.zeros((mesh_size,mesh_size))
 # print(grid)
 m = ROCModel(mesh_size)
 m.load_problem(grid, conductance)
-result = m.run_spice_solver()
+
+for i in range(num_iters):
+    result = m.run_spice_solver()
+    for s,r in zip(sum_result, result):
+        s += r
 
 debug = False
 if debug:
@@ -36,5 +42,6 @@ if debug:
 # plt.imshow(grid, cmap='hot', interpolation='nearest')
 # plt.savefig('tmp')
 
-plt.imshow(result, cmap='hot', interpolation='nearest')
-plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
+plt.imshow(sum_result, cmap='hot', interpolation='nearest')
+# plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
+plt.show()
