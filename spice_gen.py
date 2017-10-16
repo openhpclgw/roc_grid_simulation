@@ -173,7 +173,6 @@ class SpiceGenerator(object):
         vid = 0
         for i, j in it.product(range(h), range(w)):
             for a in self.ammeters[i][j]:
-                print(a)
                 tmp_val = float(subprocess.check_output(
                                        grep_cmd.format(sym=a),
                                        shell=True))
