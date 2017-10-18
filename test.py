@@ -60,10 +60,10 @@ class HeatProblem(object):
 # I am using python 3.6.1
 
 # assume square grid
-N = 20
+N = 40
 source = (5, 5, 1, 1)
 sink = (8, 8, 1, 1)
-cond_exp = -1
+cond_exp = -3
 conductance = 10**cond_exp
 num_iters = 1
 pos = 1
@@ -104,10 +104,10 @@ def cross_plot(i, j):
 
 def heat_plot(data, hp):
     # zero out the source and the sink
-    for i,j in hp.source_iter():
-        data[i][j] = 0.
-    for i,j in hp.sink_iter():
-        data[i][j] = 0.
+    # for i,j in hp.source_iter():
+        # data[i][j] = 0.
+    # for i,j in hp.sink_iter():
+        # data[i][j] = 0.
 
     plt.imshow(data, cmap='hot', interpolation='nearest')
 
@@ -141,7 +141,7 @@ def numerical_solve(hp, num_steps):
         for (i,j) in it.product(range(N), range(N)):
             abs_delta += abs(grids[0][i][j]-grids[1][i][j])
         print(abs_delta)
-        if abs_delta < 0.00001:
+        if abs_delta < 0.01:
             break
 
     return grids[num_steps%2]
@@ -150,6 +150,6 @@ def numerical_solve(hp, num_steps):
 # tmp_y_loc = int(pos/int(N/mesh_size))
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
-# heat_plot(numerical_solve(hp,10000), hp)
-heat_plot(m.run_spice_solver(), hp)
+heat_plot(numerical_solve(hp,10000), hp)
+# heat_plot(m.run_spice_solver(), hp)
 plt.show()

@@ -190,8 +190,9 @@ class SpiceGenerator(object):
                                            grep_cmd.format(sym=a),
                                            shell=True))
             else:
+                sym = 'v\('+self.__nfrmt.format(n=(i,j))+'\)'
                 tmp_val = float(subprocess.check_output(
-                                           grep_cmd.format(sym=self.__nfrmt.format(n=(i,j))),
+                                           grep_cmd.format(sym=sym),
                                            shell=True))
 
             if tmp_val > 0:
