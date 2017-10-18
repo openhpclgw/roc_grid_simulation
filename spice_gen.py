@@ -33,6 +33,7 @@ class SpiceGenerator(object):
         self.__commentfrmt = '* {c}'
         self.__bcommentfrmt = '\n*\n* {c}\n*'
 
+        self.__nfrmt = 'N{n[0]:}_{n[1]:}'
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
@@ -90,6 +91,7 @@ class SpiceGenerator(object):
         for i, j in it.product(full_range, full_range):
             for a in self.ammeters[i][j]:
                 self.add_iprintstmt(a)
+            self.add_vprintstmt((i,j))
 
         self.file.close()
 
@@ -103,9 +105,9 @@ class SpiceGenerator(object):
         self.gen(self.__printfrmt.format(typ='I',
                                          symbol=symbol))
 
-    def add_vprintstmt(self, symbol):
+    def add_vprintstmt(self, n):
         self.gen(self.__printfrmt.format(typ='V',
-                                         symbol=symbol))
+                                         symbol=self.__nfrmt.format(n=n)))
 
     def add_r(self, grid_idx1, grid_idx2, r, horizontal, name=''):
         if horizontal:
