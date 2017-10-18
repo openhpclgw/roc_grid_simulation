@@ -37,7 +37,7 @@ class SpiceGenerator(object):
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
         self.__tranfrmt = '.TRAN 1NS 11NS 10NS 10NS'
-        self.__printfrmt = '.PRINT TRAN I({symbol})'
+        self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
 
     def create_script(self, mesh, conductance):
         # mesh size
@@ -89,7 +89,7 @@ class SpiceGenerator(object):
         self.add_transtmt()
         for i, j in it.product(full_range, full_range):
             for a in self.ammeters[i][j]:
-                self.add_printstmt(a)
+                self.add_iprintstmt(a)
 
         self.file.close()
 
@@ -99,8 +99,13 @@ class SpiceGenerator(object):
     def add_transtmt(self):
         self.gen(self.__tranfrmt.format())
 
-    def add_printstmt(self, symbol):
-        self.gen(self.__printfrmt.format(symbol=symbol))
+    def add_iprintstmt(self, symbol):
+        self.gen(self.__printfrmt.format(typ='I',
+                                         symbol=symbol))
+
+    def add_vprintstmt(self, symbol):
+        self.gen(self.__printfrmt.format(typ='V',
+                                         symbol=symbol))
 
     def add_r(self, grid_idx1, grid_idx2, r, horizontal, name=''):
         if horizontal:
