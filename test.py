@@ -5,23 +5,72 @@ import itertools as it
 from roc_model import ROCModel
 import matplotlib.pyplot as plt
 
+class HeatProblem(object):
+    # bbox : (left, top, width, height)
+    def __init__(self, N, source, sink, conductance, src_val=1., sink_val=0.):
+        self.N = N
+        self.source = source
+        self.sink = sink
+        self.conductance = conductance
+        self.src_val = 1.
+        self.sink_val = 0.
+
+    def __iter_bbox(self, bbox):
+        for i,j in it.product(range(bbox[1], bbox[1]+bbox[3]),
+                              range(bbox[0], bbox[0]+bbox[2])):
+            yield (i,j)
+
+    def source_iter(self):
+        for idx in self.__iter_bbox(self.source):
+            yield idx
+
+    def sink_iter(self):
+        for idx in self.__iter_bbox(self.source):
+            yield idx
+
+    def __is_in_bbox(self, bbox, point):
+        i, j = point
+        left, top, width, height = bbox
+
+        if j < left or j >= left+width:
+            return False
+        if i < top or i >= top+height:
+            return False
+
+        return True
+
+    def is_source(self, p):
+        return self.__is_in_bbox(self.source, p)
+
+    def is_sink(self, p):
+        return self.__is_in_bbox(self.sink, p)
+
+    def gen_matrix(self):
+        mat = np.zeros((N,N))
+        print(self.source)
+        for (i,j) in self.__iter_bbox(self.source):
+            mat[i][j] = self.src_val
+        for (i,j) in self.__iter_bbox(self.sink):
+            mat[i][j] = self.sink_val
+
+        return mat
+        
+
+
 # I am using python 3.6.1
 
 # assume square grid
-N = 10
+N = 50
+source = (10, 10, 20, 20)
+sink = (35, 25, 5, 5)
+cond_exp = -1
+conductance = 10**cond_exp
 num_iters = 1
 pos = 1
 mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
+hp = HeatProblem(N, source, sink, conductance)
 
-# initialize grid
-grid = np.zeros((N, N))
-
-# heat up an arbitrary point
-grid[pos][pos] = 10.
-
-cond_exp = -1
-conductance = 10**cond_exp
 
 sum_result = np.zeros((mesh_size,mesh_size))
 # print(grid)
@@ -54,44 +103,50 @@ def cross_plot(i, j):
     axes[0][0].plot(range(mesh_size), data_cross)
     axes[1][1].imshow(sum_result, cmap='hot', interpolation='nearest')
 
-def heat_plot(data):
+def heat_plot(data, hp):
     # zero out the source and the sink
-    data[pos][pos] = 0.
-    data[8][80] = 0.
+    for i,j in hp.source_iter():
+        data[i][j] = 0.
+    for i,j in hp.sink_iter():
+        data[i][j] = 0.
+
     plt.imshow(data, cmap='hot', interpolation='nearest')
 
-def numerical_solve(grid, sink, c, num_steps):
+def numerical_solve(hp, num_steps):
+    N = hp.N
     grid2 = np.zeros((N,N))
-    # for g,g2 in zip(grid,grid2):
-    for (i,j) in it.product(range(N), range(N)):
-        grid2[i][j] = grid[i][j]
+    grid = hp.gen_matrix()
+    grid2 = hp.gen_matrix()
+    c = hp.conductance
 
     for step in range(num_steps):
         if step %2 == 0:
             for (i,j) in it.product(range(1, N-1), range(1, N-1)):
-                if i==pos and j==pos:
+                if hp.is_source((i,j)):
                     continue
-                if i==sink[0] and j==sink[1]:
+                if hp.is_sink((i,j)):
                     continue
                 grid2[i][j] = (grid[i+1][j] + grid[i-1][j] +
                                   grid[i][j+1] + grid[i][j-1] -
-                                  0*grid[i][j])/c
+                                  0*grid[i][j])/4.
             # print(grid2)
         else:
             for (i,j) in it.product(range(1, N-1), range(1, N-1)):
-                if i==pos and j==pos:
+                if hp.is_source((i,j)):
                     continue
-                if i==sink[0] and j==sink[1]:
+                if hp.is_sink((i,j)):
                     continue
                 grid[i][j] = (grid2[i+1][j] + grid2[i-1][j] +
                                   grid2[i][j+1] + grid2[i][j-1] -
-                                  0*grid2[i][j])/c
+                                  0*grid2[i][j])/4.
             # print(grid)
 
         abs_delta = 0.
         for (i,j) in it.product(range(N), range(N)):
             abs_delta += abs(grid[i][j]-grid2[i][j])
         print(abs_delta)
+        if abs_delta < 0.00001:
+            break
 
     return grid
 
@@ -99,5 +154,5 @@ def numerical_solve(grid, sink, c, num_steps):
 # tmp_y_loc = int(pos/int(N/mesh_size))
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
-heat_plot(numerical_solve(grid, (8,80), 4, 100))
+heat_plot(numerical_solve(hp,10000), hp)
 plt.show()
