@@ -115,12 +115,16 @@ class ROCModel(object):
         self.load_problem(hp.gen_matrix(), hp.conductance)
         # create the heatsink zone
         # print(self.exp_factor)
-        extrp_hs = (int(hp.sink[0]/self.exp_factor),
-                    int(hp.sink[1]/self.exp_factor),
-                    int(hp.sink[2]/self.exp_factor)+1,
-                    int(hp.sink[3]/self.exp_factor)+1)
+        extrp_hsnk = (int(hp.sink[0]/self.exp_factor),
+                      int(hp.sink[1]/self.exp_factor),
+                      int(hp.sink[2]/self.exp_factor)+1,
+                      int(hp.sink[3]/self.exp_factor)+1)
+        extrp_hsrc = (int(hp.source[0]/self.exp_factor),
+                      int(hp.source[1]/self.exp_factor),
+                      int(hp.source[2]/self.exp_factor)+1,
+                      int(hp.source[3]/self.exp_factor)+1)
         # print(extrp_hs)
         sg = SpiceGenerator('test')
-        sg.create_script(self.mesh, self.prob_conductance, extrp_hs)  # FIXME
+        sg.create_script(self.mesh, self.prob_conductance, extrp_hsnk)  # FIXME
         sg.run()
         return sg.get_results()

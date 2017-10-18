@@ -187,20 +187,38 @@ class SpiceGenerator(object):
         vid = 0
         U = np.zeros((self.mesh_size, self.mesh_size))
         V = np.zeros((self.mesh_size, self.mesh_size))
+        ein = np.zeros((self.mesh_size, self.mesh_size))
+        eout = np.zeros((self.mesh_size, self.mesh_size))
         for i, j in it.product(range(h), range(w)):
+            def accumulate_energy(val):
+                if val < 0:
+                    eout[i][j] += val
+                else:
+                    ein[i][j] += val
             a = self.ammeters[i][j]
-            U[i][j] += -float(subprocess.check_output(
+            east = float(subprocess.check_output(
                                    grep_cmd.format(sym=a[0]),
                                    shell=True))
-            U[i][j] += float(subprocess.check_output(
+            accumulate_energy(east)
+            U[i][j] += -east
+            
+            west = float(subprocess.check_output(
                                    grep_cmd.format(sym=a[1]),
                                    shell=True))
-            V[i][j] += -float(subprocess.check_output(
+            accumulate_energy(west)
+            U[i][j] += west
+
+            north = float(subprocess.check_output(
                                    grep_cmd.format(sym=a[2]),
                                    shell=True))
-            V[i][j] += float(subprocess.check_output(
+            accumulate_energy(north)
+            V[i][j] += -north
+            
+            south = float(subprocess.check_output(
                                    grep_cmd.format(sym=a[3]),
                                    shell=True))
+            accumulate_energy(south)
+            V[i][j] += south
 
             sym = 'v\('+self.__nfrmt.format(n=(i,j))+'\)'
             tmp_val = float(subprocess.check_output(
