@@ -83,7 +83,12 @@ class SpiceGenerator(object):
         # generate row voltages
         self.add_block_comment("Voltage Sources")
         for i, j in it.product(full_range, full_range):
-            self.add_point_v((i, j), mesh[i][j])
+            v = mesh[i][j]
+            if v > 0:
+                self.add_point_v((i, j), v)
+
+        # generate heat sink
+        self.add_point_v((8,8), 0)
 
         # self.generate measurement/analysis components
         self.add_block_comment("Analysis code")
@@ -148,12 +153,11 @@ class SpiceGenerator(object):
         return ret
 
     def add_point_v(self, grid_idx, v, name=''):
-        if v > 0:
-            self.gen(self.__pvfrmt.format(i=self.v_counter,
-                                          uname=self.concat_name(name),
-                                          n=grid_idx,
-                                          v=v))
-            self.v_counter += 1
+        self.gen(self.__pvfrmt.format(i=self.v_counter,
+                                      uname=self.concat_name(name),
+                                      n=grid_idx,
+                                      v=v))
+        self.v_counter += 1
 
     def add_block_comment(self, comment):
         self.gen(self.__bcommentfrmt.format(c=comment))
@@ -178,14 +182,22 @@ class SpiceGenerator(object):
                     | tr "\t" " " \
                     | cut -d" " -f"3"'
         vid = 0
+        measure_i = False
         for i, j in it.product(range(h), range(w)):
-            for a in self.ammeters[i][j]:
+            if measure_i:
+                for a in self.ammeters[i][j]:
+                    tmp_val = float(subprocess.check_output(
+                                           grep_cmd.format(sym=a),
+                                           shell=True))
+            else:
                 tmp_val = float(subprocess.check_output(
-                                       grep_cmd.format(sym=a),
-                                       shell=True))
-                if tmp_val > 0:
-                    results[i][j] += tmp_val
-                vid += 1
+                                           grep_cmd.format(sym=self.__nfrmt.format(n=(i,j))),
+                                           shell=True))
+
+            if tmp_val > 0:
+                results[i][j] += tmp_val
+            vid += 1
+
 
         return results
 

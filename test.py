@@ -60,7 +60,7 @@ class HeatProblem(object):
 # I am using python 3.6.1
 
 # assume square grid
-N = 100
+N = 10
 source = (5, 5, 1, 1)
 sink = (8, 8, 1, 1)
 cond_exp = -1
