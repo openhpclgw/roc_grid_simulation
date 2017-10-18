@@ -37,7 +37,7 @@ class SpiceGenerator(object):
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
-        self.__tranfrmt = '.TRAN 1NS 11NS 10NS 10NS'
+        self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
 
     def create_script(self, mesh, conductance, hs):
@@ -229,6 +229,7 @@ class SpiceGenerator(object):
             vid += 1
 
         sum_out = 0.
+        print(hsrc)
         for i,j in it.product(range(hsrc[1], hsrc[1]+hsrc[3]),
                               range(hsrc[0], hsrc[0]+hsrc[2])):
             sum_out += eout[i][j]

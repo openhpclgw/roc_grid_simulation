@@ -60,8 +60,8 @@ class HeatProblem(object):
 
 # assume square grid
 N = 100
-source = (0, 70, 5, 29)
-sink = (50, 20, 29, 5)
+source = (10, 10, 5, 5)
+sink = (55, 10, 5, 50)
 cond_exp = -3
 conductance = 10**cond_exp
 num_iters = 1

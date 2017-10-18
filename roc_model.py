@@ -117,12 +117,12 @@ class ROCModel(object):
         # print(self.exp_factor)
         extrp_hsnk = (int(hp.sink[0]/self.exp_factor),
                       int(hp.sink[1]/self.exp_factor),
-                      int(hp.sink[2]/self.exp_factor)+1,
-                      int(hp.sink[3]/self.exp_factor)+1)
+                      int(np.ceil(hp.sink[2]/self.exp_factor)),
+                      int(np.ceil(hp.sink[3]/self.exp_factor)))
         extrp_hsrc = (int(hp.source[0]/self.exp_factor),
                       int(hp.source[1]/self.exp_factor),
-                      int(hp.source[2]/self.exp_factor)+1,
-                      int(hp.source[3]/self.exp_factor)+1)
+                      int(np.ceil(hp.source[2]/self.exp_factor)),
+                      int(np.ceil(hp.source[3]/self.exp_factor)))
         # print(extrp_hs)
         sg = SpiceGenerator('test')
         sg.create_script(self.mesh, self.prob_conductance, extrp_hsnk)  # FIXME
