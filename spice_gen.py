@@ -185,25 +185,34 @@ class SpiceGenerator(object):
                     | tr "\t" " " \
                     | cut -d" " -f"3"'
         vid = 0
-        measure_i = False
+        U = np.zeros((self.mesh_size, self.mesh_size))
+        V = np.zeros((self.mesh_size, self.mesh_size))
         for i, j in it.product(range(h), range(w)):
-            if measure_i:
-                for a in self.ammeters[i][j]:
-                    tmp_val = float(subprocess.check_output(
-                                           grep_cmd.format(sym=a),
-                                           shell=True))
-            else:
-                sym = 'v\('+self.__nfrmt.format(n=(i,j))+'\)'
-                tmp_val = float(subprocess.check_output(
-                                           grep_cmd.format(sym=sym),
-                                           shell=True))
+            a = self.ammeters[i][j]
+            U[i][j] += -float(subprocess.check_output(
+                                   grep_cmd.format(sym=a[0]),
+                                   shell=True))
+            U[i][j] += float(subprocess.check_output(
+                                   grep_cmd.format(sym=a[1]),
+                                   shell=True))
+            V[i][j] += -float(subprocess.check_output(
+                                   grep_cmd.format(sym=a[2]),
+                                   shell=True))
+            V[i][j] += float(subprocess.check_output(
+                                   grep_cmd.format(sym=a[3]),
+                                   shell=True))
+
+            sym = 'v\('+self.__nfrmt.format(n=(i,j))+'\)'
+            tmp_val = float(subprocess.check_output(
+                                       grep_cmd.format(sym=sym),
+                                       shell=True))
 
             if tmp_val > 0:
                 results[i][j] += tmp_val
             vid += 1
 
 
-        return results
+        return results, U, V
 
     #
     # Utility Functions

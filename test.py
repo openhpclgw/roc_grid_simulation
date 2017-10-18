@@ -101,14 +101,14 @@ def cross_plot(i, j):
     axes[0][0].plot(range(mesh_size), data_cross)
     axes[1][1].imshow(sum_result, cmap='hot', interpolation='nearest')
 
-def heat_plot(data, hp):
+# def heat_plot(data, hp):
     # zero out the source and the sink
     # for i,j in hp.source_iter():
         # data[i][j] = 0.
     # for i,j in hp.sink_iter():
         # data[i][j] = 0.
 
-    plt.imshow(data, cmap='hot', interpolation='nearest')
+    # plt.imshow(data, cmap='hot', interpolation='nearest')
 
 def numerical_solve(hp, num_steps):
     N = hp.N
@@ -145,10 +145,23 @@ def numerical_solve(hp, num_steps):
 
     return grids[num_steps%2]
 
+# def quiver_plot(U,V):
+
 # tmp_x_loc = int(pos/int(N/mesh_size))
 # tmp_y_loc = int(pos/int(N/mesh_size))
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
 # heat_plot(numerical_solve(hp,10000), hp)
-heat_plot(m.run_spice_solver(hp), hp)
+results, U, V = m.run_spice_solver(hp)
+
+fig, axes = plt.subplots(1,1)
+axes.imshow(results, cmap='hot', interpolation='nearest')
+# print([i for i in range(mesh_size)])
+# print([i for i in range(mesh_size-1, -1, -1)])
+
+axes.streamplot(np.array([i for i in range(mesh_size)]),
+               np.array([i for i in range(mesh_size)]),
+               U, V, color='green')
+
+# heat_plot(results, hp)
 plt.show()
