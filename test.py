@@ -60,7 +60,7 @@ class HeatProblem(object):
 # I am using python 3.6.1
 
 # assume square grid
-N = 10
+N = 20
 source = (5, 5, 1, 1)
 sink = (8, 8, 1, 1)
 cond_exp = -1
@@ -69,7 +69,7 @@ num_iters = 1
 pos = 1
 mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
-hp = HeatProblem(N, source, sink, conductance)
+hp = HeatProblem(N, source, sink, conductance, src_val=100.)
 
 
 # sum_result = np.zeros((mesh_size,mesh_size))
@@ -119,16 +119,23 @@ def numerical_solve(hp, num_steps):
     c = hp.conductance
 
     for step in range(num_steps):
-        for (i,j) in it.product(range(1, N-1), range(1, N-1)):
+        for (i,j) in it.product(range(N), range(N)):
             if hp.is_source((i,j)):
                 continue
             if hp.is_sink((i,j)):
                 continue
             ing=step%2
             outg=1-ing
-            grids[outg][i][j] = (grids[ing][i+1][j] + grids[ing][i-1][j] +
-                              grids[ing][i][j+1] + grids[ing][i][j-1] -
-                              0*grids[ing][i][j])/4.
+            tmp_sum = 0.
+            if i-1 >= 0:
+                tmp_sum += grids[ing][i-1][j]
+            if i+1 < N:
+                tmp_sum += grids[ing][i+1][j]
+            if j-1 >= 0:
+                tmp_sum += grids[ing][i][j-1]
+            if j+1 < N:
+                tmp_sum += grids[ing][i][j+1]
+            grids[outg][i][j] = (tmp_sum)/4.
 
         abs_delta = 0.
         for (i,j) in it.product(range(N), range(N)):
@@ -143,6 +150,6 @@ def numerical_solve(hp, num_steps):
 # tmp_y_loc = int(pos/int(N/mesh_size))
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
-heat_plot(numerical_solve(hp,10000), hp)
-# heat_plot(m.run_spice_solver(), hp)
+# heat_plot(numerical_solve(hp,10000), hp)
+heat_plot(m.run_spice_solver(), hp)
 plt.show()
