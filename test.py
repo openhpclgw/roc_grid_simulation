@@ -59,9 +59,14 @@ class HeatProblem(object):
 # I am using python 3.6.1
 
 # assume square grid
-N = 100
-source = (10, 10, 5, 5)
-sink = (55, 10, 5, 50)
+# N = 100
+# source = (10, 10, 5, 5)
+# sink = (55, 10, 5, 50)
+N = 20
+# source = (2, 2, 7, 10)
+# sink = (11, 2, 1, 10)
+source = (4, 4, 4, 12)
+sink = (12, 4, 4, 12)
 cond_exp = -3
 conductance = 10**cond_exp
 num_iters = 1
@@ -100,14 +105,14 @@ def cross_plot(i, j):
     axes[0][0].plot(range(mesh_size), data_cross)
     axes[1][1].imshow(sum_result, cmap='hot', interpolation='nearest')
 
-# def heat_plot(data, hp):
+def heat_plot(data, hp):
     # zero out the source and the sink
     # for i,j in hp.source_iter():
         # data[i][j] = 0.
     # for i,j in hp.sink_iter():
         # data[i][j] = 0.
 
-    # plt.imshow(data, cmap='hot', interpolation='nearest')
+    plt.imshow(data, cmap='hot', interpolation='nearest')
 
 def numerical_solve(hp, num_steps):
     N = hp.N
@@ -139,7 +144,7 @@ def numerical_solve(hp, num_steps):
         for (i,j) in it.product(range(N), range(N)):
             abs_delta += abs(grids[0][i][j]-grids[1][i][j])
         print(abs_delta)
-        if abs_delta < 0.01:
+        if abs_delta == 0:
             break
 
     return grids[num_steps%2]
@@ -152,17 +157,12 @@ def numerical_solve(hp, num_steps):
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
 # heat_plot(numerical_solve(hp,10000), hp)
 results, U, V, sum_out, sum_in= m.run_spice_solver(hp)
-
 print(sum_out)
 print(sum_in)
 fig, axes = plt.subplots(1,1)
 axes.imshow(results, cmap='hot', interpolation='nearest')
-# print([i for i in range(mesh_size)])
-# print([i for i in range(mesh_size-1, -1, -1)])
-
 axes.streamplot(np.array([i for i in range(mesh_size)]),
                np.array([i for i in range(mesh_size)]),
                U, V, color='green', linewidth=1, density=0.5)
 
-# heat_plot(results, hp)
 plt.show()

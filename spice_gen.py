@@ -43,7 +43,7 @@ class SpiceGenerator(object):
     def create_script(self, mesh, conductance, hs):
         # mesh size
         self.mesh_size = len(mesh)
-        self.set_id_pads(int(np.log10(self.mesh_size**2)+1))
+        self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
 
         full_range = range(self.mesh_size)
         short_range = range(self.mesh_size-1)
@@ -195,6 +195,7 @@ class SpiceGenerator(object):
                 else:
                     ein[i][j] += val
             a = self.ammeters[i][j]
+            print(a)
             east = float(subprocess.check_output(
                                    grep_cmd.format(sym=a[0]),
                                    shell=True))
@@ -232,11 +233,13 @@ class SpiceGenerator(object):
         print(hsrc)
         for i,j in it.product(range(hsrc[1], hsrc[1]+hsrc[3]),
                               range(hsrc[0], hsrc[0]+hsrc[2])):
+            print((i,j))
             sum_out += eout[i][j]
 
         sum_in = 0.
         for i,j in it.product(range(hsnk[1], hsnk[1]+hsnk[3]),
                               range(hsnk[0], hsnk[0]+hsnk[2])):
+            print((i,j))
             sum_in+= ein[i][j]
 
         return results, U, V, sum_out, sum_in

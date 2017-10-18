@@ -123,7 +123,8 @@ class ROCModel(object):
                       int(hp.source[1]/self.exp_factor),
                       int(np.ceil(hp.source[2]/self.exp_factor)),
                       int(np.ceil(hp.source[3]/self.exp_factor)))
-        # print(extrp_hs)
+        print(extrp_hsrc)
+        print(extrp_hsnk)
         sg = SpiceGenerator('test')
         sg.create_script(self.mesh, self.prob_conductance, extrp_hsnk)  # FIXME
         sg.run()
