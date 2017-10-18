@@ -113,46 +113,36 @@ def heat_plot(data, hp):
 
 def numerical_solve(hp, num_steps):
     N = hp.N
-    grid2 = np.zeros((N,N))
-    grid = hp.gen_matrix()
-    grid2 = hp.gen_matrix()
+    # grid = hp.gen_matrix()
+    # grid2 = hp.gen_matrix()
+    grids = (hp.gen_matrix(), hp.gen_matrix())
     c = hp.conductance
 
     for step in range(num_steps):
-        if step %2 == 0:
-            for (i,j) in it.product(range(1, N-1), range(1, N-1)):
-                if hp.is_source((i,j)):
-                    continue
-                if hp.is_sink((i,j)):
-                    continue
-                grid2[i][j] = (grid[i+1][j] + grid[i-1][j] +
-                                  grid[i][j+1] + grid[i][j-1] -
-                                  0*grid[i][j])/4.
-            # print(grid2)
-        else:
-            for (i,j) in it.product(range(1, N-1), range(1, N-1)):
-                if hp.is_source((i,j)):
-                    continue
-                if hp.is_sink((i,j)):
-                    continue
-                grid[i][j] = (grid2[i+1][j] + grid2[i-1][j] +
-                                  grid2[i][j+1] + grid2[i][j-1] -
-                                  0*grid2[i][j])/4.
-            # print(grid)
+        for (i,j) in it.product(range(1, N-1), range(1, N-1)):
+            if hp.is_source((i,j)):
+                continue
+            if hp.is_sink((i,j)):
+                continue
+            ing=step%2
+            outg=1-ing
+            grids[outg][i][j] = (grids[ing][i+1][j] + grids[ing][i-1][j] +
+                              grids[ing][i][j+1] + grids[ing][i][j-1] -
+                              0*grids[ing][i][j])/4.
 
         abs_delta = 0.
         for (i,j) in it.product(range(N), range(N)):
-            abs_delta += abs(grid[i][j]-grid2[i][j])
+            abs_delta += abs(grids[0][i][j]-grids[1][i][j])
         print(abs_delta)
         if abs_delta < 0.00001:
             break
 
-    return grid
+    return grids[num_steps%2]
 
 # tmp_x_loc = int(pos/int(N/mesh_size))
 # tmp_y_loc = int(pos/int(N/mesh_size))
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
-# heat_plot(numerical_solve(hp,10000), hp)
-heat_plot(m.run_spice_solver(), hp)
+heat_plot(numerical_solve(hp,10000), hp)
+# heat_plot(m.run_spice_solver(), hp)
 plt.show()
