@@ -61,8 +61,8 @@ class HeatProblem(object):
 
 # assume square grid
 N = 100
-source = (10, 5, 10, 20)
-sink = (50, 10, 10, 10)
+source = (0, 70, 5, 29)
+sink = (70, 20, 29, 5)
 cond_exp = -3
 conductance = 10**cond_exp
 num_iters = 1
@@ -161,7 +161,7 @@ axes.imshow(results, cmap='hot', interpolation='nearest')
 
 axes.streamplot(np.array([i for i in range(mesh_size)]),
                np.array([i for i in range(mesh_size)]),
-               U, V, color='green')
+               U, V, color='green', linewidth=1, density=0.5)
 
 # heat_plot(results, hp)
 plt.show()
