@@ -15,6 +15,7 @@ class ROCModel(object):
 
         def direct_copy(grid):
             self.mesh = grid.copy()
+            return 1.
 
         def interpolate_copy(grid):
             grid_size = len(grid)  # number of cells
@@ -90,6 +91,7 @@ class ROCModel(object):
             # print(extrp_factor)
             print(grid)
             print(self.mesh)
+            return extrp_factor
         #
         # end of interpolate
         #
@@ -98,19 +100,27 @@ class ROCModel(object):
         grid_w = len(grid[0])
 
         if grid_w <= self.w:
-            direct_copy(grid)
+            return direct_copy(grid)
         else:  # problem is larger than the mesh
-            interpolate_copy(grid)
+            return interpolate_copy(grid)
     #
     # end of create_mesh
     #
 
     def load_problem(self, grid, conductance):
-        self.create_mesh(grid)
+        self.exp_factor = self.create_mesh(grid)
         self.prob_conductance = conductance
 
-    def run_spice_solver(self):
+    def run_spice_solver(self, hp):
+        self.load_problem(hp.gen_matrix(), hp.conductance)
+        # create the heatsink zone
+        # print(self.exp_factor)
+        extrp_hs = (int(hp.sink[0]/self.exp_factor),
+                    int(hp.sink[1]/self.exp_factor),
+                    int(hp.sink[2]/self.exp_factor)+1,
+                    int(hp.sink[3]/self.exp_factor)+1)
+        # print(extrp_hs)
         sg = SpiceGenerator('test')
-        sg.create_script(self.mesh, self.prob_conductance)  # FIXME
+        sg.create_script(self.mesh, self.prob_conductance, extrp_hs)  # FIXME
         sg.run()
         return sg.get_results()

@@ -60,9 +60,9 @@ class HeatProblem(object):
 # I am using python 3.6.1
 
 # assume square grid
-N = 40
-source = (5, 5, 1, 1)
-sink = (8, 8, 1, 1)
+N = 100
+source = (10, 5, 10, 20)
+sink = (50, 80, 10, 10)
 cond_exp = -3
 conductance = 10**cond_exp
 num_iters = 1
@@ -74,7 +74,6 @@ hp = HeatProblem(N, source, sink, conductance, src_val=100.)
 
 # sum_result = np.zeros((mesh_size,mesh_size))
 m = ROCModel(mesh_size)
-m.load_problem(hp.gen_matrix(), hp.conductance)
 
 # for i in range(num_iters):
     # result = m.run_spice_solver()
@@ -150,6 +149,6 @@ def numerical_solve(hp, num_steps):
 # tmp_y_loc = int(pos/int(N/mesh_size))
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
-heat_plot(numerical_solve(hp,10000), hp)
-# heat_plot(m.run_spice_solver(), hp)
+# heat_plot(numerical_solve(hp,10000), hp)
+heat_plot(m.run_spice_solver(hp), hp)
 plt.show()

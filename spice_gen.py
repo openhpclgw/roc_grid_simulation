@@ -40,7 +40,7 @@ class SpiceGenerator(object):
         self.__tranfrmt = '.TRAN 1NS 11NS 10NS 10NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
 
-    def create_script(self, mesh, conductance):
+    def create_script(self, mesh, conductance, hs):
         # mesh size
         self.mesh_size = len(mesh)
         self.set_id_pads(int(np.log10(self.mesh_size**2)+1))
@@ -88,7 +88,10 @@ class SpiceGenerator(object):
                 self.add_point_v((i, j), v)
 
         # generate heat sink
-        self.add_point_v((8,8), 0)
+        for i,j in it.product(range(hs[1], hs[1]+hs[3]),
+                              range(hs[0], hs[0]+hs[2])):
+            print((i,j))
+            self.add_point_v((i,j), mesh[i][j])
 
         # self.generate measurement/analysis components
         self.add_block_comment("Analysis code")
