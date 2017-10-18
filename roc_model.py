@@ -127,4 +127,4 @@ class ROCModel(object):
         sg = SpiceGenerator('test')
         sg.create_script(self.mesh, self.prob_conductance, extrp_hsnk)  # FIXME
         sg.run()
-        return sg.get_results()
+        return sg.get_results(extrp_hsrc, extrp_hsnk)

@@ -90,7 +90,6 @@ class SpiceGenerator(object):
         # generate heat sink
         for i,j in it.product(range(hs[1], hs[1]+hs[3]),
                               range(hs[0], hs[0]+hs[2])):
-            print((i,j))
             self.add_point_v((i,j), mesh[i][j])
 
         # self.generate measurement/analysis components
@@ -175,7 +174,7 @@ class SpiceGenerator(object):
         # FIXME set file names/hierarchy better
         subprocess.run('ngspice -b test.cir -o test.out', shell=True)
 
-    def get_results(self):
+    def get_results(self, hsrc, hsnk):
         w = self.mesh_size
         h = self.mesh_size
         results = np.zeros((h, w))
@@ -229,8 +228,17 @@ class SpiceGenerator(object):
                 results[i][j] += tmp_val
             vid += 1
 
+        sum_out = 0.
+        for i,j in it.product(range(hsrc[1], hsrc[1]+hsrc[3]),
+                              range(hsrc[0], hsrc[0]+hsrc[2])):
+            sum_out += eout[i][j]
 
-        return results, U, V
+        sum_in = 0.
+        for i,j in it.product(range(hsnk[1], hsnk[1]+hsnk[3]),
+                              range(hsnk[0], hsnk[0]+hsnk[2])):
+            sum_in+= ein[i][j]
+
+        return results, U, V, sum_out, sum_in
 
     #
     # Utility Functions

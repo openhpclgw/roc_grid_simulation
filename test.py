@@ -12,8 +12,8 @@ class HeatProblem(object):
         self.source = source
         self.sink = sink
         self.conductance = conductance
-        self.src_val = 1.
-        self.sink_val = 0.
+        self.src_val = src_val
+        self.sink_val = sink_val
 
     def __iter_bbox(self, bbox):
         for i,j in it.product(range(bbox[1], bbox[1]+bbox[3]),
@@ -47,7 +47,6 @@ class HeatProblem(object):
 
     def gen_matrix(self):
         mat = np.zeros((N,N))
-        print(self.source)
         for (i,j) in self.__iter_bbox(self.source):
             mat[i][j] = self.src_val
         for (i,j) in self.__iter_bbox(self.sink):
@@ -69,7 +68,7 @@ num_iters = 1
 pos = 1
 mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
-hp = HeatProblem(N, source, sink, conductance, src_val=100.)
+hp = HeatProblem(N, source, sink, conductance, src_val=10.)
 
 
 # sum_result = np.zeros((mesh_size,mesh_size))
@@ -152,8 +151,10 @@ def numerical_solve(hp, num_steps):
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
 # heat_plot(numerical_solve(hp,10000), hp)
-results, U, V = m.run_spice_solver(hp)
+results, U, V, sum_out, sum_in= m.run_spice_solver(hp)
 
+print(sum_out)
+print(sum_in)
 fig, axes = plt.subplots(1,1)
 axes.imshow(results, cmap='hot', interpolation='nearest')
 # print([i for i in range(mesh_size)])
