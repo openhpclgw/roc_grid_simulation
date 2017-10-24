@@ -188,6 +188,7 @@ class SpiceGenerator(object):
         V = np.zeros((self.mesh_size, self.mesh_size))
         ein = np.zeros((self.mesh_size, self.mesh_size))
         eout = np.zeros((self.mesh_size, self.mesh_size))
+        rcurs = []
         for i, j in it.product(range(h), range(w)):
             def accumulate_energy(val):
                 if val < 0:
@@ -199,6 +200,11 @@ class SpiceGenerator(object):
             east = float(subprocess.check_output(
                                    grep_cmd.format(sym=a[0]),
                                    shell=True))
+            direction = 0 if east==0 else 'W' if east>0 else 'E'
+            rcurs.append(((i,j),   # terminal 1
+                          (i,j+1),  # terminal 2
+                          abs(east),  # current
+                          direction))  # +1: West, -1: East
             accumulate_energy(east)
             U[i][j] += -east
             
@@ -217,6 +223,11 @@ class SpiceGenerator(object):
             south = float(subprocess.check_output(
                                    grep_cmd.format(sym=a[3]),
                                    shell=True))
+            direction = 0 if south==0 else 'N' if south>0 else 'S'
+            rcurs.append(((i,j),   # terminal 1
+                          (i+1,j),  # terminal 2
+                          abs(south),  # current
+                          direction))
             accumulate_energy(south)
             V[i][j] += south
 
@@ -242,7 +253,7 @@ class SpiceGenerator(object):
             print((i,j))
             sum_in+= ein[i][j]
 
-        return results, U, V, sum_out, sum_in
+        return results, U, V, sum_out, sum_in, rcurs
 
     #
     # Utility Functions

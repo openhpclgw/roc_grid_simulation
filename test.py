@@ -149,6 +149,14 @@ def numerical_solve(hp, num_steps):
 
     return grids[num_steps%2]
 
+def print_current_table(rcurs):
+    print('Terminal1    Terminal2    Current    Direction')
+    for data in rcurs:
+        print('{}\t{}\t\t{}\t\t{}'.format(data[0],
+                                            data[1],
+                                            data[2],
+                                            data[3]))
+
 # def quiver_plot(U,V):
 
 # tmp_x_loc = int(pos/int(N/mesh_size))
@@ -156,9 +164,10 @@ def numerical_solve(hp, num_steps):
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
 # heat_plot(numerical_solve(hp,10000), hp)
-results, U, V, sum_out, sum_in= m.run_spice_solver(hp)
+results, U, V, sum_out, sum_in, rcurs= m.run_spice_solver(hp)
 print(sum_out)
 print(sum_in)
+print_current_table(rcurs)
 fig, axes = plt.subplots(1,1)
 axes.imshow(results, cmap='hot', interpolation='nearest')
 axes.streamplot(np.array([i for i in range(mesh_size)]),
