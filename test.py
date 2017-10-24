@@ -150,12 +150,13 @@ def numerical_solve(hp, num_steps):
     return grids[num_steps%2]
 
 def print_current_table(rcurs):
-    print('Terminal1    Terminal2    Current    Direction')
+    frs = '{0:>9}    {1:>9}     {2}         {3:>1}'
+    print(frs.format('Terminal1', 'Terminal2', 'Current', 'Direction'))
     for data in rcurs:
-        print('{}\t{}\t\t{}\t\t{}'.format(data[0],
-                                            data[1],
-                                            data[2],
-                                            data[3]))
+        print(frs.format(str(data[0]),
+                         str(data[1]),
+                         '{:>10.6e}'.format(data[2]),
+                         data[3]))
 
 # def quiver_plot(U,V):
 
