@@ -1,4 +1,5 @@
 from sys import stdout
+import roc_model as rm
 import itertools as it
 import numpy as np
 import subprocess
@@ -36,6 +37,7 @@ class SpiceGenerator(object):
         self.__nfrmt = 'N{n[0]:}_{n[1]:}'
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
+        self.__v2frmt = 'V'+cg+'{uname} {nn1} {nn2} DC {v}'
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
@@ -67,22 +69,8 @@ class SpiceGenerator(object):
         self.add_block_comment("Node subcircuits")
         for i, j in it.product(full_range, full_range):
             self.add_comment("Node " + str((i, j)))
-            if add_extra_ammeters or j > 0:
-                tmp_name = self.add_v((i, j), (i, j), v=0, dir1='E')
-                roc_model.nodes[i][j].ammeters['E'].sname = tmp_name
-                self.ammeters[i][j].append(tmp_name)
-            if add_extra_ammeters or j < self.mesh_size-1:
-                tmp_name = self.add_v((i, j), (i, j), v=0, dir1='W')
-                roc_model.nodes[i][j].ammeters['W'].sname = tmp_name
-                self.ammeters[i][j].append(tmp_name)
-            if add_extra_ammeters or i > 0:
-                tmp_name = self.add_v((i, j), (i, j), v=0, dir1='N')
-                roc_model.nodes[i][j].ammeters['N'].sname = tmp_name
-                self.ammeters[i][j].append(tmp_name)
-            if add_extra_ammeters or i < self.mesh_size-1:
-                tmp_name = self.add_v((i, j), (i, j), v=0, dir1='S')
-                roc_model.nodes[i][j].ammeters['S'].sname = tmp_name
-                self.ammeters[i][j].append(tmp_name)
+            for c in roc_model.nodes[i][j].components():
+                self.component_codegen(c)
 
         # generate row voltages
         self.add_block_comment("Voltage Sources")
@@ -100,8 +88,8 @@ class SpiceGenerator(object):
         self.add_block_comment("Analysis code")
         self.add_transtmt()
         for i, j in it.product(full_range, full_range):
-            for a in self.ammeters[i][j]:
-                self.add_iprintstmt(a)
+            for d,a in roc_model.nodes[i][j].ammeters.items():
+                self.add_iprintstmt(a.sname)
             self.add_vprintstmt((i,j))
 
         self.file.close()
@@ -201,6 +189,8 @@ class SpiceGenerator(object):
                     ein[i][j] += val
             a = roc_model.nodes[i][j].ammeters
             print([v.sname for k,v in a.items()])
+            print(a['E'].sname)
+            print(grep_cmd.format(sym=a['E'].sname))
             east = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['E'].sname),
                                    shell=True))
@@ -273,6 +263,34 @@ class SpiceGenerator(object):
         else:
             return ''
 
+    def add_v2(self, v):
+        ret = ''
+        if v.v >= 0:
+            ret = self.gen(
+                    self.__v2frmt.format(i=v.uid,
+                                        uname=self.concat_name(v.uname),
+                                        nn1=v.node1,
+                                        nn2=v.node2,
+                                        v=v.v))
+        elif v.v < 0:
+            print("How?")
+            self.__v2frmt.format(i=v.uid,
+                                uname=self.concat_name(v.uname),
+                                nn1=v.node2,
+                                nn2=v.node1,
+                                v=v.v)
+        self.v_counter += 1
+        return ret
+
+    def component_codegen(self, c):
+        if isinstance(c, rm.VoltageSource):
+            tmp_name = self.add_v2(c)
+            c.sname = tmp_name
+        else:
+            print("error")
+        
     def gen(self, s):
         self.file.write('{}\n'.format(s))
         return s.split()[0]
+
+

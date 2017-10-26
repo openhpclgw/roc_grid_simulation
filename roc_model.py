@@ -89,16 +89,16 @@ class NodeBlock(object):
         self.ammeters = {}
 
         # TODO this should go to some sort of a global config file
-        directions = ('E', 'W', 'N', 'S')
+        self.directions = ('E', 'W', 'N', 'S')
 
-        for d in directions:
+        for d in self.directions:
             tmp_subnode = gen_node_name(coord, d)
             self.subnodes[d] = tmp_subnode
             self.ammeters[d] = Ammeter(tmp_subnode, self.nodename)
 
     def components(self):
-        for d in directions:
-            yield self.ammeters[d]
+        for d,a in self.ammeters.items():
+            yield a
 
     def get_facing_subnodes(self, other):
         if not self.is_neighbor(other):
@@ -227,7 +227,7 @@ class ROCModel(object):
     def init_nodes(self):
         hr = range(self.h)
         wr = range(self.w)
-        self.nodes = [[NodeBlock(Coord(i,j)) for i in hr] for j in wr]
+        self.nodes = [[NodeBlock(Coord(i,j)) for j in wr] for i in hr]
 
 
 
