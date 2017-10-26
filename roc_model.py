@@ -35,11 +35,23 @@ class Resistance(object):
 # VoltageSource objects can be connected to any kind of node
 class VoltageSource(object):
     counter = 0
-    def __init__(self, v, node1, node2, uname=''):
+    def __init__(self, v, node1, node2='0', uname=''):
         self.uid = VoltageSource.counter
         self.v = v
-        self.node1 = node1
-        self.node2 = node2
+        if isinstance(node1, str):
+            self.node1 = node1
+        elif isinstance(node1, NodeBlock):
+            self.node1 = node1.nodename
+        else:
+            print('Unrecognized node')
+
+        if isinstance(node2, str):
+            self.node2 = node2
+        elif isinstance(node2, NodeBlock):
+            self.node2 = node2.nodename
+        else:
+            print('Unrecognized node')
+
         self.uname = uname
 
         self.sname = ''
@@ -251,28 +263,62 @@ class ROCModel(object):
                                              self.nodes[i+1][j]))
 
 
-    def load_problem(self, grid, conductance):
+    def load_problem(self, hp):
+        grid = hp.gen_matrix()
+        conductance = hp.conductance
         self.exp_factor = self.create_mesh(grid)
         self.init_nodes()
         self.init_links(conductance)
+        # what to do in case of indivisible sizes?
+        self.snk_bbox = (int(hp.sink[0]/self.exp_factor),
+                         int(hp.sink[1]/self.exp_factor),
+                         int(np.ceil(hp.sink[2]/self.exp_factor)),
+                         int(np.ceil(hp.sink[3]/self.exp_factor)))
+        self.src_bbox = (int(hp.source[0]/self.exp_factor),
+                         int(hp.source[1]/self.exp_factor),
+                         int(np.ceil(hp.source[2]/self.exp_factor)),
+                         int(np.ceil(hp.source[3]/self.exp_factor)))
+        self.init_source()
+        self.init_sink()
         self.prob_conductance = conductance
 
+    def init_source(self):
+        self.src = []
+        for i,j in self.src_nodes():
+            self.src.append(VoltageSource(self.mesh[i][j],
+                                          self.nodes[i][j]))
+
+    def init_sink(self):
+        self.snk = []
+        for i,j in self.snk_nodes():
+            self.snk.append(VoltageSource(0.,
+                                          self.nodes[i][j]))
+
+    def __iter_bbox(self, bbox):
+        for i,j in it.product(range(bbox[1], bbox[1]+bbox[3]),
+                              range(bbox[0], bbox[0]+bbox[2])):
+            yield (i,j)
+
+    def src_nodes(self):
+        for idx in self.__iter_bbox(self.src_bbox):
+            yield idx
+
+    def snk_nodes(self):
+        for idx in self.__iter_bbox(self.snk_bbox):
+            yield idx
+
     def run_spice_solver(self, hp):
-        self.load_problem(hp.gen_matrix(), hp.conductance)
+        self.load_problem(hp)
         # create the heatsink zone
         # print(self.exp_factor)
+        # print(extrp_hsrc)
         extrp_hsnk = (int(hp.sink[0]/self.exp_factor),
-                      int(hp.sink[1]/self.exp_factor),
-                      int(np.ceil(hp.sink[2]/self.exp_factor)),
-                      int(np.ceil(hp.sink[3]/self.exp_factor)))
-        extrp_hsrc = (int(hp.source[0]/self.exp_factor),
-                      int(hp.source[1]/self.exp_factor),
-                      int(np.ceil(hp.source[2]/self.exp_factor)),
-                      int(np.ceil(hp.source[3]/self.exp_factor)))
-        print(extrp_hsrc)
-        print(extrp_hsnk)
+                         int(hp.sink[1]/self.exp_factor),
+                         int(np.ceil(hp.sink[2]/self.exp_factor)),
+                         int(np.ceil(hp.sink[3]/self.exp_factor)))
+        # print(extrp_hsnk)
         sg = SpiceGenerator('test')
         sg.create_script(self.mesh, self.prob_conductance, extrp_hsnk,
                 self)  # FIXME
         sg.run()
-        return sg.get_results(extrp_hsrc, extrp_hsnk, self)
+        return sg.get_results(self.src, extrp_hsnk, self)

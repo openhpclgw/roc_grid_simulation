@@ -57,12 +57,7 @@ class SpiceGenerator(object):
             for c in r.components():
                 self.component_codegen(c)
 
-        # I wanted to avoid adding external voltages that goes outside
-        # the boundary and doesn't attach to anything. But spice seems
-        # to go haywire if I do that
-        add_extra_ammeters = True
-        self.ammeters = [[[] for i in full_range] for j in full_range]
-        # generate nodes with 4 0V sources
+        # generate nodes 
         self.add_block_comment("Node subcircuits")
         for i, j in it.product(full_range, full_range):
             self.add_comment("Node " + str((i, j)))
@@ -80,6 +75,8 @@ class SpiceGenerator(object):
         for i,j in it.product(range(hs[1], hs[1]+hs[3]),
                               range(hs[0], hs[0]+hs[2])):
             self.add_point_v((i,j), mesh[i][j])
+        # for s in roc_model.snk_nodes():
+            # self.component_codegen(c)
 
         # self.generate measurement/analysis components
         self.add_block_comment("Analysis code")
@@ -185,9 +182,9 @@ class SpiceGenerator(object):
                 else:
                     ein[i][j] += val
             a = roc_model.nodes[i][j].ammeters
-            print([v.sname for k,v in a.items()])
-            print(a['E'].sname)
-            print(grep_cmd.format(sym=a['E'].sname))
+            # print([v.sname for k,v in a.items()])
+            # print(a['E'].sname)
+            # print(grep_cmd.format(sym=a['E'].sname))
             east = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['E'].sname),
                                    shell=True))
@@ -235,9 +232,10 @@ class SpiceGenerator(object):
 
         sum_out = 0.
         print(hsrc)
-        for i,j in it.product(range(hsrc[1], hsrc[1]+hsrc[3]),
-                              range(hsrc[0], hsrc[0]+hsrc[2])):
-            print((i,j))
+        # for i,j in it.product(range(hsrc[1], hsrc[1]+hsrc[3]),
+                              # range(hsrc[0], hsrc[0]+hsrc[2])):
+            # print((i,j))
+        for i,j in roc_model.src_nodes():
             sum_out += eout[i][j]
 
         sum_in = 0.

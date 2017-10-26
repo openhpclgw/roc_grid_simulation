@@ -25,7 +25,7 @@ class HeatProblem(object):
             yield idx
 
     def sink_iter(self):
-        for idx in self.__iter_bbox(self.source):
+        for idx in self.__iter_bbox(self.sink):
             yield idx
 
     def __is_in_bbox(self, bbox, point):
