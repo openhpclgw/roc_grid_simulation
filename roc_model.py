@@ -2,6 +2,123 @@ import numpy as np
 import itertools as it
 from spice_gen import SpiceGenerator
 
+# class NodeName(object):
+    # def __init__(self, name):
+        # self.name=name
+
+class Coord(object):
+    def __init__(self, i, j):
+        self.i = i
+        self.j = j
+        self.__coord = (i,j)
+
+    def __getitem__(self, key):
+        return self.__coord[key]
+
+    def distance(self, other):
+        return abs(self.i-other.i) + abs(self.j-other.j)
+
+    def is_neighbor(self, other):
+        return self.distance(other) == 1
+
+# Resistance is a simple spice object
+class Resistance(object):
+    counter = 0
+    def __init__(self, r, node1, node2, uname=''):
+        self.uid = Resistance.counter
+        self.r = r
+        self.node1 = node1
+        self.node2 = node2
+        self.uname = uname
+        Resistance.counter += 1
+
+# VoltageSource objects can be connected to any kind of node
+class VoltageSource(object):
+    counter = 0
+    def __init__(self, v, node1, node2, uname=''):
+        self.uid = VoltageSource.counter
+        self.v = v
+        self.node1 = node1
+        self.node2 = node2
+        self.uname = uname
+
+        self.sname = ''
+
+        VoltageSource.counter += 1
+
+
+
+class Ground(VoltageSource):
+    def __init__(self, nid):
+        VoltageSource.__init__(self, v=0, node1=node, node2=0)
+
+class Ammeter(VoltageSource):
+    def __init__(self, node1, node2):
+        VoltageSource.__init__(self, v=0, node1=node1, node2=node2)
+
+# MeshResistances must connect two node block objects
+class MeshResistance(object):
+    def __init__(self, r, nodeblock1, nodeblock2, uname=''):
+        # self.r = r
+        self.nodeblock1 = nodeblock1
+        self.nodeblock2 = nodeblock2
+        # self.uname = uname
+
+        self.ts = nodeblock1.get_facing_subnodes(nodeblock2)
+        self.resistance = Resistance(r, self.ts[0],
+                                     self.ts[1], uname)
+
+        # add internal subnode to attach the ammeter
+        self.innodeid = str(self.uid)+'sub'
+
+        # add ammeter
+        self.ammeter = Ammeter(self.terminals[0], self.innodeid)
+
+    def components(self):
+        yield self.resistance
+        yield self.ammeter
+
+class NodeBlock(object):
+    def __init__(self, coord):
+        def gen_node_name(coord, d=''):
+            return 'N{}_{}{}'.format(coord[0], coord[1], d)
+
+        self.coord = coord
+        self.nodename = gen_node_name(coord)
+        self.subnodes = {}
+        self.ammeters = {}
+
+        # TODO this should go to some sort of a global config file
+        directions = ('E', 'W', 'N', 'S')
+
+        for d in directions:
+            tmp_subnode = gen_node_name(coord, d)
+            self.subnodes[d] = tmp_subnode
+            self.ammeters[d] = Ammeter(tmp_subnode, self.nodename)
+
+    def components(self):
+        for d in directions:
+            yield self.ammeters[d]
+
+    def get_facing_subnodes(self, other):
+        if not self.is_neighbor(other):
+            return None
+
+        if self.coord.i == other.coord.i:
+            if self.coord.j < other.coord.j:
+                return (self.subnodes['E'], other.subnodes['W'])
+            else:
+                return (self.subnodes['W'], other.subnodes['E'])
+        else:
+            if self.coord.i < other.coord.i:
+                return (self.subnodes['S'], other.subnodes['N'])
+            else:
+                return (self.subnodes['N'], other.subnodes['S'])
+        
+    def is_neighbor(self, other):
+        return self.coord.is_neighbor(other.coord)
+
+
 
 class ROCModel(object):
     def __init__(self, N):
@@ -107,8 +224,17 @@ class ROCModel(object):
     # end of create_mesh
     #
 
+    def init_nodes(self):
+        hr = range(self.h)
+        wr = range(self.w)
+        self.nodes = [[NodeBlock(Coord(i,j)) for i in hr] for j in wr]
+
+
+
+
     def load_problem(self, grid, conductance):
         self.exp_factor = self.create_mesh(grid)
+        self.init_nodes()
         self.prob_conductance = conductance
 
     def run_spice_solver(self, hp):
@@ -126,6 +252,7 @@ class ROCModel(object):
         print(extrp_hsrc)
         print(extrp_hsnk)
         sg = SpiceGenerator('test')
-        sg.create_script(self.mesh, self.prob_conductance, extrp_hsnk)  # FIXME
+        sg.create_script(self.mesh, self.prob_conductance, extrp_hsnk,
+                self)  # FIXME
         sg.run()
-        return sg.get_results(extrp_hsrc, extrp_hsnk)
+        return sg.get_results(extrp_hsrc, extrp_hsnk, self)

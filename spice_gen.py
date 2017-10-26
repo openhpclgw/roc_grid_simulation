@@ -40,7 +40,7 @@ class SpiceGenerator(object):
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
 
-    def create_script(self, mesh, conductance, hs):
+    def create_script(self, mesh, conductance, hs, roc_model):
         # mesh size
         self.mesh_size = len(mesh)
         self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
@@ -68,17 +68,21 @@ class SpiceGenerator(object):
         for i, j in it.product(full_range, full_range):
             self.add_comment("Node " + str((i, j)))
             if add_extra_ammeters or j > 0:
-                self.ammeters[i][j].append(
-                        self.add_v((i, j), (i, j), v=0, dir1='E'))
+                tmp_name = self.add_v((i, j), (i, j), v=0, dir1='E')
+                roc_model.nodes[i][j].ammeters['E'].sname = tmp_name
+                self.ammeters[i][j].append(tmp_name)
             if add_extra_ammeters or j < self.mesh_size-1:
-                self.ammeters[i][j].append(
-                        self.add_v((i, j), (i, j), v=0, dir1='W'))
+                tmp_name = self.add_v((i, j), (i, j), v=0, dir1='W')
+                roc_model.nodes[i][j].ammeters['W'].sname = tmp_name
+                self.ammeters[i][j].append(tmp_name)
             if add_extra_ammeters or i > 0:
-                self.ammeters[i][j].append(
-                        self.add_v((i, j), (i, j), v=0, dir1='N'))
+                tmp_name = self.add_v((i, j), (i, j), v=0, dir1='N')
+                roc_model.nodes[i][j].ammeters['N'].sname = tmp_name
+                self.ammeters[i][j].append(tmp_name)
             if add_extra_ammeters or i < self.mesh_size-1:
-                self.ammeters[i][j].append(
-                        self.add_v((i, j), (i, j), v=0, dir1='S'))
+                tmp_name = self.add_v((i, j), (i, j), v=0, dir1='S')
+                roc_model.nodes[i][j].ammeters['S'].sname = tmp_name
+                self.ammeters[i][j].append(tmp_name)
 
         # generate row voltages
         self.add_block_comment("Voltage Sources")
@@ -174,7 +178,7 @@ class SpiceGenerator(object):
         # FIXME set file names/hierarchy better
         subprocess.run('ngspice -b test.cir -o test.out', shell=True)
 
-    def get_results(self, hsrc, hsnk):
+    def get_results(self, hsrc, hsnk, roc_model):
         w = self.mesh_size
         h = self.mesh_size
         results = np.zeros((h, w))
@@ -195,10 +199,10 @@ class SpiceGenerator(object):
                     eout[i][j] += val
                 else:
                     ein[i][j] += val
-            a = self.ammeters[i][j]
-            print(a)
+            a = roc_model.nodes[i][j].ammeters
+            print([v.sname for k,v in a.items()])
             east = float(subprocess.check_output(
-                                   grep_cmd.format(sym=a[0]),
+                                   grep_cmd.format(sym=a['E'].sname),
                                    shell=True))
             if j+1 < w:
                 direction = 0 if east==0 else 'W' if east>0 else 'E'
@@ -210,19 +214,19 @@ class SpiceGenerator(object):
             U[i][j] += -east
             
             west = float(subprocess.check_output(
-                                   grep_cmd.format(sym=a[1]),
+                                   grep_cmd.format(sym=a['W'].sname),
                                    shell=True))
             accumulate_energy(west)
             U[i][j] += west
 
             north = float(subprocess.check_output(
-                                   grep_cmd.format(sym=a[2]),
+                                   grep_cmd.format(sym=a['N'].sname),
                                    shell=True))
             accumulate_energy(north)
             V[i][j] += -north
             
             south = float(subprocess.check_output(
-                                   grep_cmd.format(sym=a[3]),
+                                   grep_cmd.format(sym=a['S'].sname),
                                    shell=True))
             if i+1 < h:
                 direction = 0 if south==0 else 'N' if south>0 else 'S'
