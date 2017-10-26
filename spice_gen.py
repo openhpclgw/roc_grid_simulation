@@ -38,6 +38,7 @@ class SpiceGenerator(object):
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
         self.__v2frmt = 'V'+cg+'{uname} {nn1} {nn2} DC {v}'
+        self.__r2frmt = 'R'+cg+'{uname} {nn1} {nn2} {r}'
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
@@ -51,14 +52,10 @@ class SpiceGenerator(object):
         short_range = range(self.mesh_size-1)
 
         # generate row resistors
-        self.add_block_comment("Row Resistors")
-        for i, j in it.product(full_range, short_range):
-            self.add_r((i, j), (i, j+1), conductance, horizontal=True)
-
-        # generate column resistors
-        self.add_block_comment("Column Resistors")
-        for i, j in it.product(short_range, full_range):
-            self.add_r((i, j), (i+1, j), conductance, horizontal=False)
+        self.add_block_comment('Resistors')
+        for r in roc_model.links:
+            for c in r.components():
+                self.component_codegen(c)
 
         # I wanted to avoid adding external voltages that goes outside
         # the boundary and doesn't attach to anything. But spice seems
@@ -112,7 +109,7 @@ class SpiceGenerator(object):
         if horizontal:
             d1, d2 = 'E', 'W'
         else:
-            d1, d2 = 'N', 'S'
+            d1, d2 = 'S', 'N'
         self.gen(self.__rfrmt.format(i=self.r_counter,
                                      uname=self.concat_name(name),
                                      n1=grid_idx1,
@@ -263,6 +260,15 @@ class SpiceGenerator(object):
         else:
             return ''
 
+    def add_r2(self, r):
+        ret = self.gen(self.__r2frmt.format(i=r.uid,
+                                     uname=self.concat_name(r.uname),
+                                     nn1=r.node1,
+                                     nn2=r.node2,
+                                     r=r.r))
+
+        self.r_counter += 1
+
     def add_v2(self, v):
         ret = ''
         if v.v >= 0:
@@ -285,9 +291,12 @@ class SpiceGenerator(object):
     def component_codegen(self, c):
         if isinstance(c, rm.VoltageSource):
             tmp_name = self.add_v2(c)
-            c.sname = tmp_name
+        elif isinstance(c, rm.Resistance):
+            tmp_name = self.add_r2(c)
         else:
+            tmp_name = ''
             print("error")
+        c.sname = tmp_name
         
     def gen(self, s):
         self.file.write('{}\n'.format(s))

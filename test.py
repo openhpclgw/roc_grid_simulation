@@ -171,8 +171,11 @@ print(sum_in)
 print_current_table(rcurs)
 fig, axes = plt.subplots(1,1)
 axes.imshow(results, cmap='hot', interpolation='nearest')
-axes.streamplot(np.array([i for i in range(mesh_size)]),
+# axes.streamplot(np.array([i for i in range(mesh_size)]),
+               # np.array([i for i in range(mesh_size)]),
+               # U, V, color='green', linewidth=1, density=0.5)
+axes.quiver(np.array([i for i in range(mesh_size)]),
                np.array([i for i in range(mesh_size)]),
-               U, V, color='green', linewidth=1, density=0.5)
+               U, V, color='green')
 
 plt.show()

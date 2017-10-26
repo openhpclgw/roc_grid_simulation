@@ -64,15 +64,17 @@ class MeshResistance(object):
         self.nodeblock2 = nodeblock2
         # self.uname = uname
 
-        self.ts = nodeblock1.get_facing_subnodes(nodeblock2)
-        self.resistance = Resistance(r, self.ts[0],
-                                     self.ts[1], uname)
+        ts = nodeblock1.get_facing_subnodes(nodeblock2)
+        self.node1, self.node2 = ts
+
+        self.resistance = Resistance(r, self.node1, self.node2)
 
         # add internal subnode to attach the ammeter
-        self.innodeid = str(self.uid)+'sub'
+        self.innodeid = str(self.resistance.uid)+'sub'
 
         # add ammeter
-        self.ammeter = Ammeter(self.terminals[0], self.innodeid)
+        self.ammeter = Ammeter(self.node1, self.innodeid)
+        self.resistance.node1 = self.innodeid
 
     def components(self):
         yield self.resistance
@@ -230,11 +232,29 @@ class ROCModel(object):
         self.nodes = [[NodeBlock(Coord(i,j)) for j in wr] for i in hr]
 
 
+    def init_links(self, conductance):
+        # assert h = w
+        full_range = range(self.w)
+        short_range = range(self.w-1)
+
+        # generate row resistors
+        self.links = []
+        for i, j in it.product(full_range, short_range):
+            self.links.append(MeshResistance(conductance,
+                                             self.nodes[i][j],
+                                             self.nodes[i][j+1]))
+
+        # generate column resistors
+        for i, j in it.product(short_range, full_range):
+            self.links.append(MeshResistance(conductance,
+                                             self.nodes[i][j],
+                                             self.nodes[i+1][j]))
 
 
     def load_problem(self, grid, conductance):
         self.exp_factor = self.create_mesh(grid)
         self.init_nodes()
+        self.init_links(conductance)
         self.prob_conductance = conductance
 
     def run_spice_solver(self, hp):
