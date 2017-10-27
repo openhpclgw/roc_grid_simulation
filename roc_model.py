@@ -43,14 +43,14 @@ class VoltageSource(object):
         elif isinstance(node1, NodeBlock):
             self.node1 = node1.nodename
         else:
-            print('Unrecognized node')
+            print('Unrecognized node' + str(node1))
 
         if isinstance(node2, str):
             self.node2 = node2
         elif isinstance(node2, NodeBlock):
             self.node2 = node2.nodename
         else:
-            print('Unrecognized node')
+            print('Unrecognized node' + str(node2))
 
         self.uname = uname
 
@@ -61,8 +61,8 @@ class VoltageSource(object):
 
 
 class Ground(VoltageSource):
-    def __init__(self, nid):
-        VoltageSource.__init__(self, v=0, node1=node, node2=0)
+    def __init__(self, node):
+        VoltageSource.__init__(self, v=0, node1=node, node2='0')
 
 class Ammeter(VoltageSource):
     def __init__(self, node1, node2):
@@ -291,8 +291,7 @@ class ROCModel(object):
     def init_sink(self):
         self.snk = []
         for i,j in self.snk_nodes():
-            self.snk.append(VoltageSource(0.,
-                                          self.nodes[i][j]))
+            self.snk.append(Ground(self.nodes[i][j]))
 
     def __iter_bbox(self, bbox):
         for i,j in it.product(range(bbox[1], bbox[1]+bbox[3]),

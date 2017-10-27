@@ -51,7 +51,7 @@ class SpiceGenerator(object):
         full_range = range(self.mesh_size)
         short_range = range(self.mesh_size-1)
 
-        # generate row resistors
+        # generate resistors
         self.add_block_comment('Resistors')
         for r in roc_model.links:
             for c in r.components():
@@ -64,19 +64,16 @@ class SpiceGenerator(object):
             for c in roc_model.nodes[i][j].components():
                 self.component_codegen(c)
 
-        # generate row voltages
-        self.add_block_comment("Voltage Sources")
-        for i, j in it.product(full_range, full_range):
-            v = mesh[i][j]
-            if v > 0:
-                self.add_point_v((i, j), v)
+        # generate source
+        self.add_block_comment("Sources")
+        for v in roc_model.src:
+            self.component_codegen(v)
 
-        # generate heat sink
-        for i,j in it.product(range(hs[1], hs[1]+hs[3]),
-                              range(hs[0], hs[0]+hs[2])):
-            self.add_point_v((i,j), mesh[i][j])
-        # for s in roc_model.snk_nodes():
-            # self.component_codegen(c)
+        # generate sink
+        self.add_block_comment("Sinks")
+        for s in roc_model.snk:
+            self.component_codegen(s)
+
 
         # self.generate measurement/analysis components
         self.add_block_comment("Analysis code")
