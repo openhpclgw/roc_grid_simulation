@@ -140,37 +140,30 @@ class SpiceGenerator(object):
                 mr.cur_direction(cur)))
 
         for i, j in it.product(range(h), range(w)):
-            def accumulate_energy(val):
-                if val < 0:
-                    eout[i][j] += val
-                else:
-                    ein[i][j] += val
-            a = roc_model.nodes[i][j].ammeters
-            # print([v.sname for k,v in a.items()])
-            # print(a['E'].sname)
-            # print(grep_cmd.format(sym=a['E'].sname))
+            node = roc_model.nodes[i][j]
+            a = node.ammeters
             east = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['E'].sname),
                                    shell=True))
-            accumulate_energy(east)
+            node.accumulate_energy(east)
             U[i][j] += -east
             
             west = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['W'].sname),
                                    shell=True))
-            accumulate_energy(west)
+            node.accumulate_energy(west)
             U[i][j] += west
 
             north = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['N'].sname),
                                    shell=True))
-            accumulate_energy(north)
+            node.accumulate_energy(north)
             V[i][j] += -north
             
             south = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['S'].sname),
                                    shell=True))
-            accumulate_energy(south)
+            node.accumulate_energy(south)
             V[i][j] += south
 
             sym = 'v\('+self.__nfrmt.format(n=(i,j))+'\)'
@@ -184,11 +177,11 @@ class SpiceGenerator(object):
 
         sum_out = 0.
         for i,j in roc_model.src_nodes():
-            sum_out += eout[i][j]
+            sum_out += roc_model.nodes[i][j].eout
 
         sum_in = 0.
         for i,j in roc_model.snk_nodes():
-            sum_in += ein[i][j]
+            sum_in += roc_model.nodes[i][j].ein
 
         return results, U, V, sum_out, sum_in, rcurs
 

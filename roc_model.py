@@ -128,6 +128,10 @@ class NodeBlock(object):
 
         self.coord = coord
         self.nodename = gen_node_name(coord)
+
+        self.ein = 0.
+        self.eout = 0.
+
         self.subnodes = {}
         self.ammeters = {}
 
@@ -166,6 +170,12 @@ class NodeBlock(object):
 
     def __gt__(self, other):
         return self.coord>other.coord
+
+    def accumulate_energy(self, val):
+        if val < 0:
+            self.eout += val
+        else:
+            self.ein += val
 
 
 class ROCModel(object):
