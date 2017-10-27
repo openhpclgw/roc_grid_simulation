@@ -63,10 +63,10 @@ class HeatProblem(object):
 # source = (10, 10, 5, 5)
 # sink = (55, 10, 5, 50)
 N = 20
-# source = (2, 2, 7, 10)
-# sink = (11, 2, 1, 10)
-source = (4, 4, 4, 12)
-sink = (12, 4, 4, 12)
+source = (2, 2, 7, 10)
+sink = (11, 2, 1, 10)
+# source = (4, 4, 4, 12)
+# sink = (12, 4, 4, 12)
 cond_exp = -3
 conductance = 10**cond_exp
 num_iters = 1
@@ -170,15 +170,20 @@ def print_current_table(m):
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
 # heat_plot(numerical_solve(hp,10000), hp)
-results, U, V, sum_out, sum_in = m.run_spice_solver(hp)
+results, sum_out, sum_in = m.run_spice_solver(hp)
 print(sum_out)
 print(sum_in)
 print_current_table(m)
 fig, axes = plt.subplots(1,1)
 axes.imshow(results, cmap='hot', interpolation='nearest')
+U = np.array([[m.nodes[j][i].aggregate_current_vector()[0] for i in
+        range(mesh_size)] for j in range(mesh_size)])
+V = np.array([[m.nodes[j][i].aggregate_current_vector()[1] for i in
+        range(mesh_size)] for j in range(mesh_size)])
 # axes.streamplot(np.array([i for i in range(mesh_size)]),
                # np.array([i for i in range(mesh_size)]),
                # U, V, color='green', linewidth=1, density=0.5)
+
 axes.quiver(np.array([i for i in range(mesh_size)]),
                np.array([i for i in range(mesh_size)]),
                U, V, color='green')

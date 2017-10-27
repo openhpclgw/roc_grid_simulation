@@ -125,8 +125,6 @@ class SpiceGenerator(object):
                     | tr "\t" " " \
                     | cut -d" " -f"3"'
         vid = 0
-        U = np.zeros((self.mesh_size, self.mesh_size))
-        V = np.zeros((self.mesh_size, self.mesh_size))
 
         for mr in roc_model.links:
             mr.ammeter.current = float(subprocess.check_output(
@@ -140,29 +138,21 @@ class SpiceGenerator(object):
                                    grep_cmd.format(sym=a['E'].sname),
                                    shell=True))
             a['E'].current = east
-            node.accumulate_energy(east)
-            U[i][j] += -east
             
             west = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['W'].sname),
                                    shell=True))
-            a['W'].current = east
-            node.accumulate_energy(west)
-            U[i][j] += west
+            a['W'].current = west
 
             north = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['N'].sname),
                                    shell=True))
-            a['N'].current = east
-            node.accumulate_energy(north)
-            V[i][j] += -north
+            a['N'].current = north
             
             south = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['S'].sname),
                                    shell=True))
-            a['S'].current = east
-            node.accumulate_energy(south)
-            V[i][j] += south
+            a['S'].current = south
 
             sym = 'v\('+self.__nfrmt.format(n=(i,j))+'\)'
             tmp_val = float(subprocess.check_output(
@@ -174,14 +164,23 @@ class SpiceGenerator(object):
             vid += 1
 
         sum_out = 0.
+        tmp_src_in = 0.
         for i,j in roc_model.src_nodes():
-            sum_out += roc_model.nodes[i][j].eout
+            sum_out += roc_model.nodes[i][j].sum_reduce_out_curs()
+            tmp_src_in += roc_model.nodes[i][j].sum_reduce_in_curs()
+
 
         sum_in = 0.
+        tmp_src_out = 0.
         for i,j in roc_model.snk_nodes():
-            sum_in += roc_model.nodes[i][j].ein
+            sum_in += roc_model.nodes[i][j].sum_reduce_in_curs()
+            tmp_src_out += roc_model.nodes[i][j].sum_reduce_out_curs()
 
-        return results, U, V, sum_out, sum_in
+        # TODO convert these to sanity checks. They both should be 0
+        print(tmp_src_in)
+        print(tmp_src_out)
+
+        return results, sum_out, sum_in
 
     #
     # Utility Functions

@@ -129,10 +129,6 @@ class NodeBlock(object):
 
         self.coord = coord
         self.nodename = gen_node_name(coord)
-
-        self.ein = 0.
-        self.eout = 0.
-
         self.subnodes = {}
         self.ammeters = {}
 
@@ -172,12 +168,24 @@ class NodeBlock(object):
     def __gt__(self, other):
         return self.coord>other.coord
 
-    def accumulate_energy(self, val):
-        if val < 0:
-            self.eout += val
-        else:
-            self.ein += val
+    def sum_reduce_in_curs(self):
+        ret = 0.
+        for _,a in self.ammeters.items():
+            if a.current > 0:
+                ret += a.current
+        return ret
 
+    def sum_reduce_out_curs(self):
+        ret = 0.
+        for _,a in self.ammeters.items():
+            if a.current < 0:
+                ret += a.current
+        return ret
+
+    def aggregate_current_vector(self):
+        u = self.ammeters['W'].current-self.ammeters['E'].current
+        v = self.ammeters['S'].current-self.ammeters['N'].current
+        return (u,v)
 
 class ROCModel(object):
     def __init__(self, N):
