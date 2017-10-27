@@ -120,7 +120,7 @@ class SpiceGenerator(object):
     # simulator utils
     #
     def run(self):
-        sp.run('ngspice -b {} -o {}'.format(self.rel_in_path,
+        sp.run('ngspice -b {} -o {} >/dev/null'.format(self.rel_in_path,
                                             self.rel_out_path),
                                             shell=True)
 

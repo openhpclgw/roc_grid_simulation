@@ -79,6 +79,12 @@ class Ammeter(VoltageSource):
         VoltageSource.__init__(self, v=0, node1=node1, node2=node2)
         self.current = 0.
 
+    def set_bias(self, v):
+        self.v = v
+
+    def reset_bias(self):
+        self.v = 0
+
 # MeshResistances must connect two node block objects
 class MeshResistance(object):
     def __init__(self, r, nodeblock1, nodeblock2, uname=''):
@@ -276,8 +282,8 @@ class ROCModel(object):
             # self.mesh = [m/(extrp_factor**2) for m in self.mesh]
             self.mesh = self.mesh/(extrp_factor**2)
             # print(extrp_factor)
-            print(grid)
-            print(self.mesh)
+            # print(grid)
+            # print(self.mesh)
             return extrp_factor
         #
         # end of interpolate
@@ -376,8 +382,7 @@ class ROCModel(object):
         for i,j in self.snk_nodes():
             yield self.nodes[i][j]
 
-    def run_spice_solver(self, hp, cleanup=True):
-        self.load_problem(hp)
+    def run_spice_solver(self, hp, cleanup=False):
         sg = SpiceGenerator()
         sg.create_script(self)
         sg.run()

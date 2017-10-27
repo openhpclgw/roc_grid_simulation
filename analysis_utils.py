@@ -32,6 +32,10 @@ def aggregate_current_vectors(m):
             np.array([[m.nodes[j][i].aggregate_current_vector()[1] for i in
         range(mesh_size)] for j in range(mesh_size)]))
 
+# returned in the EWNS order
+def nodal_current_tup(node):
+    return {d:a.current for d,a in node.ammeters.items()}
+
 def node_potentials(m):
     mesh_size = m.h
     return  np.array([[m.nodes[j][i].potential for i in
