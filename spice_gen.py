@@ -139,24 +139,28 @@ class SpiceGenerator(object):
             east = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['E'].sname),
                                    shell=True))
+            a['E'].current = east
             node.accumulate_energy(east)
             U[i][j] += -east
             
             west = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['W'].sname),
                                    shell=True))
+            a['W'].current = east
             node.accumulate_energy(west)
             U[i][j] += west
 
             north = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['N'].sname),
                                    shell=True))
+            a['N'].current = east
             node.accumulate_energy(north)
             V[i][j] += -north
             
             south = float(subprocess.check_output(
                                    grep_cmd.format(sym=a['S'].sname),
                                    shell=True))
+            a['S'].current = east
             node.accumulate_energy(south)
             V[i][j] += south
 

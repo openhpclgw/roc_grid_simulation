@@ -170,7 +170,7 @@ def print_current_table(m):
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
 # heat_plot(numerical_solve(hp,10000), hp)
-results, U, V, sum_out, sum_in, rcurs = m.run_spice_solver(hp)
+results, U, V, sum_out, sum_in = m.run_spice_solver(hp)
 print(sum_out)
 print(sum_in)
 print_current_table(m)
