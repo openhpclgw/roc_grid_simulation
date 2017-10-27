@@ -129,8 +129,7 @@ class SpiceGenerator(object):
                                    grep_cmd.format(sym=mr.ammeter.sname),
                                    shell=True))
 
-        for i, j in it.product(range(h), range(w)):
-            node = roc_model.nodes[i][j]
+        for node in roc_model.iter_nodes():
             for _,a in node.ammeters.items():
                 a.current = float(subprocess.check_output(
                                        grep_cmd.format(sym=a.sname),

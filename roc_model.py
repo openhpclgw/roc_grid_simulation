@@ -294,6 +294,12 @@ class ROCModel(object):
     # end of create_mesh
     #
 
+    # for convenience. I think this can be refactored out if nodes was a
+    # numpy array
+    def iter_nodes(self):
+        for i,j in it.product(range(self.h), range(self.w)):
+            yield self.nodes[i][j]
+
     def init_nodes(self):
         hr = range(self.h)
         wr = range(self.w)
