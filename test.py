@@ -24,8 +24,6 @@ sink = (11, 2, 1, 10)
 # sink = (12, 4, 4, 12)
 cond_exp = -3
 conductance = 10**cond_exp
-num_iters = 1
-pos = 1
 mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
 hp = HeatProblem(N, source, sink, conductance, src_val=10.)
