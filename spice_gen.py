@@ -133,26 +133,10 @@ class SpiceGenerator(object):
 
         for i, j in it.product(range(h), range(w)):
             node = roc_model.nodes[i][j]
-            a = node.ammeters
-            east = float(subprocess.check_output(
-                                   grep_cmd.format(sym=a['E'].sname),
-                                   shell=True))
-            a['E'].current = east
-            
-            west = float(subprocess.check_output(
-                                   grep_cmd.format(sym=a['W'].sname),
-                                   shell=True))
-            a['W'].current = west
-
-            north = float(subprocess.check_output(
-                                   grep_cmd.format(sym=a['N'].sname),
-                                   shell=True))
-            a['N'].current = north
-            
-            south = float(subprocess.check_output(
-                                   grep_cmd.format(sym=a['S'].sname),
-                                   shell=True))
-            a['S'].current = south
+            for _,a in node.ammeters.items():
+                a.current = float(subprocess.check_output(
+                                       grep_cmd.format(sym=a.sname),
+                                       shell=True))
 
             sym = 'v\('+self.__nfrmt.format(n=(i,j))+'\)'
             tmp_val = float(subprocess.check_output(
