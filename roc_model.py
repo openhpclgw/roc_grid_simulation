@@ -308,16 +308,7 @@ class ROCModel(object):
 
     def run_spice_solver(self, hp):
         self.load_problem(hp)
-        # create the heatsink zone
-        # print(self.exp_factor)
-        # print(extrp_hsrc)
-        extrp_hsnk = (int(hp.sink[0]/self.exp_factor),
-                         int(hp.sink[1]/self.exp_factor),
-                         int(np.ceil(hp.sink[2]/self.exp_factor)),
-                         int(np.ceil(hp.sink[3]/self.exp_factor)))
-        # print(extrp_hsnk)
         sg = SpiceGenerator('test')
-        sg.create_script(self.mesh, self.prob_conductance, extrp_hsnk,
-                self)  # FIXME
+        sg.create_script(self)  # FIXME
         sg.run()
-        return sg.get_results(self.src, extrp_hsnk, self)
+        return sg.get_results(self)

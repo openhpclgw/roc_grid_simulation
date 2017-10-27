@@ -43,9 +43,9 @@ class SpiceGenerator(object):
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
 
-    def create_script(self, mesh, conductance, hs, roc_model):
+    def create_script(self, roc_model):
         # mesh size
-        self.mesh_size = len(mesh)
+        self.mesh_size = len(roc_model.mesh)
         self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
 
         full_range = range(self.mesh_size)
@@ -79,7 +79,7 @@ class SpiceGenerator(object):
         self.add_block_comment("Analysis code")
         self.add_transtmt()
         for i, j in it.product(full_range, full_range):
-            for d,a in roc_model.nodes[i][j].ammeters.items():
+            for _,a in roc_model.nodes[i][j].ammeters.items():
                 self.add_iprintstmt(a.sname)
             self.add_vprintstmt((i,j))
 
@@ -99,51 +99,6 @@ class SpiceGenerator(object):
         self.gen(self.__printfrmt.format(typ='V',
                                          symbol=self.__nfrmt.format(n=n)))
 
-    def add_r(self, grid_idx1, grid_idx2, r, horizontal, name=''):
-        if horizontal:
-            d1, d2 = 'E', 'W'
-        else:
-            d1, d2 = 'S', 'N'
-        self.gen(self.__rfrmt.format(i=self.r_counter,
-                                     uname=self.concat_name(name),
-                                     n1=grid_idx1,
-                                     d1=d1,
-                                     n2=grid_idx2,
-                                     d2=d2,
-                                     r=r))
-
-        self.r_counter += 1
-
-    def add_v(self, grid_idx1, grid_idx2, v, dir1='', dir2='', name=''):
-        ret = ''
-        if v >= 0:
-            ret = self.gen(
-                    self.__vfrmt.format(i=self.v_counter,
-                                        uname=self.concat_name(name),
-                                        n1=grid_idx1,
-                                        d1=dir1,
-                                        n2=grid_idx2,
-                                        d2=dir2,
-                                        v=v))
-        elif v < 0:
-            ret = self.gen(
-                    self.__vfrmt.format(i=self.v_counter,
-                                        uname=self.concat_name(name),
-                                        n1=grid_idx2,
-                                        d1=dir1,
-                                        n2=grid_idx1,
-                                        d2=dir2,
-                                        v=-v))
-        self.v_counter += 1
-        return ret
-
-    def add_point_v(self, grid_idx, v, name=''):
-        self.gen(self.__pvfrmt.format(i=self.v_counter,
-                                      uname=self.concat_name(name),
-                                      n=grid_idx,
-                                      v=v))
-        self.v_counter += 1
-
     def add_block_comment(self, comment):
         self.gen(self.__bcommentfrmt.format(c=comment))
 
@@ -157,7 +112,7 @@ class SpiceGenerator(object):
         # FIXME set file names/hierarchy better
         subprocess.run('ngspice -b test.cir -o test.out', shell=True)
 
-    def get_results(self, hsrc, hsnk, roc_model):
+    def get_results(self, roc_model):
         w = self.mesh_size
         h = self.mesh_size
         results = np.zeros((h, w))
@@ -228,18 +183,12 @@ class SpiceGenerator(object):
             vid += 1
 
         sum_out = 0.
-        print(hsrc)
-        # for i,j in it.product(range(hsrc[1], hsrc[1]+hsrc[3]),
-                              # range(hsrc[0], hsrc[0]+hsrc[2])):
-            # print((i,j))
         for i,j in roc_model.src_nodes():
             sum_out += eout[i][j]
 
         sum_in = 0.
-        for i,j in it.product(range(hsnk[1], hsnk[1]+hsnk[3]),
-                              range(hsnk[0], hsnk[0]+hsnk[2])):
-            print((i,j))
-            sum_in+= ein[i][j]
+        for i,j in roc_model.snk_nodes():
+            sum_in += ein[i][j]
 
         return results, U, V, sum_out, sum_in, rcurs
 
