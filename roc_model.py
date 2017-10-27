@@ -378,7 +378,7 @@ class ROCModel(object):
 
     def run_spice_solver(self, hp):
         self.load_problem(hp)
-        sg = SpiceGenerator('test')
+        sg = SpiceGenerator()
         sg.create_script(self)  # FIXME
         sg.run()
         return sg.get_results(self)

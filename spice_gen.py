@@ -3,7 +3,7 @@ from sys import stdout
 import roc_model as rm
 import itertools as it
 import numpy as np
-import subprocess
+import subprocess as sp
 
 
 class SpiceGenerator(object):
@@ -12,12 +12,14 @@ class SpiceGenerator(object):
         # init component counters
         self.r_counter = 0
         self.v_counter = 0
+        self.tmp_folder = 'tmp'
 
         # create file handle
         if filename == '':
-            self.file = stdout
-        else:
-            self.file = open('{}.cir'.format(filename), 'w')
+            filename = 'test'
+        self.rel_in_path = '{}/{}.cir'.format(self.tmp_folder, filename)
+        self.rel_out_path = '{}/{}.out'.format(self.tmp_folder, filename)
+        self.file = open(self.rel_in_path, 'w')
 
     def set_id_pads(self, width):
         ps = str(width)
@@ -113,8 +115,9 @@ class SpiceGenerator(object):
     # simulator utils
     #
     def run(self):
-        # FIXME set file names/hierarchy better
-        subprocess.run('ngspice -b test.cir -o test.out', shell=True)
+        sp.run('ngspice -b {} -o {}'.format(self.rel_in_path,
+                                            self.rel_out_path),
+                                            shell=True)
 
     def get_results(self, roc_model):
         result_dict = self.generate_result_dict()
@@ -140,7 +143,7 @@ class SpiceGenerator(object):
         looking_for_header = True
         name = ''
         val = 0.
-        with open('test.out') as f:
+        with open(self.rel_out_path) as f:
             for line in f:
                 if looking_for_header:
                     m = header_regobj.match(line)
