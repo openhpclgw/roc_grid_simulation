@@ -27,43 +27,11 @@ img_name = 'hm_{gr_sz}_{ms_sz}'
 hp = HeatProblem(N, source, sink, conductance, src_val=10.)
 
 
-# sum_result = np.zeros((mesh_size,mesh_size))
 m = ROCModel(mesh_size)
-
-# for i in range(num_iters):
-    # result = m.run_spice_solver()
-    # for s,r in zip(sum_result, result):
-        # s += r
-
-debug = False
-if debug:
-    for i in range(N):
-        for j in range(N):
-            print('{0: >11.5f} '.format((result[i][j])*10.**15), end='')
-        print()
 
 # save the input grid as well
 # plt.imshow(grid, cmap='hot', interpolation='nearest')
 # plt.savefig('tmp')
-
-def cross_plot(i, j):
-    data_x = [sum_result[i][idx] for idx in range(mesh_size)]
-    data_y = [sum_result[idx][j] for idx in range(mesh_size)]
-    data_cross = [sum_result[idx][idx] for idx in range(mesh_size)]
-    figs, axes = plt.subplots(3,3)
-    axes[2][1].plot(range(mesh_size), data_x)
-    axes[1][2].plot(range(mesh_size), data_y)
-    axes[0][0].plot(range(mesh_size), data_cross)
-    axes[1][1].imshow(sum_result, cmap='hot', interpolation='nearest')
-
-def heat_plot(data, hp):
-    # zero out the source and the sink
-    # for i,j in hp.source_iter():
-        # data[i][j] = 0.
-    # for i,j in hp.sink_iter():
-        # data[i][j] = 0.
-
-    plt.imshow(data, cmap='hot', interpolation='nearest')
 
 def numerical_solve(hp, num_steps):
     N = hp.N
@@ -114,13 +82,6 @@ def print_current_table(m):
 
     print('Checksum: {}'.format(checksum))
 
-# def quiver_plot(U,V):
-
-# tmp_x_loc = int(pos/int(N/mesh_size))
-# tmp_y_loc = int(pos/int(N/mesh_size))
-# cross_plot(tmp_x_loc,tmp_y_loc)
-# plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
-# heat_plot(numerical_solve(hp,10000), hp)
 m.run_spice_solver(hp)
 
 src_out = sum([n.sum_reduce_in_curs() for n in m.snk_nodeblocks()])
