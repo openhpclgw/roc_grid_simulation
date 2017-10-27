@@ -1,3 +1,4 @@
+import re
 from sys import stdout
 import roc_model as rm
 import itertools as it
@@ -116,29 +117,44 @@ class SpiceGenerator(object):
         subprocess.run('ngspice -b test.cir -o test.out', shell=True)
 
     def get_results(self, roc_model):
-        w = self.mesh_size
-        h = self.mesh_size
-        # FIXME parse in a more pythonic way
-        grep_cmd = 'grep -i {sym} test.out -A2 \
-                    | tail -n1 \
-                    | tr "\t" " " \
-                    | cut -d" " -f"3"'
+        result_dict = self.generate_result_dict()
 
         for mr in roc_model.links:
-            mr.ammeter.current = float(subprocess.check_output(
-                                   grep_cmd.format(sym=mr.ammeter.sname),
-                                   shell=True))
+            mr.ammeter.current = result_dict[mr.ammeter.sname]
 
         for node in roc_model.iter_nodes():
             for _,a in node.ammeters.items():
-                a.current = float(subprocess.check_output(
-                                       grep_cmd.format(sym=a.sname),
-                                       shell=True))
+                a.current = result_dict[a.sname]
 
-            sym = 'v\('+node.sname+'\)'
-            node.potential = float(subprocess.check_output(
-                                       grep_cmd.format(sym=sym),
-                                       shell=True))
+            sym = 'V('+node.sname+')'
+            node.potential = result_dict[sym]
+
+    def generate_result_dict(self):
+        header_regexp = '^Index\s+time\s+(.*)$'
+        value_regexp = '^0\s+\d[.]\d+e[+-]\d+\s+(\-?\d[.]\d+e[+-]\d+)'
+        header_regobj = re.compile(header_regexp)
+        value_regobj = re.compile(value_regexp)
+
+        result_dict = {}
+
+        looking_for_header = True
+        name = ''
+        val = 0.
+        with open('test.out') as f:
+            for line in f:
+                if looking_for_header:
+                    m = header_regobj.match(line)
+                    if m:
+                        name = m.group(1).split('#')[0].strip().upper()
+                        looking_for_header = False;
+                else:
+                    m = value_regobj.match(line)
+                    if m:
+                        val = float(m.group(1))
+                        result_dict[name] = val
+                        looking_for_header = True;
+
+        return result_dict
 
     #
     # Utility Functions
