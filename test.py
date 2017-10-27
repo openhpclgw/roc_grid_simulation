@@ -33,40 +33,6 @@ m = ROCModel(mesh_size)
 # plt.imshow(grid, cmap='hot', interpolation='nearest')
 # plt.savefig('tmp')
 
-def numerical_solve(hp, num_steps):
-    N = hp.N
-    # grid = hp.gen_matrix()
-    # grid2 = hp.gen_matrix()
-    grids = (hp.gen_matrix(), hp.gen_matrix())
-    c = hp.conductance
-
-    for step in range(num_steps):
-        for (i,j) in it.product(range(N), range(N)):
-            if hp.is_source((i,j)):
-                continue
-            if hp.is_sink((i,j)):
-                continue
-            ing=step%2
-            outg=1-ing
-            tmp_sum = 0.
-            if i-1 >= 0:
-                tmp_sum += grids[ing][i-1][j]
-            if i+1 < N:
-                tmp_sum += grids[ing][i+1][j]
-            if j-1 >= 0:
-                tmp_sum += grids[ing][i][j-1]
-            if j+1 < N:
-                tmp_sum += grids[ing][i][j+1]
-            grids[outg][i][j] = (tmp_sum)/4.
-
-        abs_delta = 0.
-        for (i,j) in it.product(range(N), range(N)):
-            abs_delta += abs(grids[0][i][j]-grids[1][i][j])
-        print(abs_delta)
-        if abs_delta == 0:
-            break
-
-    return grids[num_steps%2]
 
 def print_current_table(m):
     frs = '{0:>9}    {1:>9}     {2}         {3:>1}'

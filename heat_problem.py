@@ -50,4 +50,38 @@ class HeatProblem(object):
 
         return mat
         
+    def numerical_solve(self, num_steps):
+        N = self.N
+        # grid = self.gen_matrix()
+        # grid2 = self.gen_matrix()
+        grids = (self.gen_matrix(), self.gen_matrix())
+        c = self.conductance
+
+        for step in range(num_steps):
+            for (i,j) in it.product(range(N), range(N)):
+                if self.is_source((i,j)):
+                    continue
+                if self.is_sink((i,j)):
+                    continue
+                ing=step%2
+                outg=1-ing
+                tmp_sum = 0.
+                if i-1 >= 0:
+                    tmp_sum += grids[ing][i-1][j]
+                if i+1 < N:
+                    tmp_sum += grids[ing][i+1][j]
+                if j-1 >= 0:
+                    tmp_sum += grids[ing][i][j-1]
+                if j+1 < N:
+                    tmp_sum += grids[ing][i][j+1]
+                grids[outg][i][j] = (tmp_sum)/4.
+
+            abs_delta = 0.
+            for (i,j) in it.product(range(N), range(N)):
+                abs_delta += abs(grids[0][i][j]-grids[1][i][j])
+            print(abs_delta)
+            if abs_delta == 0:
+                break
+
+        return grids[num_steps%2]
 
