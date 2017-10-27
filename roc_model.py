@@ -376,9 +376,14 @@ class ROCModel(object):
         for i,j in self.snk_nodes():
             yield self.nodes[i][j]
 
-    def run_spice_solver(self, hp):
+    def run_spice_solver(self, hp, cleanup=True):
         self.load_problem(hp)
         sg = SpiceGenerator()
-        sg.create_script(self)  # FIXME
+        sg.create_script(self)
         sg.run()
-        return sg.get_results(self)
+        sg.get_results(self)
+        if cleanup:
+            sg.rm_tmp_files()
+
+
+

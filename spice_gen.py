@@ -16,10 +16,15 @@ class SpiceGenerator(object):
 
         # create file handle
         if filename == '':
-            filename = 'test'
+            filename = '__autogen_tmp'
         self.rel_in_path = '{}/{}.cir'.format(self.tmp_folder, filename)
         self.rel_out_path = '{}/{}.out'.format(self.tmp_folder, filename)
         self.file = open(self.rel_in_path, 'w')
+
+    def rm_tmp_files(self):
+        sp.run('rm -f {} {}'.format(self.rel_in_path,
+                                    self.rel_out_path),
+                                    shell=True)
 
     def set_id_pads(self, width):
         ps = str(width)
