@@ -127,17 +127,11 @@ class SpiceGenerator(object):
         vid = 0
         U = np.zeros((self.mesh_size, self.mesh_size))
         V = np.zeros((self.mesh_size, self.mesh_size))
-        ein = np.zeros((self.mesh_size, self.mesh_size))
-        eout = np.zeros((self.mesh_size, self.mesh_size))
-        rcurs = []
 
         for mr in roc_model.links:
-            cur = float(subprocess.check_output(
+            mr.ammeter.current = float(subprocess.check_output(
                                    grep_cmd.format(sym=mr.ammeter.sname),
                                    shell=True))
-            rcurs.append((mr.nodeblock1.coord, mr.nodeblock2.coord,
-                abs(cur), 
-                mr.cur_direction(cur)))
 
         for i, j in it.product(range(h), range(w)):
             node = roc_model.nodes[i][j]
@@ -183,7 +177,7 @@ class SpiceGenerator(object):
         for i,j in roc_model.snk_nodes():
             sum_in += roc_model.nodes[i][j].ein
 
-        return results, U, V, sum_out, sum_in, rcurs
+        return results, U, V, sum_out, sum_in
 
     #
     # Utility Functions

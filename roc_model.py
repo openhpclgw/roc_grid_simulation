@@ -77,6 +77,7 @@ class Ground(VoltageSource):
 class Ammeter(VoltageSource):
     def __init__(self, node1, node2):
         VoltageSource.__init__(self, v=0, node1=node1, node2=node2)
+        self.current = 0.
 
 # MeshResistances must connect two node block objects
 class MeshResistance(object):

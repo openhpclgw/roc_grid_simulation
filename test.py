@@ -149,16 +149,17 @@ def numerical_solve(hp, num_steps):
 
     return grids[num_steps%2]
 
-def print_current_table(rcurs):
+def print_current_table(m):
     frs = '{0:>9}    {1:>9}     {2}         {3:>1}'
     print(frs.format('Terminal1', 'Terminal2', 'Current', 'Direction'))
     checksum = 0.
-    for data in rcurs:
-        print(frs.format(str(data[0]),
-                         str(data[1]),
-                         '{:>10.6e}'.format(data[2]),
-                         data[3]))
-        checksum += data[2]
+    for mr in m.links:
+        abs_current = abs(mr.ammeter.current)
+        print(frs.format(str(mr.nodeblock1.coord),
+                         str(mr.nodeblock2.coord),
+                         '{:>10.6e}'.format(abs_current),
+                         mr.cur_direction(mr.ammeter.current)))
+        checksum += abs_current
 
     print('Checksum: {}'.format(checksum))
 
@@ -172,7 +173,7 @@ def print_current_table(rcurs):
 results, U, V, sum_out, sum_in, rcurs = m.run_spice_solver(hp)
 print(sum_out)
 print(sum_in)
-print_current_table(rcurs)
+print_current_table(m)
 fig, axes = plt.subplots(1,1)
 axes.imshow(results, cmap='hot', interpolation='nearest')
 # axes.streamplot(np.array([i for i in range(mesh_size)]),
