@@ -65,6 +65,7 @@ for i,j in it.product(range(mesh_size), range(mesh_size)):
     fin_splits = final_nodal_current_splits[i][j]
 
     for d,a in node.ammeters.items():
+        sys.stdout.write('\rRunning bias: {}, {}'.format(str((i,j)), d))
         a.set_bias(1)
         m.run_spice_solver(hp)
         biased_split = nodal_current_tup(node)
