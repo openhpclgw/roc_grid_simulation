@@ -170,12 +170,14 @@ def print_current_table(m):
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
 # heat_plot(numerical_solve(hp,10000), hp)
-results, sum_out, sum_in = m.run_spice_solver(hp)
+sum_out, sum_in = m.run_spice_solver(hp)
 print(sum_out)
 print(sum_in)
 print_current_table(m)
 fig, axes = plt.subplots(1,1)
-axes.imshow(results, cmap='hot', interpolation='nearest')
+potentials = np.array([[m.nodes[j][i].potential for i in
+    range(mesh_size)] for j in range(mesh_size)])
+axes.imshow(potentials, cmap='hot', interpolation='nearest')
 U = np.array([[m.nodes[j][i].aggregate_current_vector()[0] for i in
         range(mesh_size)] for j in range(mesh_size)])
 V = np.array([[m.nodes[j][i].aggregate_current_vector()[1] for i in

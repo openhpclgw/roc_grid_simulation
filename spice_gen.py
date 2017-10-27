@@ -118,13 +118,11 @@ class SpiceGenerator(object):
     def get_results(self, roc_model):
         w = self.mesh_size
         h = self.mesh_size
-        results = np.zeros((h, w))
         # FIXME parse in a more pythonic way
         grep_cmd = 'grep -i {sym} test.out -A2 \
                     | tail -n1 \
                     | tr "\t" " " \
                     | cut -d" " -f"3"'
-        vid = 0
 
         for mr in roc_model.links:
             mr.ammeter.current = float(subprocess.check_output(
@@ -138,14 +136,11 @@ class SpiceGenerator(object):
                                        grep_cmd.format(sym=a.sname),
                                        shell=True))
 
-            sym = 'v\('+self.__nfrmt.format(n=(i,j))+'\)'
-            tmp_val = float(subprocess.check_output(
+            sym = 'v\('+node.sname+'\)'
+            node.potential = float(subprocess.check_output(
                                        grep_cmd.format(sym=sym),
                                        shell=True))
 
-            if tmp_val > 0:
-                results[i][j] += tmp_val
-            vid += 1
 
         sum_out = 0.
         tmp_src_in = 0.
@@ -164,7 +159,7 @@ class SpiceGenerator(object):
         print(tmp_src_in)
         print(tmp_src_out)
 
-        return results, sum_out, sum_in
+        return sum_out, sum_in
 
     #
     # Utility Functions

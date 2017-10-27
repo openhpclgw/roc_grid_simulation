@@ -129,8 +129,11 @@ class NodeBlock(object):
 
         self.coord = coord
         self.nodename = gen_node_name(coord)
+        self.sname = self.nodename
         self.subnodes = {}
         self.ammeters = {}
+
+        self.potential = 0.
 
         # TODO this should go to some sort of a global config file
         self.directions = ('E', 'W', 'N', 'S')
