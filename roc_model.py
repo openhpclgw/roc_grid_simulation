@@ -15,11 +15,21 @@ class Coord(object):
     def __getitem__(self, key):
         return self.__coord[key]
 
+    def __str__(self):
+        return str(self.__coord)
+
     def distance(self, other):
         return abs(self.i-other.i) + abs(self.j-other.j)
 
     def is_neighbor(self, other):
         return self.distance(other) == 1
+
+    def is_h(self, other):
+        return abs(self.j-other.j)==1
+
+    # this should be enough to run the logic for now
+    def __gt__(self, other):
+        return self.i>other.i or (self.i==other.i and self.j>other.j)
 
 # Resistance is a simple spice object
 class Resistance(object):
@@ -71,15 +81,25 @@ class Ammeter(VoltageSource):
 # MeshResistances must connect two node block objects
 class MeshResistance(object):
     def __init__(self, r, nodeblock1, nodeblock2, uname=''):
+        # check if nodeblock2 comes "after" nodeblock1
+        if not (nodeblock2> nodeblock1):
+            print('2nd NodeBlock of MeshResistance must come after the\
+                  1st in ij ordering')
+
+        # get corresponding terminals between NodeBlocks
+        ts = nodeblock1.get_facing_subnodes(nodeblock2)
+        if ts == None:
+            print('MeshResistance can be created only between\
+                    neighboring NodeBlocks')
+
         # self.r = r
         self.nodeblock1 = nodeblock1
         self.nodeblock2 = nodeblock2
-        # self.uname = uname
 
-        ts = nodeblock1.get_facing_subnodes(nodeblock2)
         self.node1, self.node2 = ts
 
-        self.resistance = Resistance(r, self.node1, self.node2)
+        self.orientation = 'H' if nodeblock1.is_h(nodeblock2) else 'V'
+        self.resistance = Resistance(r, self.node1, self.node2, uname)
 
         # add internal subnode to attach the ammeter
         self.innodeid = str(self.resistance.uid)+'sub'
@@ -91,6 +111,15 @@ class MeshResistance(object):
     def components(self):
         yield self.resistance
         yield self.ammeter
+    
+    def cur_direction(self, val):
+        if val == 0:
+            return 0
+        if val < 0:
+            return 'W' if self.orientation=='H' else 'N'
+        if val > 0:
+            return 'E' if self.orientation=='H' else 'S'
+
 
 class NodeBlock(object):
     def __init__(self, coord):
@@ -132,6 +161,11 @@ class NodeBlock(object):
     def is_neighbor(self, other):
         return self.coord.is_neighbor(other.coord)
 
+    def is_h(self, other):
+        return self.coord.is_h(other.coord)
+
+    def __gt__(self, other):
+        return self.coord>other.coord
 
 
 class ROCModel(object):

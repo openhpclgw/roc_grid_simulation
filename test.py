@@ -152,11 +152,15 @@ def numerical_solve(hp, num_steps):
 def print_current_table(rcurs):
     frs = '{0:>9}    {1:>9}     {2}         {3:>1}'
     print(frs.format('Terminal1', 'Terminal2', 'Current', 'Direction'))
+    checksum = 0.
     for data in rcurs:
         print(frs.format(str(data[0]),
                          str(data[1]),
                          '{:>10.6e}'.format(data[2]),
                          data[3]))
+        checksum += data[2]
+
+    print('Checksum: {}'.format(checksum))
 
 # def quiver_plot(U,V):
 
@@ -165,7 +169,7 @@ def print_current_table(rcurs):
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
 # heat_plot(numerical_solve(hp,10000), hp)
-results, U, V, sum_out, sum_in, rcurs= m.run_spice_solver(hp)
+results, U, V, sum_out, sum_in, rcurs = m.run_spice_solver(hp)
 print(sum_out)
 print(sum_in)
 print_current_table(rcurs)
