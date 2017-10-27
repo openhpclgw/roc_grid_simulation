@@ -176,14 +176,14 @@ class NodeBlock(object):
         for _,a in self.ammeters.items():
             if a.current > 0:
                 ret += a.current
-        return ret
+        return abs(ret)
 
     def sum_reduce_out_curs(self):
         ret = 0.
         for _,a in self.ammeters.items():
             if a.current < 0:
                 ret += a.current
-        return ret
+        return abs(ret)
 
     def aggregate_current_vector(self):
         u = self.ammeters['W'].current-self.ammeters['E'].current
@@ -358,9 +358,17 @@ class ROCModel(object):
         for idx in self.__iter_bbox(self.src_bbox):
             yield idx
 
+    def src_nodeblocks(self):
+        for i,j in self.src_nodes():
+            yield self.nodes[i][j]
+
     def snk_nodes(self):
         for idx in self.__iter_bbox(self.snk_bbox):
             yield idx
+
+    def snk_nodeblocks(self):
+        for i,j in self.snk_nodes():
+            yield self.nodes[i][j]
 
     def run_spice_solver(self, hp):
         self.load_problem(hp)

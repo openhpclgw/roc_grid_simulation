@@ -170,9 +170,18 @@ def print_current_table(m):
 # cross_plot(tmp_x_loc,tmp_y_loc)
 # plt.savefig(img_name.format(gr_sz=N, ms_sz=mesh_size))
 # heat_plot(numerical_solve(hp,10000), hp)
-sum_out, sum_in = m.run_spice_solver(hp)
-print(sum_out)
-print(sum_in)
+m.run_spice_solver(hp)
+
+src_out = sum([n.sum_reduce_in_curs() for n in m.snk_nodeblocks()])
+snk_in = sum([n.sum_reduce_out_curs() for n in m.src_nodeblocks()])
+
+# for sanity checks
+src_in = sum([n.sum_reduce_in_curs() for n in m.src_nodeblocks()])
+snk_out = sum([n.sum_reduce_out_curs() for n in m.snk_nodeblocks()])
+print('Source in : {}'.format(src_in))
+print('Source out: {}'.format(src_out))
+print('Sink in   : {}'.format(snk_in))
+print('Sink out  : {}'.format(snk_out))
 print_current_table(m)
 fig, axes = plt.subplots(1,1)
 potentials = np.array([[m.nodes[j][i].potential for i in

@@ -141,26 +141,6 @@ class SpiceGenerator(object):
                                        grep_cmd.format(sym=sym),
                                        shell=True))
 
-
-        sum_out = 0.
-        tmp_src_in = 0.
-        for i,j in roc_model.src_nodes():
-            sum_out += roc_model.nodes[i][j].sum_reduce_out_curs()
-            tmp_src_in += roc_model.nodes[i][j].sum_reduce_in_curs()
-
-
-        sum_in = 0.
-        tmp_src_out = 0.
-        for i,j in roc_model.snk_nodes():
-            sum_in += roc_model.nodes[i][j].sum_reduce_in_curs()
-            tmp_src_out += roc_model.nodes[i][j].sum_reduce_out_curs()
-
-        # TODO convert these to sanity checks. They both should be 0
-        print(tmp_src_in)
-        print(tmp_src_out)
-
-        return sum_out, sum_in
-
     #
     # Utility Functions
     #
