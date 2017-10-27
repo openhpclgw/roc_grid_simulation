@@ -75,7 +75,7 @@ for i,j in it.product(range(mesh_size), range(mesh_size)):
         fin_splits[d] = fin_split
 
 # print the final table
-row_format = '{:<10}\n\t{}\n\t{}\n\t{}\n\t{}'
+row_format = '{}\t\t{}\n\t\t{}\n\t\t{}\n\t\t{}'
 dict_format = 'E:{E:0<.2f} W:{W:0<.2f} N:{N:0<.2f} S:{S:0<.2f}'
 for i,j in it.product(range(mesh_size), range(mesh_size)):
     tmp_splits = final_nodal_current_splits[i][j]
