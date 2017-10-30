@@ -9,7 +9,7 @@ from analysis_utils import (aggregate_current_vectors,
                             print_current_table,
                             energy_flow,
                             node_potentials,
-                            nodal_current_tup)
+                            nodal_current_dict)
 
 
 # I am using python 3.6.1
@@ -37,11 +37,11 @@ m.run_spice_solver(hp)
 
 
 # record initial current splits
-init_nodal_current_splits = [[nodal_current_tup(m.nodes[i][j])
-        for i in range(mesh_size)] for j in range(mesh_size)]
+init_nodal_current_splits = [[nodal_current_dict(m.nodes[i][j])
+        for j in range(mesh_size)] for i in range(mesh_size)]
 
 final_nodal_current_splits = [[{}
-        for i in range(mesh_size)] for j in range(mesh_size)]
+        for j in range(mesh_size)] for i in range(mesh_size)]
 
 # print(init_nodal_current_splits)
 
@@ -63,24 +63,28 @@ for i,j in it.product(range(mesh_size), range(mesh_size)):
     node = m.nodes[i][j]
     base_split = init_nodal_current_splits[i][j]
     fin_splits = final_nodal_current_splits[i][j]
+    print(base_split)
 
-    for d,a in node.ammeters.items():
-        sys.stdout.write('\rRunning bias: {}, {}'.format(str((i,j)), d))
-        a.set_bias(1)
-        m.run_spice_solver(hp)
-        biased_split = nodal_current_tup(node)
-        a.reset_bias()
-        dif_split = split_dif(biased_split, base_split)
-        mask_split(dif_split, d)
-        fin_split = normalize_split(dif_split)
-        fin_splits[d] = fin_split
+    for d in node.directions:
+        if d in node.ammeters:
+            a = node.ammeters[d]
+            # sys.stdout.write('\rRunning bias: {}, {}'.format(str((i,j)), d))
+            a.set_bias(1)
+            m.run_spice_solver(hp)
+            biased_split = nodal_current_dict(node)
+            a.reset_bias()
+            dif_split = split_dif(biased_split, base_split)
+            mask_split(dif_split, d)
+            fin_split = normalize_split(dif_split)
+            fin_splits[d] = fin_split
+        else:
+            fin_splits[d] = {'E':0.,'W':0.,'N':0.,'S':0.}
 
 # print the final table
 row_format = '{}\t\t{}\n\t\t{}\n\t\t{}\n\t\t{}'
 dict_format = 'E:{E:0<.2f} W:{W:0<.2f} N:{N:0<.2f} S:{S:0<.2f}'
 for i,j in it.product(range(mesh_size), range(mesh_size)):
     tmp_splits = final_nodal_current_splits[i][j]
-    # print(*tmp_splits)
     print(row_format.format(str((i,j)),
         *[dict_format.format(**d) for _,d in tmp_splits.items()]))
 
