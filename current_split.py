@@ -63,12 +63,11 @@ for i,j in it.product(range(mesh_size), range(mesh_size)):
     node = m.nodes[i][j]
     base_split = init_nodal_current_splits[i][j]
     fin_splits = final_nodal_current_splits[i][j]
-    print(base_split)
 
     for d in node.directions:
         if d in node.ammeters:
             a = node.ammeters[d]
-            # sys.stdout.write('\rRunning bias: {}, {}'.format(str((i,j)), d))
+            sys.stdout.write('\rRunning bias: {}, {}'.format(str((i,j)), d))
             a.set_bias(1)
             m.run_spice_solver(hp)
             biased_split = nodal_current_dict(node)
