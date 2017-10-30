@@ -129,7 +129,7 @@ class MeshResistance(object):
 
 
 class NodeBlock(object):
-    def __init__(self, coord):
+    def __init__(self, coord, mesh_size):
         def gen_node_name(coord, d=''):
             return 'N{}_{}{}'.format(coord[0], coord[1], d)
 
@@ -139,12 +139,14 @@ class NodeBlock(object):
         self.subnodes = {}
         self.ammeters = {}
 
+        self.mesh_size = mesh_size
+
         self.potential = 0.
 
         # TODO this should go to some sort of a global config file
         self.directions = ('E', 'W', 'N', 'S')
 
-        for d in self.directions:
+        for d in self.inward_directions():
             tmp_subnode = gen_node_name(coord, d)
             self.subnodes[d] = tmp_subnode
             self.ammeters[d] = Ammeter(tmp_subnode, self.nodename)
@@ -152,6 +154,17 @@ class NodeBlock(object):
     def components(self):
         for d,a in self.ammeters.items():
             yield a
+
+    def inward_directions(self):
+        if self.coord.i > 0:
+            yield 'N'
+        if self.coord.i < self.mesh_size-1:
+            yield 'S'
+        if self.coord.j > 0:
+            yield 'W'
+        if self.coord.j < self.mesh_size-1:
+            yield 'E'
+
 
     def get_facing_subnodes(self, other):
         if not self.is_neighbor(other):
@@ -192,8 +205,10 @@ class NodeBlock(object):
         return abs(ret)
 
     def aggregate_current_vector(self):
-        u = self.ammeters['W'].current-self.ammeters['E'].current
-        v = self.ammeters['S'].current-self.ammeters['N'].current
+        a = self.ammeters
+        curs = {d:a[d].current if d in a else 0. for d in self.directions}
+        u = curs['W']-curs['E']
+        v = curs['S']-curs['N']
         return (u,v)
 
 class ROCModel(object):
@@ -309,7 +324,7 @@ class ROCModel(object):
     def init_nodes(self):
         hr = range(self.h)
         wr = range(self.w)
-        self.nodes = [[NodeBlock(Coord(i,j)) for j in wr] for i in hr]
+        self.nodes = [[NodeBlock(Coord(i,j), self.h) for j in wr] for i in hr]
 
 
     def init_links(self, conductance):
