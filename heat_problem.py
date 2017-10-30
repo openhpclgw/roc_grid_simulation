@@ -3,10 +3,19 @@ import itertools as it
 
 class HeatProblem(object):
     # bbox : (left, top, width, height)
-    def __init__(self, N, source, sink, conductance, src_val=1., sink_val=0.):
+    def __init__(self, N, sources, sinks, conductance, src_val=1., sink_val=0.):
         self.N = N
-        self.source = source
-        self.sink = sink
+
+        self.sources = sources
+        self.source_idxs = set()
+        for s in self.source_iter():
+            self.source_idxs|={idx for idx in self.__iter_bbox(s)}
+
+        self.sinks = sinks
+        self.sink_idxs = set()
+        for s in self.sink_iter():
+            self.sink_idxs|={idx for idx in self.__iter_bbox(s)}
+
         self.conductance = conductance
         self.src_val = src_val
         self.sink_val = sink_val
@@ -17,12 +26,18 @@ class HeatProblem(object):
             yield (i,j)
 
     def source_iter(self):
-        for idx in self.__iter_bbox(self.source):
-            yield idx
+        if isinstance(self.sources, list):
+            for s in self.sources:
+                yield s
+        else:
+            yield self.sources
 
     def sink_iter(self):
-        for idx in self.__iter_bbox(self.sink):
-            yield idx
+        if isinstance(self.sinks, list):
+            for s in self.sinks:
+                yield s
+        else:
+            yield self.sinks
 
     def __is_in_bbox(self, bbox, point):
         i, j = point
@@ -36,20 +51,21 @@ class HeatProblem(object):
         return True
 
     def is_source(self, p):
-        return self.__is_in_bbox(self.source, p)
+        return p in self.source_idxs
 
     def is_sink(self, p):
-        return self.__is_in_bbox(self.sink, p)
+        return p in self.sink_idxs
 
     def gen_matrix(self):
         mat = np.zeros((self.N, self.N))
-        for (i,j) in self.__iter_bbox(self.source):
+        for (i,j) in self.source_idxs:
             mat[i][j] = self.src_val
-        for (i,j) in self.__iter_bbox(self.sink):
+        for (i,j) in self.sink_idxs:
             mat[i][j] = self.sink_val
 
         return mat
         
+    # this method is very naive and can use a lot of optimizations
     def numerical_solve(self, num_steps):
         N = self.N
         # grid = self.gen_matrix()

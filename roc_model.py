@@ -337,28 +337,39 @@ class ROCModel(object):
         self.exp_factor = self.create_mesh(grid)
         self.init_nodes()
         self.init_links(conductance)
-        # what to do in case of indivisible sizes?
-        self.snk_bbox = (int(hp.sink[0]/self.exp_factor),
-                         int(hp.sink[1]/self.exp_factor),
-                         int(np.ceil(hp.sink[2]/self.exp_factor)),
-                         int(np.ceil(hp.sink[3]/self.exp_factor)))
-        self.src_bbox = (int(hp.source[0]/self.exp_factor),
-                         int(hp.source[1]/self.exp_factor),
-                         int(np.ceil(hp.source[2]/self.exp_factor)),
-                         int(np.ceil(hp.source[3]/self.exp_factor)))
-        self.init_source()
-        self.init_sink()
+        self.init_source(hp)
+        self.init_sink(hp)
         self.prob_conductance = conductance
 
-    def init_source(self):
+    def init_source(self, hp):
+        # what to do in case of indivisible sizes?
+        self.src_bboxs = [(int(s[0]/self.exp_factor),
+                         int(s[1]/self.exp_factor),
+                         int(np.ceil(s[2]/self.exp_factor)),
+                         int(np.ceil(s[3]/self.exp_factor)))
+                         for s in hp.source_iter()]
+        self.src_idxs = set()
         self.src = []
-        for i,j in self.src_nodes():
+        for s in self.src_bboxs:
+            self.src_idxs |= {idx for idx in self.__iter_bbox(s)}
+
+        for i,j in self.src_idxs:
             self.src.append(VoltageSource(self.mesh[i][j],
                                           self.nodes[i][j]))
 
-    def init_sink(self):
+    def init_sink(self, hp):
+        # what to do in case of indivisible sizes?
+        self.snk_bboxs = [(int(s[0]/self.exp_factor),
+                         int(s[1]/self.exp_factor),
+                         int(np.ceil(s[2]/self.exp_factor)),
+                         int(np.ceil(s[3]/self.exp_factor))) 
+                         for s in hp.sink_iter()]
+        self.snk_idxs = set()
         self.snk = []
-        for i,j in self.snk_nodes():
+        for s in self.snk_bboxs:
+            self.snk_idxs |= {idx for idx in self.__iter_bbox(s)}
+
+        for i,j in self.snk_idxs:
             self.snk.append(Ground(self.nodes[i][j]))
 
     def __iter_bbox(self, bbox):
@@ -366,20 +377,12 @@ class ROCModel(object):
                               range(bbox[0], bbox[0]+bbox[2])):
             yield (i,j)
 
-    def src_nodes(self):
-        for idx in self.__iter_bbox(self.src_bbox):
-            yield idx
-
     def src_nodeblocks(self):
-        for i,j in self.src_nodes():
+        for i,j in self.src_idxs:
             yield self.nodes[i][j]
 
-    def snk_nodes(self):
-        for idx in self.__iter_bbox(self.snk_bbox):
-            yield idx
-
     def snk_nodeblocks(self):
-        for i,j in self.snk_nodes():
+        for i,j in self.snk_idxs:
             yield self.nodes[i][j]
 
     def run_spice_solver(self, hp, cleanup=False):

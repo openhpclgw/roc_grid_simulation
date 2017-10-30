@@ -19,7 +19,7 @@ from analysis_utils import (aggregate_current_vectors,
 # sink = (55, 10, 5, 50)
 N = 20
 source = (2, 2, 7, 10)
-sink = (11, 2, 1, 10)
+sink = [(11, 2, 1, 10), (5, 15, 2, 2)]
 # source = (4, 4, 4, 12)
 # sink = (12, 4, 4, 12)
 cond_exp = -3
