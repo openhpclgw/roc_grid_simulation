@@ -40,3 +40,22 @@ def node_potentials(m):
     return  np.array([[m.nodes[j][i].potential for i in
         range(mesh_size)] for j in range(mesh_size)])
 
+def plot_heatmap(m):
+    import matplotlib.pyplot as plt
+
+    mesh_size = m.h
+    potentials = node_potentials(m)
+    fig, axes = plt.subplots(1,1)
+    axes.imshow(potentials, cmap='hot', interpolation='nearest')
+
+    U, V = aggregate_current_vectors(m)
+    # axes.streamplot(np.array([i for i in range(mesh_size)]),
+                   # np.array([i for i in range(mesh_size)]),
+                   # U, V, color='green', linewidth=1, density=0.5)
+
+    axes.quiver(np.array([i for i in range(mesh_size)]),
+                   np.array([i for i in range(mesh_size)]),
+                   U, V, color='green')
+
+    plt.show()
+
