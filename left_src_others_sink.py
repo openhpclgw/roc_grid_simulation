@@ -1,0 +1,21 @@
+#! /usr/bin/env python
+from roc_model import ROCModel
+from heat_problem import HeatProblem
+from analysis_utils import (node_potentials, plot_heatmap)
+
+
+N = 5
+mesh_size = 5
+source = (0, 0, 1, 5)
+sink = [(1, 0, 4, 1), (4, 0, 1, 4), (1, 4, 4, 1)]
+cond_exp = -3
+conductance = 10**cond_exp  # this'll be used as resistance directly
+hp = HeatProblem(N, source, sink, conductance, src_val=10.)
+
+m = ROCModel(mesh_size)
+m.load_problem(hp)
+m.run_spice_solver(hp)
+
+print('Node Potentials')
+print(node_potentials(m))
+plot_heatmap(m)
