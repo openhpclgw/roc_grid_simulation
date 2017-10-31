@@ -9,7 +9,7 @@ source = (0, 0, 1, 5)
 sink = [(1, 0, 4, 1), (4, 0, 1, 4), (1, 4, 4, 1)]
 cond_exp = 3
 conductance = 10**cond_exp  # this'll be used as resistance directly
-hp = HeatProblem(N, source, sink, conductance, src_val=10.)
+hp = HeatProblem(N, source, sink, conductance, src_val=1.)
 
 m = ROCModel(mesh_size)
 m.load_problem(hp)

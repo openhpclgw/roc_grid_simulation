@@ -15,16 +15,18 @@ def print_current_table(m):
     print('Checksum: {}'.format(checksum))
 
 def print_node_potentials(m):
-    frs = '{0:>9}    {1:>9}'
+    frs = '{0:>9}    {1:>12}'
     print(frs.format('Node', 'Potential'))
     for n in m.iter_nodes():
-        print(frs.format(str(n.coord), n.potential))
+        print(frs.format(str(n.coord), '{: e}'.format(n.potential)))
 
 def print_node_currents(m):
     frs = '{:>9}    {}'
+    dict_format = 'E:{E: e}   W:{W: e}   N:{N: e}   S:{S: e}'
     print(frs.format('Node', 'Currents (+:in, -:out)'))
     for n in m.iter_nodes():
-        print(frs.format(str(n.coord), nodal_current_dict(n)))
+        print(frs.format(str(n.coord),
+            dict_format.format(**nodal_current_dict(n))))
 
 def energy_flow(m):
     src_out = sum([n.sum_reduce_in_curs() for n in m.snk_nodeblocks()])
