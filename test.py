@@ -41,4 +41,4 @@ print('Sink in   : {}'.format(eflow_data['snk_in']))
 print('Sink out  : {}'.format(eflow_data['snk_out']))
 
 print_current_table(m)
-plot_heatmap(m)
+plot_heatmap(m, current_flow_plot='stream')

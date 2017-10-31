@@ -41,7 +41,7 @@ def node_potentials(m):
     return  np.array([[m.nodes[j][i].potential for i in
         range(mesh_size)] for j in range(mesh_size)])
 
-def plot_heatmap(m):
+def plot_heatmap(m, current_flow_plot=None):
     import matplotlib.pyplot as plt
 
     mesh_size = m.h
@@ -49,14 +49,19 @@ def plot_heatmap(m):
     fig, axes = plt.subplots(1,1)
     axes.imshow(potentials, cmap='hot', interpolation='nearest')
 
-    U, V = aggregate_current_vectors(m)
-    # axes.streamplot(np.array([i for i in range(mesh_size)]),
-                   # np.array([i for i in range(mesh_size)]),
-                   # U, V, color='green', linewidth=1, density=0.5)
+    if current_flow_plot is not None:
+        U, V = aggregate_current_vectors(m)
 
-    axes.quiver(np.array([i for i in range(mesh_size)]),
-                   np.array([i for i in range(mesh_size)]),
-                   U, V, color='green')
+    if current_flow_plot == 'stream':
+        axes.streamplot(np.array([i for i in range(mesh_size)]),
+                       np.array([i for i in range(mesh_size)]),
+                       U, -V, color='green', linewidth=1, density=1)
+    elif current_flow_plot == 'quiver':
+        axes.quiver(np.array([i for i in range(mesh_size)]),
+                       np.array([i for i in range(mesh_size)]),
+                       U, V, color='green')
+    else:
+        print('Unrecognized current_flow_plot')
 
     plt.show()
 
