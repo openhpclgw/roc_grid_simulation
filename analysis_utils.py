@@ -20,6 +20,11 @@ def print_node_potentials(m):
     for n in m.iter_nodes():
         print(frs.format(str(n.coord), n.potential))
 
+def print_node_currents(m):
+    frs = '{:>9}    {}'
+    print(frs.format('Node', 'Currents (+:in, -:out)'))
+    for n in m.iter_nodes():
+        print(frs.format(str(n.coord), nodal_current_dict(n)))
 
 def energy_flow(m):
     src_out = sum([n.sum_reduce_in_curs() for n in m.snk_nodeblocks()])
