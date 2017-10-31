@@ -206,9 +206,17 @@ class NodeBlock(object):
 
     def aggregate_current_vector(self):
         a = self.ammeters
-        curs = {d:a[d].current if d in a else 0. for d in self.directions}
-        u = curs['W']-curs['E']
-        v = curs['S']-curs['N']
+        curs = {}
+        for d in self.directions:
+            if d in a:
+                if a[d].current < 0:
+                    curs[d] = abs(a[d].current)
+                else:
+                    curs[d] = 0.
+            else:
+                curs[d] = 0.
+        u = curs['E']-curs['W']
+        v = curs['N']-curs['S']
         return (u,v)
 
 class ROCModel(object):
