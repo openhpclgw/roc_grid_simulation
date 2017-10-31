@@ -36,6 +36,10 @@ def nodal_current_dict(node):
     return {d:node.ammeters[d].current if d in node.ammeters else 0. 
             for d in node.directions}
 
+def node_currents(m):
+    for n in m.iter_nodes():
+        print(nodal_current_dict(n))
+
 def node_potentials(m):
     mesh_size = m.h
     return  np.array([[m.nodes[j][i].potential for i in
@@ -51,17 +55,16 @@ def plot_heatmap(m, current_flow_plot=None):
 
     if current_flow_plot is not None:
         U, V = aggregate_current_vectors(m)
-
-    if current_flow_plot == 'stream':
-        axes.streamplot(np.array([i for i in range(mesh_size)]),
-                       np.array([i for i in range(mesh_size)]),
-                       U, -V, color='green', linewidth=1, density=1)
-    elif current_flow_plot == 'quiver':
-        axes.quiver(np.array([i for i in range(mesh_size)]),
-                       np.array([i for i in range(mesh_size)]),
-                       U, V, color='green')
-    else:
-        print('Unrecognized current_flow_plot')
+        if current_flow_plot == 'stream':
+            axes.streamplot(np.array([i for i in range(mesh_size)]),
+                           np.array([i for i in range(mesh_size)]),
+                           U, -V, color='green', linewidth=1, density=1)
+        elif current_flow_plot == 'quiver':
+            axes.quiver(np.array([i for i in range(mesh_size)]),
+                           np.array([i for i in range(mesh_size)]),
+                           U, V, color='green')
+        else:
+            print('Unrecognized current_flow_plot')
 
     plt.show()
 
