@@ -1,9 +1,7 @@
 #! /usr/bin/env python
 from roc_model import ROCModel
 from heat_problem import HeatProblem
-from analysis_utils import (node_potentials, plot_heatmap,
-                            node_currents)
-
+from analysis_utils import *
 
 N = 5
 mesh_size = 5
@@ -18,6 +16,6 @@ m.load_problem(hp)
 m.run_spice_solver(hp)
 
 print('Node Potentials')
-print(node_potentials(m))
+print_node_potentials(m)
 node_currents(m)
 plot_heatmap(m, current_flow_plot='stream')

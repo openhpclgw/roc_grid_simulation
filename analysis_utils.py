@@ -14,6 +14,13 @@ def print_current_table(m):
 
     print('Checksum: {}'.format(checksum))
 
+def print_node_potentials(m):
+    frs = '{0:>9}    {1:>9}'
+    print(frs.format('Node', 'Potential'))
+    for n in m.iter_nodes():
+        print(frs.format(str(n.coord), n.potential))
+
+
 def energy_flow(m):
     src_out = sum([n.sum_reduce_in_curs() for n in m.snk_nodeblocks()])
     snk_in = sum([n.sum_reduce_out_curs() for n in m.src_nodeblocks()])
