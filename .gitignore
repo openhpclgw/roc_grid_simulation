@@ -3,6 +3,7 @@ __pycache__
 *.cir
 *.png
 *.out
+*.dat
 tests
 img
 notes
