@@ -84,6 +84,10 @@ def plot_heatmap(m, current_flow_plot=None):
 
     plt.show()
 
+# returns a list of lists of dictionaries of dictionaries:
+# run_current_split_analysis(model)[i][j]['E'] sis a dictionary that
+# stores the current split at node ij when the current is incoming from
+# East
 def run_current_split_analysis(m):
     mesh_size = m.h
 
