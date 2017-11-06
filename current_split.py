@@ -5,12 +5,7 @@ import itertools as it
 from roc_model import ROCModel
 import matplotlib.pyplot as plt
 from heat_problem import HeatProblem
-from analysis_utils import (aggregate_current_vectors,
-                            print_current_table,
-                            energy_flow,
-                            node_potentials,
-                            nodal_current_dict)
-
+from analysis_utils import run_current_split_analysis
 
 # I am using python 3.6.1
 
@@ -33,51 +28,7 @@ hp = HeatProblem(N, source, sink, conductance, src_val=10.)
 m = ROCModel(mesh_size)
 
 m.load_problem(hp)
-m.run_spice_solver(hp)
-
-
-# record initial current splits
-init_nodal_current_splits = [[nodal_current_dict(m.nodes[i][j])
-        for j in range(mesh_size)] for i in range(mesh_size)]
-
-final_nodal_current_splits = [[{}
-        for j in range(mesh_size)] for i in range(mesh_size)]
-
-# print(init_nodal_current_splits)
-
-def split_dif(biased, base):
-    return {d:abs(biased[d]-base[d]) for d in ('E', 'W', 'N', 'S')}
-
-def mask_split(split, mask_key):
-    split[mask_key] = 0.0
-
-def normalize_split(split):
-    val_sum = sum([v for _,v in split.items()])
-    if val_sum != 0:
-        return {k:v/val_sum for k,v in split.items()}
-    else:
-        return split
-
-# apply bias and measure the deltas
-for i,j in it.product(range(mesh_size), range(mesh_size)):
-    node = m.nodes[i][j]
-    base_split = init_nodal_current_splits[i][j]
-    fin_splits = final_nodal_current_splits[i][j]
-
-    for d in node.directions:
-        if d in node.ammeters:
-            a = node.ammeters[d]
-            sys.stdout.write('\rRunning bias: {}, {}'.format(str((i,j)), d))
-            a.set_bias(1)
-            m.run_spice_solver(hp)
-            biased_split = nodal_current_dict(node)
-            a.reset_bias()
-            dif_split = split_dif(biased_split, base_split)
-            mask_split(dif_split, d)
-            fin_split = normalize_split(dif_split)
-            fin_splits[d] = fin_split
-        else:
-            fin_splits[d] = {'E':0.,'W':0.,'N':0.,'S':0.}
+final_nodal_current_splits = run_current_split_analysis(m)
 
 # print the final table
 row_format = '{}\t\t{}\n\t\t{}\n\t\t{}\n\t\t{}'

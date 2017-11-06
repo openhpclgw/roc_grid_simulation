@@ -1,4 +1,6 @@
 import numpy as np
+import itertools as it
+import sys
 
 def print_current_table(m):
     frs = '{0:>9}    {1:>9}     {2}         {3:>1}'
@@ -82,3 +84,52 @@ def plot_heatmap(m, current_flow_plot=None):
 
     plt.show()
 
+def run_current_split_analysis(m):
+    mesh_size = m.h
+
+    m.run_spice_solver()
+
+    # record initial current splits
+    init_nodal_current_splits = [[nodal_current_dict(m.nodes[i][j])
+            for j in range(mesh_size)] for i in range(mesh_size)]
+
+    final_nodal_current_splits = [[{}
+            for j in range(mesh_size)] for i in range(mesh_size)]
+
+    # print(init_nodal_current_splits)
+
+    def split_dif(biased, base):
+        return {d:abs(biased[d]-base[d]) for d in ('E', 'W', 'N', 'S')}
+
+    def mask_split(split, mask_key):
+        split[mask_key] = 0.0
+
+    def normalize_split(split):
+        val_sum = sum([v for _,v in split.items()])
+        if val_sum != 0:
+            return {k:v/val_sum for k,v in split.items()}
+        else:
+            return split
+
+    # apply bias and measure the deltas
+    for i,j in it.product(range(mesh_size), range(mesh_size)):
+        node = m.nodes[i][j]
+        base_split = init_nodal_current_splits[i][j]
+        fin_splits = final_nodal_current_splits[i][j]
+
+        for d in node.directions:
+            if d in node.ammeters:
+                a = node.ammeters[d]
+                sys.stdout.write('\rRunning bias: {}, {}'.format(str((i,j)), d))
+                a.set_bias(1)
+                m.run_spice_solver()
+                biased_split = nodal_current_dict(node)
+                a.reset_bias()
+                dif_split = split_dif(biased_split, base_split)
+                mask_split(dif_split, d)
+                fin_split = normalize_split(dif_split)
+                fin_splits[d] = fin_split
+            else:
+                fin_splits[d] = {'E':0.,'W':0.,'N':0.,'S':0.}
+
+    return final_nodal_current_splits

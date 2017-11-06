@@ -408,7 +408,7 @@ class ROCModel(object):
         for i,j in self.snk_idxs:
             yield self.nodes[i][j]
 
-    def run_spice_solver(self, hp, cleanup=False):
+    def run_spice_solver(self, cleanup=False):
         sg = SpiceGenerator()
         sg.create_script(self)
         sg.run()
