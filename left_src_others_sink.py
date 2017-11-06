@@ -14,7 +14,7 @@ hp = HeatProblem(N, source, sink, conductance, src_val=1.)
 
 m = ROCModel(mesh_size)
 m.load_problem(hp)
-m.run_spice_solver(hp)
+m.run_spice_solver()
 
 print('Node Potentials')
 print('---------------')

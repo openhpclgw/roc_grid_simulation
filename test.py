@@ -32,7 +32,7 @@ hp = HeatProblem(N, source, sink, conductance, src_val=10.)
 m = ROCModel(mesh_size)
 
 m.load_problem(hp)
-m.run_spice_solver(hp)
+m.run_spice_solver()
 
 eflow_data = energy_flow(m)
 print('Source in : {}'.format(eflow_data['src_in']))
