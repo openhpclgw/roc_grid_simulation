@@ -153,7 +153,7 @@ def run_current_split_analysis(m, verbose=False):
 def print_current_splits(splits):
     mesh_size = len(splits)
     row_format = '{}\t\t{}\n\t\t{}\n\t\t{}\n\t\t{}'
-    dict_format = 'E:{E:0<.2f} W:{W:0<.2f} N:{N:0<.2f} S:{S:0<.2f}'
+    dict_format = 'E: {E:0<.2f}  W: {W:0<.2f}  N: {N:0<.2f}  S: {S:0<.2f}'
     for i,j in it.product(range(mesh_size), range(mesh_size)):
         tmp_splits = splits[i][j]
         print(row_format.format(str((i,j)),
