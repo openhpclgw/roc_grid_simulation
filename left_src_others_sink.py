@@ -23,4 +23,8 @@ print()
 print('Node Currents')
 print('-------------')
 print_node_currents(m)
+print('Node Current Splits')
+print('-------------')
+print_current_splits(run_current_split_analysis(m))
+
 plot_heatmap(m, current_flow_plot='stream')
