@@ -138,3 +138,26 @@ def run_current_split_analysis(m):
                 fin_splits[d] = {'E':0.,'W':0.,'N':0.,'S':0.}
 
     return final_nodal_current_splits
+
+# a little bit different then other library functions this take the
+# return value from the curren split analysis function
+# The rationale is that I want to separate functions that run the model
+# and collect datar from the model in the future. In that vein, a
+# printer mustn't run any solvers. But at the same time, I don't think
+# there is feasible way to store the curretn split data within the
+# model. So the data should be stored in the application level even if
+# the whole purpose is just to print the whole data
+def print_current_splits(splits):
+    mesh_size = len(splits)
+    row_format = '{}\t\t{}\n\t\t{}\n\t\t{}\n\t\t{}'
+    dict_format = 'E:{E:0<.2f} W:{W:0<.2f} N:{N:0<.2f} S:{S:0<.2f}'
+    for i,j in it.product(range(mesh_size), range(mesh_size)):
+        tmp_splits = splits[i][j]
+        print(row_format.format(str((i,j)),
+            *[dict_format.format(**d) for _,d in tmp_splits.items()]))
+
+        
+        print()
+
+
+

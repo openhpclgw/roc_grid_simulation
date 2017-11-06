@@ -5,7 +5,8 @@ import itertools as it
 from roc_model import ROCModel
 import matplotlib.pyplot as plt
 from heat_problem import HeatProblem
-from analysis_utils import run_current_split_analysis
+from analysis_utils import (run_current_split_analysis,
+                            print_current_splits)
 
 # I am using python 3.6.1
 
@@ -28,16 +29,4 @@ hp = HeatProblem(N, source, sink, conductance, src_val=10.)
 m = ROCModel(mesh_size)
 
 m.load_problem(hp)
-final_nodal_current_splits = run_current_split_analysis(m)
-
-# print the final table
-row_format = '{}\t\t{}\n\t\t{}\n\t\t{}\n\t\t{}'
-dict_format = 'E:{E:0<.2f} W:{W:0<.2f} N:{N:0<.2f} S:{S:0<.2f}'
-for i,j in it.product(range(mesh_size), range(mesh_size)):
-    tmp_splits = final_nodal_current_splits[i][j]
-    print(row_format.format(str((i,j)),
-        *[dict_format.format(**d) for _,d in tmp_splits.items()]))
-
-    
-    print()
-
+print_current_splits(run_current_split_analysis(m))
