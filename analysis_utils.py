@@ -89,7 +89,7 @@ def plot_heatmap(m, current_flow_plot=None):
 # stores the current split at node ij when the current is incoming from
 # East
 # Note: The model doesn't need to have been run prior to calling this
-def run_current_split_analysis(m):
+def run_current_split_analysis(m, verbose=False):
     mesh_size = m.h
 
     m.run_spice_solver()
@@ -125,7 +125,10 @@ def run_current_split_analysis(m):
         for d in node.directions:
             if d in node.ammeters:
                 a = node.ammeters[d]
-                sys.stdout.write('\rRunning bias: {}, {}'.format(str((i,j)), d))
+                if verbose:
+                    sys.stdout.write(
+                            '\rRunning bias: {}, {}'.format(str((i,j)),
+                                                            d))
                 a.set_bias(1)
                 m.run_spice_solver()
                 biased_split = nodal_current_dict(node)
