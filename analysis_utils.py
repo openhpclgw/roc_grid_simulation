@@ -22,7 +22,7 @@ def print_node_potentials(m):
 
 def print_node_currents(m):
     frs = '{:>9}    {}'
-    dict_format = 'E:{E: e}   W:{W: e}   N:{N: e}   S:{S: e}'
+    dict_format = 'E:{E: >14e}   W:{W: >14e}   N:{N: >14e}   S:{S: >14e}'
     print(frs.format('Node', 'Currents (+:in, -:out)'))
     for n in m.iter_nodes():
         print(frs.format(str(n.coord),
