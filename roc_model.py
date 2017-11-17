@@ -2,15 +2,12 @@ import numpy as np
 import itertools as it
 from spice_gen import SpiceGenerator
 
-# class NodeName(object):
-    # def __init__(self, name):
-        # self.name=name
 
 class Coord(object):
     def __init__(self, i, j):
         self.i = i
         self.j = j
-        self.__coord = (i,j)
+        self.__coord = (i, j)
 
     def __getitem__(self, key):
         return self.__coord[key]
@@ -25,15 +22,17 @@ class Coord(object):
         return self.distance(other) == 1
 
     def is_h(self, other):
-        return abs(self.j-other.j)==1
+        return abs(self.j-other.j) == 1
 
     # this should be enough to run the logic for now
-    def __gt__(self, other):
-        return self.i>other.i or (self.i==other.i and self.j>other.j)
+    def __gt__(self, o):
+        return self.i > o.i or (self.i == o.i and self.j > o.j)
+
 
 # Resistance is a simple spice object
 class Resistance(object):
     counter = 0
+
     def __init__(self, r, node1, node2, uname=''):
         self.uid = Resistance.counter
         self.r = r
@@ -42,9 +41,11 @@ class Resistance(object):
         self.uname = uname
         Resistance.counter += 1
 
+
 # VoltageSource objects can be connected to any kind of node
 class VoltageSource(object):
     counter = 0
+
     def __init__(self, v, node1, node2='0', uname=''):
         self.uid = VoltageSource.counter
         self.v = v
@@ -69,10 +70,10 @@ class VoltageSource(object):
         VoltageSource.counter += 1
 
 
-
 class Ground(VoltageSource):
     def __init__(self, node):
         VoltageSource.__init__(self, v=0, node1=node, node2='0')
+
 
 class Ammeter(VoltageSource):
     def __init__(self, node1, node2):
@@ -85,17 +86,18 @@ class Ammeter(VoltageSource):
     def reset_bias(self):
         self.v = 0
 
+
 # MeshResistances must connect two node block objects
 class MeshResistance(object):
     def __init__(self, r, nodeblock1, nodeblock2, uname=''):
         # check if nodeblock2 comes "after" nodeblock1
-        if not (nodeblock2> nodeblock1):
+        if not (nodeblock2 > nodeblock1):
             print('2nd NodeBlock of MeshResistance must come after the\
                   1st in ij ordering')
 
         # get corresponding terminals between NodeBlocks
         ts = nodeblock1.get_facing_subnodes(nodeblock2)
-        if ts == None:
+        if ts is None:
             print('MeshResistance can be created only between\
                     neighboring NodeBlocks')
 
@@ -118,14 +120,14 @@ class MeshResistance(object):
     def components(self):
         yield self.resistance
         yield self.ammeter
-    
+
     def cur_direction(self, val):
         if val == 0:
             return 0
         if val < 0:
-            return 'W' if self.orientation=='H' else 'N'
+            return 'W' if self.orientation == 'H' else 'N'
         if val > 0:
-            return 'E' if self.orientation=='H' else 'S'
+            return 'E' if self.orientation == 'H' else 'S'
 
 
 class NodeBlock(object):
@@ -152,7 +154,7 @@ class NodeBlock(object):
             self.ammeters[d] = Ammeter(tmp_subnode, self.nodename)
 
     def components(self):
-        for d,a in self.ammeters.items():
+        for d, a in self.ammeters.items():
             yield a
 
     def inward_directions(self):
@@ -164,7 +166,6 @@ class NodeBlock(object):
             yield 'W'
         if self.coord.j < self.mesh_size-1:
             yield 'E'
-
 
     def get_facing_subnodes(self, other):
         if not self.is_neighbor(other):
@@ -180,7 +181,7 @@ class NodeBlock(object):
                 return (self.subnodes['S'], other.subnodes['N'])
             else:
                 return (self.subnodes['N'], other.subnodes['S'])
-        
+
     def is_neighbor(self, other):
         return self.coord.is_neighbor(other.coord)
 
@@ -188,18 +189,18 @@ class NodeBlock(object):
         return self.coord.is_h(other.coord)
 
     def __gt__(self, other):
-        return self.coord>other.coord
+        return self.coord > other.coord
 
     def sum_reduce_in_curs(self):
         ret = 0.
-        for _,a in self.ammeters.items():
+        for _, a in self.ammeters.items():
             if a.current > 0:
                 ret += a.current
         return abs(ret)
 
     def sum_reduce_out_curs(self):
         ret = 0.
-        for _,a in self.ammeters.items():
+        for _, a in self.ammeters.items():
             if a.current < 0:
                 ret += a.current
         return abs(ret)
@@ -217,7 +218,8 @@ class NodeBlock(object):
                 curs[d] = 0.
         u = curs['E']-curs['W']
         v = curs['N']-curs['S']
-        return (u,v)
+        return u, v
+
 
 class ROCModel(object):
     def __init__(self, N):
@@ -326,14 +328,14 @@ class ROCModel(object):
     # for convenience. I think this can be refactored out if nodes was a
     # numpy array
     def iter_nodes(self):
-        for i,j in it.product(range(self.h), range(self.w)):
+        for i, j in it.product(range(self.h), range(self.w)):
             yield self.nodes[i][j]
 
     def init_nodes(self):
         hr = range(self.h)
         wr = range(self.w)
-        self.nodes = [[NodeBlock(Coord(i,j), self.h) for j in wr] for i in hr]
-
+        self.nodes = [[NodeBlock(Coord(i, j), self.h)
+                      for j in wr] for i in hr]
 
     def init_links(self, conductance):
         # assert h = w
@@ -353,7 +355,6 @@ class ROCModel(object):
                                              self.nodes[i][j],
                                              self.nodes[i+1][j]))
 
-
     def load_problem(self, hp):
         grid = hp.gen_matrix()
         conductance = hp.conductance
@@ -367,45 +368,45 @@ class ROCModel(object):
     def init_source(self, hp):
         # what to do in case of indivisible sizes?
         self.src_bboxs = [(int(s[0]/self.exp_factor),
-                         int(s[1]/self.exp_factor),
-                         int(np.ceil(s[2]/self.exp_factor)),
-                         int(np.ceil(s[3]/self.exp_factor)))
-                         for s in hp.source_iter()]
+                          int(s[1]/self.exp_factor),
+                          int(np.ceil(s[2]/self.exp_factor)),
+                          int(np.ceil(s[3]/self.exp_factor)))
+                          for s in hp.source_iter()]
         self.src_idxs = set()
         self.src = []
         for s in self.src_bboxs:
             self.src_idxs |= {idx for idx in self.__iter_bbox(s)}
 
-        for i,j in self.src_idxs:
+        for i, j in self.src_idxs:
             self.src.append(VoltageSource(self.mesh[i][j],
                                           self.nodes[i][j]))
 
     def init_sink(self, hp):
         # what to do in case of indivisible sizes?
         self.snk_bboxs = [(int(s[0]/self.exp_factor),
-                         int(s[1]/self.exp_factor),
-                         int(np.ceil(s[2]/self.exp_factor)),
-                         int(np.ceil(s[3]/self.exp_factor))) 
-                         for s in hp.sink_iter()]
+                          int(s[1]/self.exp_factor),
+                          int(np.ceil(s[2]/self.exp_factor)),
+                          int(np.ceil(s[3]/self.exp_factor)))
+                          for s in hp.sink_iter()]
         self.snk_idxs = set()
         self.snk = []
         for s in self.snk_bboxs:
             self.snk_idxs |= {idx for idx in self.__iter_bbox(s)}
 
-        for i,j in self.snk_idxs:
+        for i, j in self.snk_idxs:
             self.snk.append(Ground(self.nodes[i][j]))
 
     def __iter_bbox(self, bbox):
-        for i,j in it.product(range(bbox[1], bbox[1]+bbox[3]),
-                              range(bbox[0], bbox[0]+bbox[2])):
-            yield (i,j)
+        for i, j in it.product(range(bbox[1], bbox[1]+bbox[3]),
+                               range(bbox[0], bbox[0]+bbox[2])):
+            yield i, j
 
     def src_nodeblocks(self):
-        for i,j in self.src_idxs:
+        for i, j in self.src_idxs:
             yield self.nodes[i][j]
 
     def snk_nodeblocks(self):
-        for i,j in self.snk_idxs:
+        for i, j in self.snk_idxs:
             yield self.nodes[i][j]
 
     def run_spice_solver(self, cleanup=False):
@@ -415,6 +416,3 @@ class ROCModel(object):
         sg.get_results(self)
         if cleanup:
             sg.rm_tmp_files()
-
-
-

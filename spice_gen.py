@@ -1,5 +1,4 @@
 import re
-from sys import stdout
 import roc_model as rm
 import itertools as it
 import numpy as np
@@ -24,7 +23,7 @@ class SpiceGenerator(object):
     def rm_tmp_files(self):
         sp.run('rm -f {} {}'.format(self.rel_in_path,
                                     self.rel_out_path),
-                                    shell=True)
+               shell=True)
 
     def set_id_pads(self, width):
         ps = str(width)
