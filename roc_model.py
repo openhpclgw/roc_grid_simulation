@@ -233,7 +233,7 @@ class ROCModel(object):
 
         def direct_copy(grid):
             self.mesh = grid.copy()
-            return 1.
+            self.exp_factor = 1.
 
         def interpolate_copy(grid):
             grid_size = len(grid)  # number of cells
@@ -306,10 +306,10 @@ class ROCModel(object):
             # average the mesh
             # self.mesh = [m/(extrp_factor**2) for m in self.mesh]
             self.mesh = self.mesh/(extrp_factor**2)
+            self.exp_factor = extrp_factor
             # print(extrp_factor)
             # print(grid)
             # print(self.mesh)
-            return extrp_factor
         #
         # end of interpolate
         #
@@ -358,7 +358,7 @@ class ROCModel(object):
     def load_problem(self, hp):
         grid = hp.gen_matrix()
         conductance = hp.conductance
-        self.exp_factor = self.create_mesh(grid)
+        self.create_mesh(grid)
         self.init_nodes()
         self.init_links(conductance)
         self.init_source(hp)
