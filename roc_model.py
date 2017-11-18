@@ -1,32 +1,7 @@
 import numpy as np
 import itertools as it
 from spice_gen import SpiceGenerator
-
-
-class Coord(object):
-    def __init__(self, i, j):
-        self.i = i
-        self.j = j
-        self.__coord = (i, j)
-
-    def __getitem__(self, key):
-        return self.__coord[key]
-
-    def __str__(self):
-        return str(self.__coord)
-
-    def distance(self, other):
-        return abs(self.i-other.i) + abs(self.j-other.j)
-
-    def is_neighbor(self, other):
-        return self.distance(other) == 1
-
-    def is_h(self, other):
-        return abs(self.j-other.j) == 1
-
-    # this should be enough to run the logic for now
-    def __gt__(self, o):
-        return self.i > o.i or (self.i == o.i and self.j > o.j)
+from common import *
 
 
 # Resistance is a simple spice object
@@ -318,8 +293,10 @@ class ROCModel(object):
         grid_w = len(grid[0])
 
         if grid_w <= self.w:
+            print('Direct copy')
             return direct_copy(grid)
         else:  # problem is larger than the mesh
+            print('Interp copy')
             return interpolate_copy(grid)
     #
     # end of create_mesh
@@ -337,7 +314,7 @@ class ROCModel(object):
         self.nodes = [[NodeBlock(Coord(i, j), self.h)
                       for j in wr] for i in hr]
 
-    def init_links(self, conductance):
+    def init_links(self):
         # assert h = w
         full_range = range(self.w)
         short_range = range(self.w-1)
@@ -345,61 +322,117 @@ class ROCModel(object):
         # generate row resistors
         self.links = []
         for i, j in it.product(full_range, short_range):
-            self.links.append(MeshResistance(conductance,
+            self.links.append(MeshResistance(self.prob_conductance,
                                              self.nodes[i][j],
                                              self.nodes[i][j+1]))
 
         # generate column resistors
         for i, j in it.product(short_range, full_range):
-            self.links.append(MeshResistance(conductance,
+            self.links.append(MeshResistance(self.prob_conductance,
                                              self.nodes[i][j],
                                              self.nodes[i+1][j]))
 
     def load_problem(self, hp):
+        self.hp = hp
         grid = hp.gen_matrix()
-        conductance = hp.conductance
+        self.prob_conductance = hp.conductance
+        self.init_mesh(grid)
+
+    def init_mesh(self, grid):
         self.create_mesh(grid)
         self.init_nodes()
-        self.init_links(conductance)
-        self.init_source(hp)
-        self.init_sink(hp)
-        self.prob_conductance = conductance
+        self.init_links()
+        self.init_source(self.hp) # FIXME hp can go away
+        self.init_sink(self.hp)
 
-    def init_source(self, hp):
+    def init_virtualized_mesh(self, grid, vslice):
+        print('Initializing virtualized mesh')
+        # TODO TODO TODO here the data from the previous grid is not
+        # transferred to the new virtualized grid. Only sources and
+        # sinks are -correctly- created but the node potentials from the
+        # initial interpolated run is lost
+        self.create_mesh(grid)
+        self.init_nodes()
+        self.init_links()
+        self.init_source(self.hp, vslice) # FIXME hp can go away
+        self.init_sink(self.hp, vslice)
+        print('Initialized virtualized mesh')
+
+    def create_grid(self):
+        ef = self.exp_factor
+        if int(ef) != ef:
+            print('Warning: Extrapolation factor is not integer')
+
+        interm_g_s = int(self.h*ef)
+        interm_grid = np.zeros((interm_g_s, interm_g_s))
+        print(len(self.nodes))
+        for i,j in it.product(range(interm_g_s), range(interm_g_s)):
+            interm_grid[i][j] = self.nodes[int(i/ef)][int(j/ef)].potential
+
+        return interm_grid
+
+    def clear_mesh(self):
+        self.nodes.clear()
+        self.links.clear()
+        self.src.clear()
+        self.src_bboxs.clear()
+        self.src_idxs.clear()
+        self.snk.clear()
+        self.snk_bboxs.clear()
+        self.snk_idxs.clear()
+
+
+    def init_source(self, hp, vslice=None):
         # what to do in case of indivisible sizes?
-        self.src_bboxs = [(int(s[0]/self.exp_factor),
-                          int(s[1]/self.exp_factor),
-                          int(np.ceil(s[2]/self.exp_factor)),
-                          int(np.ceil(s[3]/self.exp_factor)))
-                          for s in hp.source_iter()]
+        if vslice == None:
+            self.src_bboxs = [BoundingBox(int(s[0]/self.exp_factor),
+                              int(s[1]/self.exp_factor),
+                              int(np.ceil(s[2]/self.exp_factor)),
+                              int(np.ceil(s[3]/self.exp_factor)))
+                              for s in hp.sources]
+        else:
+            mesh_bbox = BoundingBox(vslice.left,vslice.top,self.w,self.h)
+            self.src_bboxs = []
+            for s in hp.sources:
+                tmp = mesh_bbox&s
+                if tmp is not None:
+                    self.src_bboxs.append(tmp.lo(-vslice.left).to(-vslice.top))
+
         self.src_idxs = set()
         self.src = []
         for s in self.src_bboxs:
-            self.src_idxs |= {idx for idx in self.__iter_bbox(s)}
+            self.src_idxs |= {idx for idx in s}
 
         for i, j in self.src_idxs:
             self.src.append(VoltageSource(self.mesh[i][j],
                                           self.nodes[i][j]))
 
-    def init_sink(self, hp):
+    def init_sink(self, hp, vslice=None):
         # what to do in case of indivisible sizes?
-        self.snk_bboxs = [(int(s[0]/self.exp_factor),
-                          int(s[1]/self.exp_factor),
-                          int(np.ceil(s[2]/self.exp_factor)),
-                          int(np.ceil(s[3]/self.exp_factor)))
-                          for s in hp.sink_iter()]
+        if vslice==None:
+            self.snk_bboxs = [BoundingBox(int(s[0]/self.exp_factor),
+                              int(s[1]/self.exp_factor),
+                              int(np.ceil(s[2]/self.exp_factor)),
+                              int(np.ceil(s[3]/self.exp_factor)))
+                              for s in hp.sinks]
+        else:
+            mesh_bbox = BoundingBox(vslice.left,vslice.top,self.w,self.h)
+            self.snk_bboxs = []
+            for s in hp.sinks:
+                tmp = mesh_bbox&s
+                if tmp is not None:
+                    self.snk_bboxs.append(tmp.lo(-vslice.left).to(-vslice.top))
+                else:
+                    print('No intersection')
+
+        print(self.snk_bboxs)
         self.snk_idxs = set()
         self.snk = []
         for s in self.snk_bboxs:
-            self.snk_idxs |= {idx for idx in self.__iter_bbox(s)}
+            self.snk_idxs |= {idx for idx in s}
 
         for i, j in self.snk_idxs:
             self.snk.append(Ground(self.nodes[i][j]))
-
-    def __iter_bbox(self, bbox):
-        for i, j in it.product(range(bbox[1], bbox[1]+bbox[3]),
-                               range(bbox[0], bbox[0]+bbox[2])):
-            yield i, j
 
     def src_nodeblocks(self):
         for i, j in self.src_idxs:
@@ -409,10 +442,60 @@ class ROCModel(object):
         for i, j in self.snk_idxs:
             yield self.nodes[i][j]
 
-    def run_spice_solver(self, cleanup=False):
+    def node_potentials(self):
+        ms = self.h
+        return np.array([[self.nodes[j][i].potential
+                        for i in range(ms)] for j in range(ms)])
+
+    def run_spice_solver(self, cleanup=False, virtualize=False):
+        mesh_size = self.h
+        grid_size = self.hp.N
+
+        def get_grid_slice(grid, bbox):
+            grid_slice = np.zeros((bbox.width, bbox.height))
+
+            i_off = bbox.top
+            j_off = bbox.left
+
+            for i,j in it.product(range(mesh_size), range(mesh_size)):
+                grid_slice[i][j] = grid[i-i_off][j-j_off]
+
+            return grid_slice
+
+        def grid_slices():
+            ep = self.exp_factor
+            slice_range = range(0, grid_size, mesh_size)
+            count = 0
+            for l,t in it.product(slice_range, slice_range):
+                yield BoundingBox(l,t,mesh_size, mesh_size)
+                count += 1
+                if count == 3:
+                    break
+
+
+        def update_grid_slice(grid, data, bbox):
+            i_off = bbox.top
+            j_off = bbox.left
+
+            for i,j in it.product(range(mesh_size), range(mesh_size)):
+                grid[i+i_off][j+j_off] = data[i][j]
+
         sg = SpiceGenerator()
         sg.create_script(self)
         sg.run()
         sg.get_results(self)
+        grid = self.create_grid()
+        if mesh_size < grid_size and virtualize:
+            for s in grid_slices():
+                print(s)
+                self.clear_mesh()
+                self.init_virtualized_mesh(get_grid_slice(grid, s), s)
+                sg.create_script(self)
+                sg.run()
+                sg.get_results(self)
+                update_grid_slice(grid, self.node_potentials(), s)
+
+        self.final_grid = grid
+
         if cleanup:
             sg.rm_tmp_files()

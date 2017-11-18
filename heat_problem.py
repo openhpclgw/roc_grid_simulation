@@ -1,45 +1,57 @@
 import numpy as np
 import itertools as it
+from common import *
+
+# This is to be used for creating intermediate heat problems for
+# virtualization
+class PointHeatSource(object):
+    def __init__(self, coord, val):
+        self.coord = coord
+        self.val = val
 
 
 class HeatProblem(object):
     # bbox : (left, top, width, height)
     def __init__(self, N, sources, sinks, conductance,
                  src_val=1., sink_val=0.):
+
+        def scalar_iter(obj):
+            if isinstance(obj, list):
+                for i in obj:
+                    yield i
+            else:
+                yield obj
+
         self.N = N
 
-        self.sources = sources
+        self.sources = [BoundingBox(*s) for s in scalar_iter(sources)]
         self.source_idxs = set()
-        for s in self.source_iter():
-            self.source_idxs |= {idx for idx in self.__iter_bbox(s)}
+        for s in self.sources:
+            self.source_idxs |= {idx for idx in s}
 
-        self.sinks = sinks
+        self.sinks = [BoundingBox(*s) for s in scalar_iter(sinks)]
         self.sink_idxs = set()
-        for s in self.sink_iter():
-            self.sink_idxs |= {idx for idx in self.__iter_bbox(s)}
+        for s in self.sinks:
+            self.sink_idxs |= {idx for idx in s}
 
         self.conductance = conductance
         self.src_val = src_val
         self.sink_val = sink_val
 
-    def __iter_bbox(self, bbox):
-        for i, j in it.product(range(bbox[1], bbox[1]+bbox[3]),
-                               range(bbox[0], bbox[0]+bbox[2])):
-            yield i, j
 
-    def source_iter(self):
-        if isinstance(self.sources, list):
-            for s in self.sources:
-                yield s
-        else:
-            yield self.sources
+    # def source_iter(self):
+        # if isinstance(self.sources, list):
+            # for s in self.sources:
+                # yield s
+        # else:
+            # yield self.sources
 
-    def sink_iter(self):
-        if isinstance(self.sinks, list):
-            for s in self.sinks:
-                yield s
-        else:
-            yield self.sinks
+    # def sink_iter(self):
+        # if isinstance(self.sinks, list):
+            # for s in self.sinks:
+                # yield s
+        # else:
+            # yield self.sinks
 
     def __is_in_bbox(self, bbox, point):
         i, j = point

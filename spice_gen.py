@@ -18,7 +18,6 @@ class SpiceGenerator(object):
             filename = '__autogen_tmp'
         self.rel_in_path = '{}/{}.cir'.format(self.tmp_folder, filename)
         self.rel_out_path = '{}/{}.out'.format(self.tmp_folder, filename)
-        self.file = open(self.rel_in_path, 'w')
 
     def rm_tmp_files(self):
         sp.run('rm -f {} {}'.format(self.rel_in_path,
@@ -51,6 +50,7 @@ class SpiceGenerator(object):
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
 
     def create_script(self, roc_model):
+        self.file = open(self.rel_in_path, 'w')
         # mesh size
         self.mesh_size = len(roc_model.mesh)
         self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
