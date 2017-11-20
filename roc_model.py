@@ -120,6 +120,9 @@ class NodeBlock(object):
 
         self.potential = 0.
 
+        # initial condition to be used in virtualized runs
+        self.ic = 0.
+
         # TODO this should go to some sort of a global config file
         self.directions = ('E', 'W', 'N', 'S')
 
@@ -343,6 +346,7 @@ class ROCModel(object):
         self.init_nodes()
         self.init_links()
         self.init_source(self.hp) # FIXME hp can go away
+        self.init_ics(self.hp)
         self.init_sink(self.hp)
 
     def init_virtualized_mesh(self, grid, vslice):
@@ -355,6 +359,7 @@ class ROCModel(object):
         self.init_nodes()
         self.init_links()
         self.init_source(self.hp, vslice) # FIXME hp can go away
+        self.init_ics(self.hp, vslice)
         self.init_sink(self.hp, vslice)
         print('Initialized virtualized mesh')
 
@@ -377,6 +382,7 @@ class ROCModel(object):
         self.src.clear()
         self.src_bboxs.clear()
         self.src_idxs.clear()
+        self.ics = np.zeros((self.w, self.w))
         self.snk.clear()
         self.snk_bboxs.clear()
         self.snk_idxs.clear()
@@ -396,7 +402,8 @@ class ROCModel(object):
             for s in hp.sources:
                 tmp = mesh_bbox&s
                 if tmp is not None:
-                    self.src_bboxs.append(tmp.lo(-vslice.left).to(-vslice.top))
+                    self.src_bboxs.append(
+                            tmp.lo(-vslice.left).to(-vslice.top))
 
         self.src_idxs = set()
         self.src = []
@@ -406,6 +413,12 @@ class ROCModel(object):
         for i, j in self.src_idxs:
             self.src.append(VoltageSource(self.mesh[i][j],
                                           self.nodes[i][j]))
+
+    def init_ics(self, hp, vslice=None):
+        ms = self.w
+        for i,j in it.product(range(ms), range(ms)):
+            if (i,j) not in self.src_idxs:
+                self.nodes[i][j].ic = self.mesh[i][j]
 
     def init_sink(self, hp, vslice=None):
         # what to do in case of indivisible sizes?
@@ -469,7 +482,7 @@ class ROCModel(object):
             for l,t in it.product(slice_range, slice_range):
                 yield BoundingBox(l,t,mesh_size, mesh_size)
                 count += 1
-                if count == 3:
+                if count == 2:
                     break
 
 

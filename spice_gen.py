@@ -48,6 +48,7 @@ class SpiceGenerator(object):
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
+        self.__icfrmt = '.IC V({node}) {val}'
 
     def create_script(self, roc_model):
         self.file = open(self.rel_in_path, 'w')
@@ -67,9 +68,14 @@ class SpiceGenerator(object):
         # generate nodes 
         self.add_block_comment("Node subcircuits")
         for i, j in it.product(full_range, full_range):
+            n = roc_model.nodes[i][j]
             self.add_comment("Node " + str((i, j)))
-            for c in roc_model.nodes[i][j].components():
+            for c in n.components():
                 self.component_codegen(c)
+
+            # generate the initial condition
+            if n.ic != 0.:
+                self.ic_codegen(n.sname, n.ic)
 
         # generate source
         self.add_block_comment("Sources")
@@ -213,6 +219,9 @@ class SpiceGenerator(object):
             print("error")
         c.sname = tmp_name
         
+    def ic_codegen(self, node, val):
+        self.gen(self.__icfrmt.format(node=node, val=val))
+
     def gen(self, s):
         self.file.write('{}\n'.format(s))
         return s.split()[0]
