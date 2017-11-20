@@ -38,6 +38,7 @@ test.py
 
 I use the following software/libs
 
+```
 Linux 4.13.4
 Python 3.6.2
   numpy
@@ -49,6 +50,7 @@ Python 3.6.2
   sys
   subprocess
 ngspice 27
+```
 
 # Using other SPICE simulators
 
