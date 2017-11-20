@@ -64,17 +64,22 @@ def node_currents(m):
         print(nodal_current_dict(n))
 
 
-def node_potentials(m):
-    ms = m.h
-    return np.array([[m.nodes[j][i].potential
-                    for i in range(ms)] for j in range(ms)])
 
+def plot_virtual_heatmap(m, current_flow_plot=None):
+    import matplotlib.pyplot as plt
+
+    ms = m.hp.N
+    potentials = m.final_grid
+    fig, axes = plt.subplots(1, 1)
+    axes.imshow(potentials, cmap='hot', interpolation='nearest')
+
+    plt.show()
 
 def plot_heatmap(m, current_flow_plot=None):
     import matplotlib.pyplot as plt
 
     ms = m.h
-    potentials = node_potentials(m)
+    potentials = m.final_grid 
     fig, axes = plt.subplots(1, 1)
     axes.imshow(potentials, cmap='hot', interpolation='nearest')
 
