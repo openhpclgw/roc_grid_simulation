@@ -490,9 +490,11 @@ class ROCModel(object):
 
             return grid_slice
 
-        def grid_slices():
+        def grid_slices(vstep_size=0):
             ep = self.exp_factor
-            slice_range = range(0, grid_size, mesh_size)
+            if vstep_size == 0:
+                vstep_size = mesh_size
+            slice_range = range(0, grid_size-mesh_size+1, vstep_size)
             count = 0
             for l,t in it.product(slice_range, slice_range):
                 yield BoundingBox(l,t,mesh_size, mesh_size)
@@ -518,21 +520,21 @@ class ROCModel(object):
         grid = self.create_grid()
         count = 0
         if mesh_size < grid_size and virtualize:
-            for s in grid_slices():
-                print('Slice')
-                print(s)
-                print('PRE')
-                grid_debug()
+            for s in grid_slices(vstep_size=1):
+                # print('Slice')
+                # print(s)
+                # print('PRE')
+                # grid_debug()
                 self.clear_mesh()
                 self.init_virtualized_mesh(get_grid_slice(grid, s), s)
                 sg.create_script(self, count)
                 sg.run(count)
                 sg.get_results(self, count)
-                print('GENERATED')
-                print(self.node_potentials())
+                # print('GENERATED')
+                # print(self.node_potentials())
                 update_grid_slice(grid, self.node_potentials(), s)
-                print('POST')
-                grid_debug()
+                # print('POST')
+                # grid_debug()
                 count += 1
 
         self.final_grid = grid
