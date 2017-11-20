@@ -7,7 +7,8 @@ from heat_problem import HeatProblem
 from analysis_utils import (aggregate_current_vectors,
                             print_current_table,
                             energy_flow,
-                            plot_heatmap)
+                            plot_heatmap,
+                            plot_virtual_heatmap)
 
 
 # I am using python 3.6.1
@@ -16,10 +17,10 @@ from analysis_utils import (aggregate_current_vectors,
 # N = 100
 # source = (10, 10, 5, 5)
 # sink = (55, 10, 5, 50)
-N = 20
-source = (2, 2, 7, 10)
-sink = [(11, 2, 1, 10),
-        (5, 15, 2, 2)]
+N = 40
+source = (4, 4, 7, 10)
+sink = [(20, 4, 1, 10),
+        (10, 30, 2, 2)]
 # source = (4, 4, 4, 12)
 # sink = (12, 4, 4, 12)
 cond_exp = -3
@@ -34,4 +35,4 @@ m = ROCModel(mesh_size)
 m.load_problem(hp)
 m.run_spice_solver(virtualize=True)
 
-plot_heatmap(m, current_flow_plot='stream')
+plot_heatmap(m)

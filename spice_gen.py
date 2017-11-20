@@ -15,13 +15,24 @@ class SpiceGenerator(object):
 
         # create file handle
         if filename == '':
-            filename = '__autogen_tmp'
-        self.rel_in_path = '{}/{}.cir'.format(self.tmp_folder, filename)
-        self.rel_out_path = '{}/{}.out'.format(self.tmp_folder, filename)
+            self.filename = '__autogen_tmp'
+        else:
+            self.filename = filename
+
+
+    def path_helper(self, path_frmt, suffix):
+        return path_frmt.format(self.tmp_folder, self.filename, suffix)
+
+    def rel_out_path(self, suffix=''):
+        return self.path_helper('{}/{}_{}.out', suffix)
+
+    def rel_in_path(self, suffix=''):
+        return self.path_helper('{}/{}_{}.cir', suffix)
+
 
     def rm_tmp_files(self):
-        sp.run('rm -f {} {}'.format(self.rel_in_path,
-                                    self.rel_out_path),
+        sp.run('rm -f {} {}'.format(self.rel_in_path(),
+                                    self.rel_out_path()),
                shell=True)
 
     def set_id_pads(self, width):
@@ -50,8 +61,8 @@ class SpiceGenerator(object):
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
         self.__icfrmt = '.IC V({node}) {val}'
 
-    def create_script(self, roc_model):
-        self.file = open(self.rel_in_path, 'w')
+    def create_script(self, roc_model, suffix=''):
+        self.file = open(self.rel_in_path(suffix), 'w')
         # mesh size
         self.mesh_size = len(roc_model.mesh)
         self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
@@ -124,13 +135,14 @@ class SpiceGenerator(object):
     #
     # simulator utils
     #
-    def run(self):
-        sp.run('ngspice -b {} -o {} >/dev/null'.format(self.rel_in_path,
-                                            self.rel_out_path),
+    def run(self, suffix=''):
+        sp.run('ngspice -b {} -o {} >/dev/null'.format(
+                                            self.rel_in_path(suffix),
+                                            self.rel_out_path(suffix)),
                                             shell=True)
 
-    def get_results(self, roc_model):
-        result_dict = self.generate_result_dict()
+    def get_results(self, roc_model, suffix=''):
+        result_dict = self.generate_result_dict(suffix)
 
         for mr in roc_model.links:
             mr.ammeter.current = result_dict[mr.ammeter.sname]
@@ -142,7 +154,7 @@ class SpiceGenerator(object):
             sym = 'V('+node.sname+')'
             node.potential = result_dict[sym]
 
-    def generate_result_dict(self):
+    def generate_result_dict(self, suffix):
         header_regexp = '^Index\s+time\s+(.*)$'
         value_regexp = '^0\s+\d[.]\d+e[+-]\d+\s+(\-?\d[.]\d+e[+-]\d+)'
         header_regobj = re.compile(header_regexp)
@@ -153,7 +165,7 @@ class SpiceGenerator(object):
         looking_for_header = True
         name = ''
         val = 0.
-        with open(self.rel_out_path) as f:
+        with open(self.rel_out_path(suffix)) as f:
             for line in f:
                 if looking_for_header:
                     m = header_regobj.match(line)

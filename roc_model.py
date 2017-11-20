@@ -296,10 +296,8 @@ class ROCModel(object):
         grid_w = len(grid[0])
 
         if grid_w <= self.w:
-            print('Direct copy')
             return direct_copy(grid)
         else:  # problem is larger than the mesh
-            print('Interp copy')
             return interpolate_copy(grid)
     #
     # end of create_mesh
@@ -346,8 +344,8 @@ class ROCModel(object):
         self.init_nodes()
         self.init_links()
         self.init_source(self.hp) # FIXME hp can go away
-        self.init_ics(self.hp)
         self.init_sink(self.hp)
+        self.init_ics(self.hp)
 
     def init_virtualized_mesh(self, grid, vslice):
         print('Initializing virtualized mesh')
@@ -359,8 +357,8 @@ class ROCModel(object):
         self.init_nodes()
         self.init_links()
         self.init_source(self.hp, vslice) # FIXME hp can go away
-        self.init_ics(self.hp, vslice)
         self.init_sink(self.hp, vslice)
+        self.init_ics(self.hp, vslice)
         print('Initialized virtualized mesh')
 
     def create_grid(self):
@@ -370,7 +368,6 @@ class ROCModel(object):
 
         interm_g_s = int(self.h*ef)
         interm_grid = np.zeros((interm_g_s, interm_g_s))
-        print(len(self.nodes))
         for i,j in it.product(range(interm_g_s), range(interm_g_s)):
             interm_grid[i][j] = self.nodes[int(i/ef)][int(j/ef)].potential
 
@@ -404,6 +401,7 @@ class ROCModel(object):
                 if tmp is not None:
                     self.src_bboxs.append(
                             tmp.lo(-vslice.left).to(-vslice.top))
+            print(self.src_bboxs)
 
         self.src_idxs = set()
         self.src = []
@@ -420,6 +418,15 @@ class ROCModel(object):
             if (i,j) not in self.src_idxs:
                 self.nodes[i][j].ic = self.mesh[i][j]
 
+        # if this was a vslice and there was no source within the slice
+        # then use the boundaries as voltage source
+        if vslice is not None:
+            if len(self.src_idxs) == 0:
+                for i, j in self.boundaries():
+                    if (i,j) not in self.snk_idxs:
+                        self.src.append(VoltageSource(self.mesh[i][j],
+                                                      self.nodes[i][j]))
+
     def init_sink(self, hp, vslice=None):
         # what to do in case of indivisible sizes?
         if vslice==None:
@@ -435,10 +442,7 @@ class ROCModel(object):
                 tmp = mesh_bbox&s
                 if tmp is not None:
                     self.snk_bboxs.append(tmp.lo(-vslice.left).to(-vslice.top))
-                else:
-                    print('No intersection')
 
-        print(self.snk_bboxs)
         self.snk_idxs = set()
         self.snk = []
         for s in self.snk_bboxs:
@@ -460,6 +464,17 @@ class ROCModel(object):
         return np.array([[self.nodes[j][i].potential
                         for i in range(ms)] for j in range(ms)])
 
+    # iterate mesh boundaries wioth no particular order
+    def boundaries(self):
+        ms = self.h
+        for i in range(ms):
+            yield (i,0)
+            yield (i,ms-1)
+
+        for j in range(1, ms-1):
+            yield (0,j)
+            yield (ms-1,j)
+
     def run_spice_solver(self, cleanup=False, virtualize=False):
         mesh_size = self.h
         grid_size = self.hp.N
@@ -471,7 +486,7 @@ class ROCModel(object):
             j_off = bbox.left
 
             for i,j in it.product(range(mesh_size), range(mesh_size)):
-                grid_slice[i][j] = grid[i-i_off][j-j_off]
+                grid_slice[i][j] = grid[i+i_off][j+j_off]
 
             return grid_slice
 
@@ -482,9 +497,6 @@ class ROCModel(object):
             for l,t in it.product(slice_range, slice_range):
                 yield BoundingBox(l,t,mesh_size, mesh_size)
                 count += 1
-                if count == 2:
-                    break
-
 
         def update_grid_slice(grid, data, bbox):
             i_off = bbox.top
@@ -493,22 +505,38 @@ class ROCModel(object):
             for i,j in it.product(range(mesh_size), range(mesh_size)):
                 grid[i+i_off][j+j_off] = data[i][j]
 
+        def grid_debug():
+            for i in range(grid_size):
+                for j in range(grid_size):
+                    print('{:>5.2f} '.format(grid[i][j]), end='')
+                print()
+
         sg = SpiceGenerator()
         sg.create_script(self)
         sg.run()
         sg.get_results(self)
         grid = self.create_grid()
+        count = 0
         if mesh_size < grid_size and virtualize:
             for s in grid_slices():
+                print('Slice')
                 print(s)
+                print('PRE')
+                grid_debug()
                 self.clear_mesh()
                 self.init_virtualized_mesh(get_grid_slice(grid, s), s)
-                sg.create_script(self)
-                sg.run()
-                sg.get_results(self)
+                sg.create_script(self, count)
+                sg.run(count)
+                sg.get_results(self, count)
+                print('GENERATED')
+                print(self.node_potentials())
                 update_grid_slice(grid, self.node_potentials(), s)
+                print('POST')
+                grid_debug()
+                count += 1
 
         self.final_grid = grid
 
         if cleanup:
             sg.rm_tmp_files()
+

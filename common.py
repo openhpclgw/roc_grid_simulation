@@ -63,10 +63,10 @@ class BoundingBox(object):
 
         i_overlap = min(big_i.height,
                         small_i.top+small_i.height-big_i.top)
-        print(self)
-        print(other)
-        print(i_overlap)
-        print(j_overlap)
+        # print(self)
+        # print(other)
+        # print(i_overlap)
+        # print(j_overlap)
 
         if i_overlap>0 and j_overlap>0:
             return BoundingBox(big_j.left, big_i.top,

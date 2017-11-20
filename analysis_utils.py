@@ -65,14 +65,22 @@ def node_currents(m):
 
 
 
+def plot_virtual_heatmap(m, current_flow_plot=None):
+    import matplotlib.pyplot as plt
+
+    ms = m.hp.N
+    potentials = m.final_grid
+    fig, axes = plt.subplots(1, 1)
+    axes.imshow(potentials, cmap='hot', interpolation='nearest')
+
+    plt.show()
 
 def plot_heatmap(m, current_flow_plot=None):
     import matplotlib.pyplot as plt
 
     ms = m.h
-    potentials = m.node_potentials()
+    potentials = m.final_grid 
     fig, axes = plt.subplots(1, 1)
-    print(potentials)
     axes.imshow(potentials, cmap='hot', interpolation='nearest')
 
     if current_flow_plot is not None:
