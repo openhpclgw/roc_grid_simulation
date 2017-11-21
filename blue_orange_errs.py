@@ -11,7 +11,7 @@ from analysis_utils import (aggregate_current_vectors,
                             energy_flow,
                             plot_heatmap)
 
-exp_largest_mesh = 5
+exp_largest_mesh = 4
 prob_size = 2**exp_largest_mesh
 source = (0, 0, 1, 1)
 sink = (prob_size-1, prob_size-1, 1, 1)
@@ -54,5 +54,10 @@ for exp_mesh_size, mesh in meshes.items():
 sizes = [2**i for i in exp_size_range]
 print(blue_errs)
 print(orange_errs)
-plt.plot(blue_errs, sizes, orange_errs, sizes)
+fig, ax = plt.subplots(1,1)
+ax.plot(sizes, blue_errs, sizes, orange_errs)
+ax.set_xticks(sizes)
+ax.set_xticklabels(sizes)
+ax.set_ylim((0, max(max(blue_errs), max(orange_errs))*1.1))
+ax.set_xlim(0,2**(exp_largest_mesh-1))
 plt.show()

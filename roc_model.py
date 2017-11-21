@@ -475,7 +475,8 @@ class ROCModel(object):
             yield (0,j)
             yield (ms-1,j)
 
-    def run_spice_solver(self, cleanup=False, virtualize=False):
+    def run_spice_solver(self, filename='', 
+                         cleanup=False, virtualize=False):
         mesh_size = self.h
         grid_size = self.hp.N
 
@@ -513,7 +514,7 @@ class ROCModel(object):
                     print('{:>5.2f} '.format(grid[i][j]), end='')
                 print()
 
-        sg = SpiceGenerator()
+        sg = SpiceGenerator(filename)
         sg.create_script(self)
         sg.run()
         sg.get_results(self)
