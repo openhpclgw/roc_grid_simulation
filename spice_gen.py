@@ -176,12 +176,9 @@ class SpiceGenerator(object):
         looking_for_header = True
         name = ''
         val = 0.
-        # print(self.rel_out_path(suffix))
-        fname = self.filename if cached_file else self.rel_out_path(suffix)
-        # print(cached_file)
-        # print(fname+'.out')
+        fname = self.filename+'.out' if cached_file else self.rel_out_path(suffix)
 
-        with open(fname+'.out') as f:
+        with open(fname) as f:
             for line in f:
                 if looking_for_header:
                     m = header_regobj.match(line)
