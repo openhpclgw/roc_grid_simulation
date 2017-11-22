@@ -6,23 +6,19 @@ from common import *
 
 # Resistance is a simple spice object
 class Resistance(object):
-    counter = 0
-
-    def __init__(self, r, node1, node2, uname=''):
-        self.uid = Resistance.counter
+    def __init__(self, r, node1, node2, cntrs):
+        self.uid = cntrs.r
         self.r = r
         self.node1 = node1
         self.node2 = node2
-        self.uname = uname
-        Resistance.counter += 1
+        # self.uname = uname
+        cntrs.r += 1
 
 
 # VoltageSource objects can be connected to any kind of node
 class VoltageSource(object):
-    counter = 0
-
-    def __init__(self, v, node1, node2='0', uname=''):
-        self.uid = VoltageSource.counter
+    def __init__(self, v, node1, node2, cntrs): 
+        self.uid = cntrs.v
         self.v = v
         if isinstance(node1, str):
             self.node1 = node1
@@ -35,24 +31,29 @@ class VoltageSource(object):
             self.node2 = node2
         elif isinstance(node2, NodeBlock):
             self.node2 = node2.nodename
+        elif isinstance(node2, int): # Ground?
+            if node2 == 0:
+                self.node2 = '0'
         else:
             print('Unrecognized node' + str(node2))
 
-        self.uname = uname
+        # self.uname = uname
 
         self.sname = ''
 
-        VoltageSource.counter += 1
+        cntrs.v += 1
 
 
 class Ground(VoltageSource):
-    def __init__(self, node):
-        VoltageSource.__init__(self, v=0, node1=node, node2='0')
+    def __init__(self, node, cntrs):
+        VoltageSource.__init__(self, v=0, node1=node, node2='0',
+                               cntrs=cntrs)
 
 
 class Ammeter(VoltageSource):
-    def __init__(self, node1, node2):
-        VoltageSource.__init__(self, v=0, node1=node1, node2=node2)
+    def __init__(self, node1, node2, cntrs):
+        VoltageSource.__init__(self, v=0, node1=node1, node2=node2,
+                               cntrs=cntrs)
         self.current = 0.
 
     def set_bias(self, v):
@@ -64,7 +65,7 @@ class Ammeter(VoltageSource):
 
 # MeshResistances must connect two node block objects
 class MeshResistance(object):
-    def __init__(self, r, nodeblock1, nodeblock2, uname=''):
+    def __init__(self, r, nodeblock1, nodeblock2, cntrs): 
         # check if nodeblock2 comes "after" nodeblock1
         if not (nodeblock2 > nodeblock1):
             print('2nd NodeBlock of MeshResistance must come after the\
@@ -83,13 +84,14 @@ class MeshResistance(object):
         self.node1, self.node2 = ts
 
         self.orientation = 'H' if nodeblock1.is_h(nodeblock2) else 'V'
-        self.resistance = Resistance(r, self.node1, self.node2, uname)
+        self.resistance = Resistance(r, self.node1, self.node2,
+                                     cntrs)
 
         # add internal subnode to attach the ammeter
         self.innodeid = str(self.resistance.uid)+'sub'
 
         # add ammeter
-        self.ammeter = Ammeter(self.node1, self.innodeid)
+        self.ammeter = Ammeter(self.node1, self.innodeid, cntrs)
         self.resistance.node1 = self.innodeid
 
     def components(self):
@@ -106,7 +108,7 @@ class MeshResistance(object):
 
 
 class NodeBlock(object):
-    def __init__(self, coord, mesh_size):
+    def __init__(self, coord, mesh_size, cntrs):
         def gen_node_name(coord, d=''):
             return 'N{}_{}{}'.format(coord[0], coord[1], d)
 
@@ -129,7 +131,9 @@ class NodeBlock(object):
         for d in self.inward_directions():
             tmp_subnode = gen_node_name(coord, d)
             self.subnodes[d] = tmp_subnode
-            self.ammeters[d] = Ammeter(tmp_subnode, self.nodename)
+            self.ammeters[d] = Ammeter(node1=tmp_subnode,
+                                       node2=self.nodename,
+                                       cntrs=cntrs)
 
     def components(self):
         for d, a in self.ammeters.items():
@@ -198,6 +202,10 @@ class NodeBlock(object):
         v = curs['N']-curs['S']
         return u, v
 
+class CounterSet(object):
+    def __init__(self):
+        self.r = 0
+        self.v = 0
 
 class ROCModel(object):
     def __init__(self, N):
@@ -206,6 +214,8 @@ class ROCModel(object):
         self.r_counter = 0
         self.v_counter = 0
         self.mesh = np.zeros((self.h, self.w))
+
+        self.cntrs = CounterSet()
 
     def create_mesh(self, grid):
 
@@ -312,7 +322,7 @@ class ROCModel(object):
     def init_nodes(self):
         hr = range(self.h)
         wr = range(self.w)
-        self.nodes = [[NodeBlock(Coord(i, j), self.h)
+        self.nodes = [[NodeBlock(Coord(i, j), self.h, self.cntrs)
                       for j in wr] for i in hr]
 
     def init_links(self):
@@ -325,13 +335,15 @@ class ROCModel(object):
         for i, j in it.product(full_range, short_range):
             self.links.append(MeshResistance(self.prob_conductance,
                                              self.nodes[i][j],
-                                             self.nodes[i][j+1]))
+                                             self.nodes[i][j+1],
+                                             self.cntrs))
 
         # generate column resistors
         for i, j in it.product(short_range, full_range):
             self.links.append(MeshResistance(self.prob_conductance,
                                              self.nodes[i][j],
-                                             self.nodes[i+1][j]))
+                                             self.nodes[i+1][j],
+                                             self.cntrs))
 
     def load_problem(self, hp):
         self.hp = hp
@@ -410,7 +422,9 @@ class ROCModel(object):
 
         for i, j in self.src_idxs:
             self.src.append(VoltageSource(self.mesh[i][j],
-                                          self.nodes[i][j]))
+                                          self.nodes[i][j],
+                                          0,
+                                          self.cntrs))
 
     def init_ics(self, hp, vslice=None):
         ms = self.w
@@ -425,7 +439,9 @@ class ROCModel(object):
                 for i, j in self.boundaries():
                     if (i,j) not in self.snk_idxs:
                         self.src.append(VoltageSource(self.mesh[i][j],
-                                                      self.nodes[i][j]))
+                                                      self.nodes[i][j],
+                                                      0,
+                                                      self.cntrs))
 
     def init_sink(self, hp, vslice=None):
         # what to do in case of indivisible sizes?
@@ -449,7 +465,8 @@ class ROCModel(object):
             self.snk_idxs |= {idx for idx in s}
 
         for i, j in self.snk_idxs:
-            self.snk.append(Ground(self.nodes[i][j]))
+            self.snk.append(Ground(self.nodes[i][j],
+                                   self.cntrs))
 
     def src_nodeblocks(self):
         for i, j in self.src_idxs:
@@ -476,9 +493,12 @@ class ROCModel(object):
             yield (ms-1,j)
 
     def init_from_cache(self, filename):
-        sg = SpiceGenerator(filename=filename)
+        sg = SpiceGenerator(cache_only=True, filename=filename)
+        print('sg r counter ' + str(sg.v_counter))
         sg.create_script(self)
+        print('sg r counter ' + str(sg.v_counter))
         sg.get_results(self, cached_file=True)
+        print('sg r counter ' + str(sg.v_counter))
         self.final_grid = self.create_grid()
 
     def run_spice_solver(self, filename='', 

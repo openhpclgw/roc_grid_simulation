@@ -71,7 +71,8 @@ class SpiceGenerator(object):
         self.__icfrmt = '.IC V({node}) {val}'
 
     def create_script(self, roc_model, suffix=''):
-        self.file = open(self.rel_in_path(suffix), 'w')
+        if not self.cache_only:
+            self.file = open(self.rel_in_path(suffix), 'w')
         # mesh size
         self.mesh_size = len(roc_model.mesh)
         self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
@@ -119,7 +120,8 @@ class SpiceGenerator(object):
         for mr in roc_model.links:
             self.add_iprintstmt(mr.ammeter.sname)
 
-        self.file.close()
+        if not self.cache_only:
+            self.file.close()
 
     #
     # codegen Functions
@@ -156,6 +158,9 @@ class SpiceGenerator(object):
         result_dict = self.generate_result_dict(suffix, cached_file)
 
         for mr in roc_model.links:
+            print(roc_model.w)
+            print(mr.nodeblock1.coord)
+            print(mr.nodeblock2.coord)
             mr.ammeter.current = result_dict[mr.ammeter.sname]
 
         for node in roc_model.iter_nodes():
@@ -208,7 +213,7 @@ class SpiceGenerator(object):
 
     def add_r2(self, r):
         ret = self.gen(self.__r2frmt.format(i=r.uid,
-                                     uname=self.concat_name(r.uname),
+                                     uname='', # FIXME
                                      nn1=r.node1,
                                      nn2=r.node2,
                                      r=r.r))
@@ -220,14 +225,14 @@ class SpiceGenerator(object):
         if v.v >= 0:
             ret = self.gen(
                     self.__v2frmt.format(i=v.uid,
-                                        uname=self.concat_name(v.uname),
+                                        uname='',
                                         nn1=v.node1,
                                         nn2=v.node2,
                                         v=v.v))
         elif v.v < 0:
             print("How?")
             self.__v2frmt.format(i=v.uid,
-                                uname=self.concat_name(v.uname),
+                                uname='',
                                 nn1=v.node2,
                                 nn2=v.node1,
                                 v=v.v)

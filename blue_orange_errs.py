@@ -11,7 +11,7 @@ from analysis_utils import (aggregate_current_vectors,
                             energy_flow,
                             plot_heatmap)
 
-exp_largest_mesh = 5
+exp_largest_mesh = 4
 prob_size = 2**exp_largest_mesh
 source = (0, 0, 1, 1)
 sink = (prob_size-1, prob_size-1, 1, 1)
@@ -19,7 +19,7 @@ cond_exp = -3
 conductance = 10**cond_exp
 hp = HeatProblem(prob_size, source, sink, conductance, src_val=10.)
 
-use_cached = True
+use_cached = False
 
 filename='tmp/bo_err_{}'
 
@@ -37,12 +37,16 @@ def orange_p(exp_mesh_size):
     return (val,val)
 
 def get_results(mesh, cached=False):
-    if cached:
-        mesh.load_problem(hp)
-        mesh.init_from_cache(filename.format(mesh.w))
+    import os.path
+
+    mesh.load_problem(hp)
+    f = filename.format(mesh.w)
+    exists = os.path.exists(f+'.out')
+    if cached and exists:
+        print('Using cache' + f)
+        mesh.init_from_cache(f)
     else:
-        mesh.load_problem(hp)
-        mesh.run_spice_solver(filename.format(mesh.w))
+        mesh.run_spice_solver(f)
     return mesh.final_grid
 
 base_grid = get_results(ground_truth_mesh, cached=use_cached)
