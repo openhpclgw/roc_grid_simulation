@@ -3,7 +3,7 @@ import itertools as it
 import sys
 
 
-def print_current_table(m):
+def print_current_table(m, print_checksum=False):
     frs = '{0:>9}    {1:>9}     {2}         {3:>1}'
     print(frs.format('Terminal1', 'Terminal2', 'Current', 'Direction'))
     checksum = 0.
@@ -15,7 +15,8 @@ def print_current_table(m):
                          mr.cur_direction(mr.ammeter.current)))
         checksum += abs_current
 
-    print('Checksum: {}'.format(checksum))
+    if print_checksum:
+        print('Checksum: {}'.format(checksum))
 
 
 def print_node_potentials(m):

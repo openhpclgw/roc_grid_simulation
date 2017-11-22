@@ -158,9 +158,6 @@ class SpiceGenerator(object):
         result_dict = self.generate_result_dict(suffix, cached_file)
 
         for mr in roc_model.links:
-            print(roc_model.w)
-            print(mr.nodeblock1.coord)
-            print(mr.nodeblock2.coord)
             mr.ammeter.current = result_dict[mr.ammeter.sname]
 
         for node in roc_model.iter_nodes():

@@ -413,7 +413,7 @@ class ROCModel(object):
                 if tmp is not None:
                     self.src_bboxs.append(
                             tmp.lo(-vslice.left).to(-vslice.top))
-            print(self.src_bboxs)
+            # print(self.src_bboxs)
 
         self.src_idxs = set()
         self.src = []
@@ -494,11 +494,8 @@ class ROCModel(object):
 
     def init_from_cache(self, filename):
         sg = SpiceGenerator(cache_only=True, filename=filename)
-        print('sg r counter ' + str(sg.v_counter))
         sg.create_script(self)
-        print('sg r counter ' + str(sg.v_counter))
         sg.get_results(self, cached_file=True)
-        print('sg r counter ' + str(sg.v_counter))
         self.final_grid = self.create_grid()
 
     def run_spice_solver(self, filename='', 
