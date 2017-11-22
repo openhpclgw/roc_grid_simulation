@@ -475,6 +475,12 @@ class ROCModel(object):
             yield (0,j)
             yield (ms-1,j)
 
+    def init_from_cache(self, filename):
+        sg = SpiceGenerator(filename=filename)
+        sg.create_script(self)
+        sg.get_results(self, cached_file=True)
+        self.final_grid = self.create_grid()
+
     def run_spice_solver(self, filename='', 
                          cleanup=False, virtualize=False):
         mesh_size = self.h
@@ -514,7 +520,7 @@ class ROCModel(object):
                     print('{:>5.2f} '.format(grid[i][j]), end='')
                 print()
 
-        sg = SpiceGenerator(filename)
+        sg = SpiceGenerator(filename=filename)
         sg.create_script(self)
         sg.run()
         sg.get_results(self)

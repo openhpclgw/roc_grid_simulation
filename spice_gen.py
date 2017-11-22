@@ -7,28 +7,37 @@ import subprocess as sp
 
 class SpiceGenerator(object):
 
-    def __init__(self, filename=''):
+    def __init__(self, cache_only=False, filename=''):
         # init component counters
         self.r_counter = 0
         self.v_counter = 0
         self.tmp_folder = 'tmp'
 
+        self.cache_only = cache_only
+
         # create file handle
         if filename == '':
+            self.user_fname = False
             self.filename = '__autogen_tmp'
         else:
+            self.user_fname = True
             self.filename = filename
 
-
-    def path_helper(self, path_frmt, suffix):
-        return path_frmt.format(self.tmp_folder, self.filename, suffix)
-
     def rel_out_path(self, suffix=''):
-        return self.path_helper('{}/{}_{}.out', suffix)
+        if self.user_fname:
+            return '{}.out'.format(self.filename)
+        else:
+            return '{}/{}_{}.out'.format(self.tmp_folder,
+                                         self.filename,
+                                         suffix)
 
     def rel_in_path(self, suffix=''):
-        return self.path_helper('{}/{}_{}.cir', suffix)
-
+        if self.user_fname:
+            return '{}.cir'.format(self.filename)
+        else:
+            return '{}/{}_{}.cir'.format(self.tmp_folder,
+                                         self.filename,
+                                         suffix)
 
     def rm_tmp_files(self):
         sp.run('rm -f {} {}'.format(self.rel_in_path(),
@@ -141,8 +150,10 @@ class SpiceGenerator(object):
                                             self.rel_out_path(suffix)),
                                             shell=True)
 
-    def get_results(self, roc_model, suffix=''):
-        result_dict = self.generate_result_dict(suffix)
+    def get_results(self, roc_model, suffix='',
+                    cached_file=False):
+
+        result_dict = self.generate_result_dict(suffix, cached_file)
 
         for mr in roc_model.links:
             mr.ammeter.current = result_dict[mr.ammeter.sname]
@@ -154,7 +165,7 @@ class SpiceGenerator(object):
             sym = 'V('+node.sname+')'
             node.potential = result_dict[sym]
 
-    def generate_result_dict(self, suffix):
+    def generate_result_dict(self, suffix, cached_file=False):
         header_regexp = '^Index\s+time\s+(.*)$'
         value_regexp = '^0\s+\d[.]\d+e[+-]\d+\s+(\-?\d[.]\d+e[+-]\d+)'
         header_regobj = re.compile(header_regexp)
@@ -165,7 +176,12 @@ class SpiceGenerator(object):
         looking_for_header = True
         name = ''
         val = 0.
-        with open(self.rel_out_path(suffix)) as f:
+        # print(self.rel_out_path(suffix))
+        fname = self.filename if cached_file else self.rel_out_path(suffix)
+        # print(cached_file)
+        # print(fname+'.out')
+
+        with open(fname+'.out') as f:
             for line in f:
                 if looking_for_header:
                     m = header_regobj.match(line)
@@ -235,7 +251,8 @@ class SpiceGenerator(object):
         self.gen(self.__icfrmt.format(node=node, val=val))
 
     def gen(self, s):
-        self.file.write('{}\n'.format(s))
+        if not self.cache_only:
+            self.file.write('{}\n'.format(s))
         return s.split()[0]
 
 
