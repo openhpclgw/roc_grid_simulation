@@ -7,7 +7,6 @@ from heat_problem import HeatProblem
 from analysis_utils import (aggregate_current_vectors,
                             print_current_table,
                             energy_flow,
-                            node_potentials,
                             plot_heatmap)
 
 
@@ -41,4 +40,8 @@ print('Sink in   : {}'.format(eflow_data['snk_in']))
 print('Sink out  : {}'.format(eflow_data['snk_out']))
 
 print_current_table(m)
+
+# current flows currently doesn't work correctly with the new grid
+# logic. It would probably require some post processing on the grid
+# itself (which sucks)
 plot_heatmap(m, current_flow_plot='stream')
