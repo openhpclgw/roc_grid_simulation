@@ -17,9 +17,9 @@ source = (0, 0, 1, 1)
 sink = (prob_size-1, prob_size-1, 1, 1)
 cond_exp = -3
 conductance = 10**cond_exp
-hp = HeatProblem(prob_size, source, sink, conductance, src_val=10.)
+hp = HeatProblem(prob_size, source, sink, conductance, src_val=1.)
 
-use_cached = False
+use_cached = True 
 
 filename='tmp/diag_v_{}'
 
@@ -36,14 +36,40 @@ def get_results(mesh, cached=False):
 
 res_grid = get_results(mesh, cached=use_cached)
 
+rect = 0.1,0.2,0.8,0.7
+fig = plt.figure(figsize=(15,5))
+ax = fig.add_axes(rect)
 
-fig, ax = plt.subplots(1,1)
 prob_range = range(prob_size)
 data = [res_grid[i,i] for i in prob_range]
 
-ax.plot(prob_range, data)
-ax.set_xticks(prob_range)
-ax.set_xticklabels(prob_range)
-ax.set_ylim((0, max(data)*1.1))
-ax.set_xlim(0,prob_size-1)
+def custom_plot(ax, x, y):
+    ax.plot(x, y,  marker='o',
+                   markerfacecolor='none',
+                   markeredgewidth=2)
+
+    # put only 8 ticks on x axis
+    ticks = [i for i in range(0, prob_size, int(prob_size/8))]
+
+    ax.set_xlabel('Grid point')
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(ticks)
+
+    ax.set_ylabel('Potential')
+
+    ax.set_ylim((0, max(data)*1.1))
+    ax.set_xlim(0,prob_size-1)
+
+    ax.grid(b=True, axis='x')
+    ax.grid(b=True, axis='y', linestyle='dashed')
+
+    ax.spines['top'].set_linewidth(1)
+    ax.spines['bottom'].set_linewidth(1)
+    ax.spines['left'].set_linewidth(1)
+    ax.spines['right'].set_linewidth(1)
+
+custom_plot(ax, prob_range, data)
+
+
+
 plt.show()
