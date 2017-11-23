@@ -499,7 +499,8 @@ class ROCModel(object):
         self.final_grid = self.create_grid()
 
     def run_spice_solver(self, filename='', 
-                         cleanup=False, virtualize=False):
+                         cleanup=False, virtualize=False,
+                         vstep_size=0):
         mesh_size = self.h
         grid_size = self.hp.N
 
@@ -544,7 +545,7 @@ class ROCModel(object):
         grid = self.create_grid()
         count = 0
         if mesh_size < grid_size and virtualize:
-            for s in grid_slices(vstep_size=1):
+            for s in grid_slices(vstep_size=vstep_size):
                 # print('Slice')
                 # print(s)
                 # print('PRE')

@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 from roc_model import ROCModel
 from heat_problem import HeatProblem
-from analysis_utils import print_current_table
+from analysis_utils import (print_current_table,
+                            print_node_potentials)
 
 exp_prob_size = 5
 prob_size = 2**exp_prob_size
@@ -24,4 +25,5 @@ for v in range(1,5):
     hp = HeatProblem(prob_size, source, sink, conductance, src_val=v)
     res_grid = get_results(mesh, hp)
     print_current_table(mesh)
+    print_node_potentials(mesh)
     print()

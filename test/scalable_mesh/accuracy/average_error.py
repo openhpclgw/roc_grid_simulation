@@ -20,6 +20,8 @@ conductance = 10**cond_exp
 hp = HeatProblem(prob_size, source, sink, conductance, src_val=10.)
 
 use_cached = True
+use_virtualization = True
+vstep_size = 0
 
 filename='tmp/bo_err_{}'
 ground_truth_mesh = ROCModel(2**exp_largest_mesh)
@@ -35,29 +37,51 @@ def orange_p(exp_mesh_size):
     val = 3*2**(exp_mesh_size-2)  # 3/4 point
     return (val,val)
 
-def get_results(mesh, cached=False):
+def get_results(mesh, virtualize=False, vstep_size=0, cached=False):
     import os.path
 
     mesh.load_problem(hp)
     f = filename.format(mesh.w)
     exists = os.path.exists(f+'.out')
-    if cached and exists:
+    if cached and exists and (not virtualize):
         mesh.init_from_cache(f)
     else:
-        mesh.run_spice_solver(f)
+        mesh.run_spice_solver(f if not virtualize else f+'vir',
+                              virtualize=virtualize,
+                              vstep_size=vstep_size)
     return mesh.final_grid
 
 base_grid = get_results(ground_truth_mesh, cached=use_cached)
 
-errs = []
+base_errs = []
+vrt0_errs = []
+vrtx_errs = []
 for exp_mesh_size, mesh in meshes.items():
 
     # grid is a numpy array
     tmp_grid = get_results(mesh, cached=use_cached)
-    errs.append(sum(sum(abs(base_grid-tmp_grid))))
 
-for i in range(len(errs)):
-    errs[i] /= prob_size**2
+    base_errs.append(sum(sum(abs(base_grid-tmp_grid))))
+
+    if use_virtualization:
+        vrt0_grid = get_results(mesh, virtualize=True,
+                               vstep_size=0,
+                               cached=use_cached)
+
+        vrt0_errs.append(sum(sum(abs(base_grid-vrt0_grid))))
+
+        vrtx_grid = get_results(mesh, virtualize=True,
+                               vstep_size=int(mesh.w/4),
+                               cached=use_cached)
+
+        vrtx_errs.append(sum(sum(abs(base_grid-vrtx_grid))))
+
+
+for i in range(len(base_errs)):
+    base_errs[i] /= prob_size**2
+    if use_virtualization:
+        vrt0_errs[i] /= prob_size**2
+        vrtx_errs[i] /= prob_size**2
 
 rect = 0.1,0.2,0.8,0.7
 fig = plt.figure(figsize=(10,5))
@@ -88,5 +112,11 @@ def custom_plot(ax, *xy):
     ax.spines['left'].set_linewidth(1)
     ax.spines['right'].set_linewidth(1)
 
-custom_plot(ax, sizes, errs)
+if use_virtualization:
+    custom_plot(ax, sizes, base_errs,
+                    sizes, vrt0_errs,
+                    sizes, vrtx_errs)
+else:
+    custom_plot(ax, sizes, base_errs)
+
 plt.show()
