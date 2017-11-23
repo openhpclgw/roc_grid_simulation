@@ -16,12 +16,12 @@ mesh = ROCModel(prob_size)
 
 def get_results(mesh, problem):
     mesh.load_problem(problem)
-    mesh.run_spice_solver(f)
+    mesh.run_spice_solver(filename.format(mesh.w))
     return mesh.final_grid
 
 for v in range(1,5):
     print('Source potential = {} V'.format(v))
     hp = HeatProblem(prob_size, source, sink, conductance, src_val=v)
-    res_grid = get_results(mesh, hp, cached=use_cached)
+    res_grid = get_results(mesh, hp)
     print_current_table(mesh)
     print()
