@@ -1,3 +1,7 @@
+Insall python 
+
+https://www.python.org/downloads/
+
 If you have python3 as default python set in your environment do
 
 # How to run
