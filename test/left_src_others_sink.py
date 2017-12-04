@@ -9,8 +9,8 @@ N = size
 mesh_size = size
 source = (0, 0, 1, size)
 sink = [(1, 0, size-1, 1), (size-1, 0, 1, size-1), (1, size-1, size-1, 1)]
-conductance = 10**3  # this'll be used as resistance directly
-hp = HeatProblem(N, source, sink, conductance, src_val=1.)
+conductance = 10**-3  # this'll be used as resistance directly
+hp = HeatProblem(N, source, sink, conductance, src_val=100.)
 
 m = ROCModel(mesh_size)
 m.load_problem(hp)
@@ -24,8 +24,8 @@ print('Node Currents')
 print('-------------')
 print_node_currents(m)
 print()
-print('Node Current Splits')
-print('-------------')
-print_current_splits(run_current_split_analysis(m))
+# print('Node Current Splits')
+# print('-------------')
+# print_current_splits(run_current_split_analysis(m))
 
-plot_heatmap(m, current_flow_plot='stream')
+plot_heatmap(m, current_flow_plot=None)
