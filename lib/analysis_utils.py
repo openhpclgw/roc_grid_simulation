@@ -112,12 +112,14 @@ def plot_errmap(data1, data2):
     plt.show()
 
 def print_error_table(m, base):
+    sim_grid = m.final_grid
+    gs = sim_grid.shape[0]
+
     frs = '{0:>9}    {1:>12}    {2:>12}'
     print(frs.format('Node', 'Potential', 'Base'))
-    for n in m.iter_nodes():
-        print(frs.format(str(n.coord), '{: e}'.format(n.potential),
-                                       '{: e}'.format(base[n.coord.i,
-                                                           n.coord.j])))
+    for i,j in it.product(range(gs), range(gs)):
+        print(frs.format(str((i,j)), '{: e}'.format(sim_grid[i,j]),
+                                     '{: e}'.format(base[i,j])))
 
 # returns a list of lists of dictionaries of dictionaries:
 # run_current_split_analysis(model)[i][j]['E'] sis a dictionary that
@@ -203,6 +205,7 @@ def load_grid_from_comsol_csv(filename):
         reading_data = False
         comsol_reader = csv.reader(csvfile, delimiter=',')
         offset = 0.
+        count = 0
         for r in comsol_reader:
             if not reading_data:
                 if r[0] == '% Nodes':
@@ -226,6 +229,7 @@ def load_grid_from_comsol_csv(filename):
                 if offset == 0.:
                     offset = tmp_x
 
-                grid[to_ij((tmp_x, tmp_y))] = tmp_val
+                grid[int(count/grid_size), count%grid_size] = tmp_val
+                count += 1
 
         return grid
