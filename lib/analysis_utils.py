@@ -101,6 +101,27 @@ def plot_heatmap(m, current_flow_plot=None):
 
     plt.show()
 
+def plot_surface(m):
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib import cm
+
+    potentials = m.final_grid 
+    gs = potentials.shape[0]
+
+    fig = plt.figure()
+    axes = fig.gca(projection='3d')
+
+    x,y = np.meshgrid([i for i in range(gs)],
+                      [i for i in range(gs)])
+
+    axes.plot_surface(x, y, potentials,
+                      rstride=1, cstride=1,
+                      cmap=cm.coolwarm, linewidth=0,
+                      antialiased=True, shade=True)
+
+    plt.show()
+
 def plot_errmap(data1, data2):
     err = abs(data1-data2)
 

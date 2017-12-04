@@ -7,6 +7,7 @@ from heat_problem import HeatProblem
 from analysis_utils import (aggregate_current_vectors,
                             print_current_table,
                             energy_flow,
+                            plot_surface,
                             plot_heatmap)
 
 
@@ -27,6 +28,7 @@ mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
 hp = HeatProblem(N, source, sink, conductance, src_val=10.)
 
+surface3d = False  # if True 3d surface plot is generated
 
 m = ROCModel(mesh_size)
 
@@ -44,4 +46,7 @@ print_current_table(m)
 # current flows currently doesn't work correctly with the new grid
 # logic. It would probably require some post processing on the grid
 # itself (which sucks)
-plot_heatmap(m)
+if not surface3d:
+    plot_heatmap(m)
+else:
+    plot_surface(m)
