@@ -44,4 +44,4 @@ print_current_table(m)
 # current flows currently doesn't work correctly with the new grid
 # logic. It would probably require some post processing on the grid
 # itself (which sucks)
-plot_heatmap(m, current_flow_plot='stream')
+plot_heatmap(m)
