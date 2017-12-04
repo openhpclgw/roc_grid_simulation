@@ -443,6 +443,9 @@ class ROCModel(object):
                                                       0,
                                                       self.cntrs))
 
+    # sources must be initialized before this is called
+    # OR at least you need to make sure there is no overlap between
+    # sources and sinks
     def init_sink(self, hp, vslice=None):
         # what to do in case of indivisible sizes?
         if vslice==None:
@@ -463,6 +466,8 @@ class ROCModel(object):
         self.snk = []
         for s in self.snk_bboxs:
             self.snk_idxs |= {idx for idx in s}
+
+        self.snk_idxs -= self.src_idxs
 
         for i, j in self.snk_idxs:
             self.snk.append(Ground(self.nodes[i][j],
