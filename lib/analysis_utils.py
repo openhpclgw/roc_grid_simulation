@@ -111,6 +111,13 @@ def plot_errmap(data1, data2):
 
     plt.show()
 
+def print_error_table(m, base):
+    frs = '{0:>9}    {1:>12}    {2:>12}'
+    print(frs.format('Node', 'Potential', 'Base'))
+    for n in m.iter_nodes():
+        print(frs.format(str(n.coord), '{: e}'.format(n.potential),
+                                       '{: e}'.format(base[n.coord.i,
+                                                           n.coord.j])))
 
 # returns a list of lists of dictionaries of dictionaries:
 # run_current_split_analysis(model)[i][j]['E'] sis a dictionary that

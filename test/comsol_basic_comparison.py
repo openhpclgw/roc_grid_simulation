@@ -17,5 +17,7 @@ m.load_problem(hp)
 m.run_spice_solver(filename='problem')
 
 from_mesh = m.final_grid
-from_comsol = load_grid_from_comsol_csv('../comsol_data/test.csv')
+from_comsol = load_grid_from_comsol_csv('comsol_data/test.csv')
+
+print_error_table(m, from_comsol)
 plot_errmap(from_mesh, from_comsol)
