@@ -43,19 +43,37 @@ def main():
     from_comsol = load_grid_from_comsol_csv('comsol_data/left_src_others_sink_comsol.csv')
 
 
-    mesh_sect = get_jsect(from_mesh, 150)
-    comsol_sect = get_jsect(from_comsol, 150)
 
 
     rect = 0.1,0.2,0.8,0.7
     fig = plt.figure(figsize=(15,5))
     ax = fig.add_axes(rect)
 
-    init_plot(ax, x_lim=size,
-                  y_lim=max(max(mesh_sect), max(comsol_sect)))
+    img_name = 'cross_comp_s'+str(size)+'_m'+str(mesh_size)+'_dir{}'
+
+    init_ax(ax, x_lim=size, y_lim=1)
+    mesh_sect = get_isect(from_mesh, 150)
+    comsol_sect = get_isect(from_comsol, 150)
     custom_plot(ax, range(0,300), mesh_sect, label='Electrical Mesh')
     custom_plot(ax, range(0,300), comsol_sect, label='Comsol')
-    do_plots()
+
+    # ugh
+    plt.legend(handles=datasets)
+
+    do_plots(img_name.format('i'))
+
+    ax.clear()
+
+    init_ax(ax, x_lim=size, y_lim=1)
+    mesh_sect = get_jsect(from_mesh, 150)
+    comsol_sect = get_jsect(from_comsol, 150)
+    custom_plot(ax, range(0,300), mesh_sect, label='Electrical Mesh')
+    custom_plot(ax, range(0,300), comsol_sect, label='Comsol')
+
+    #ugh
+    plt.legend()
+
+    do_plots(img_name.format('j'))
 
 
 
@@ -71,6 +89,7 @@ def get_jsect(data, idx):
 
 datasets = []
 def custom_plot(ax, x, y, label=''):
+    ax.set_ylim((0, max(y)*1.1))
     handle, = ax.plot(x, y, label=label,
                             marker='o',
                             markerfacecolor='none',
@@ -78,7 +97,7 @@ def custom_plot(ax, x, y, label=''):
 
     datasets.append(handle)
 
-def init_plot(ax, x_lim, y_lim):
+def init_ax(ax, x_lim, y_lim):
     num_x_ticks=10
     # put only 8 ticks on x axis
     ticks = [i for i in range(0, x_lim, int(x_lim/num_x_ticks))]
@@ -89,7 +108,6 @@ def init_plot(ax, x_lim, y_lim):
 
     ax.set_ylabel('Potential/Temperature')
 
-    ax.set_ylim((0, y_lim*1.1))
     ax.set_xlim(0, x_lim)
 
     ax.grid(b=True, axis='x')
@@ -100,9 +118,12 @@ def init_plot(ax, x_lim, y_lim):
     ax.spines['left'].set_linewidth(1)
     ax.spines['right'].set_linewidth(1)
 
-def do_plots():
-    plt.legend(handles=datasets)
-    plt.show()
+def do_plots(filename=''):
+    if filename != '':
+        plt.savefig(filename)
+        plt.savefig(filename+'.eps', format='eps', dpi=1000)
+    else:
+        plt.show()
     
 
 if __name__=='__main__':
