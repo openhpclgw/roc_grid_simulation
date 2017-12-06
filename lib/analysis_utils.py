@@ -132,15 +132,17 @@ def plot_errmap(data1, data2):
 
     plt.show()
 
-def print_error_table(m, base):
-    sim_grid = m.final_grid
+def print_error_table(sim_grid, base):
     gs = sim_grid.shape[0]
 
-    frs = '{0:>9}    {1:>12}    {2:>12}'
-    print(frs.format('Node', 'Potential', 'Base'))
+    frs = '{0:>9}    {1:>12}    {2:>12}    {3:>12}'
+    print(frs.format('Node', 'Potential', 'Base', 'ERROR'))
     for i,j in it.product(range(gs), range(gs)):
-        print(frs.format(str((i,j)), '{: e}'.format(sim_grid[i,j]),
-                                     '{: e}'.format(base[i,j])))
+        s = sim_grid[i,j]
+        b = base[i,j]
+        print(frs.format(str((i,j)), '{: e}'.format(s),
+                                     '{: e}'.format(b),
+                                     '{: e}'.format(s-b)))
 
 # returns a list of lists of dictionaries of dictionaries:
 # run_current_split_analysis(model)[i][j]['E'] sis a dictionary that
@@ -237,7 +239,7 @@ def load_grid_from_comsol_csv(filename):
                         print('Grid is not square')
                     grid = np.zeros((grid_size, grid_size))
 
-                elif r[0] == '% x':
+                elif r[0] == '% X': # this depends on comsol version
                     reading_data = True
             else: # now we are reading the data
                 def to_ij(xy):
