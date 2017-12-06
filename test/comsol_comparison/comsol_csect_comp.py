@@ -43,8 +43,8 @@ def main():
     from_comsol = load_grid_from_comsol_csv('comsol_data/left_src_others_sink_comsol.csv')
 
 
-    mesh_sect = get_isect(from_mesh, 150)
-    comsol_sect = get_isect(from_comsol, 150)
+    mesh_sect = get_jsect(from_mesh, 150)
+    comsol_sect = get_jsect(from_comsol, 150)
 
 
     rect = 0.1,0.2,0.8,0.7
@@ -64,6 +64,10 @@ def main():
 def get_isect(data, idx):
     i_len = data.shape[0]
     return [r[0] for r in data[0:i_len, idx:idx+1]]
+
+def get_jsect(data, idx):
+    j_len = data.shape[1]
+    return data[idx:idx+1, 0:j_len][0]
 
 datasets = []
 def custom_plot(ax, x, y, label=''):
