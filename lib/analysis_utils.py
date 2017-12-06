@@ -123,12 +123,13 @@ def plot_surface(m):
     plt.show()
 
 def plot_errmap(data1, data2):
-    err = abs(data1-data2)
+    err = data1-data2
 
     import matplotlib.pyplot as plt
     fig, axes = plt.subplots(1, 1)
 
-    axes.imshow(err, cmap='hot', interpolation='nearest')
+    colors = axes.imshow(err, cmap='bwr', interpolation='nearest')
+    fig.colorbar(colors)
 
     plt.show()
 

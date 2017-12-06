@@ -37,7 +37,7 @@ m.run_spice_solver(filename='problem')
 
 from_mesh = m.final_grid[comp_size:comp_size+size,
                          comp_size:comp_size+size]
-from_comsol = load_grid_from_comsol_csv('../comsol_data/left_src_others_sink_comsol.csv')
+from_comsol = load_grid_from_comsol_csv('comsol_data/left_src_others_sink_comsol.csv')
 
 # print_error_table(from_mesh, from_comsol)
 plot_errmap(from_mesh, from_comsol)
