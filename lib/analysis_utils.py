@@ -77,7 +77,7 @@ def plot_virtual_heatmap(m, current_flow_plot=None):
 
     plt.show()
 
-def plot_heatmap(m, current_flow_plot=None):
+def plot_heatmap(m, filename='', current_flow_plot=None):
     import matplotlib.pyplot as plt
 
     ms = m.h
@@ -99,9 +99,9 @@ def plot_heatmap(m, current_flow_plot=None):
         else:
             print('Unrecognized current_flow_plot')
 
-    plt.show()
+    __plt_help(filename)
 
-def plot_surface(m):
+def plot_surface(m, filename=''):
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     from matplotlib import cm
@@ -120,9 +120,9 @@ def plot_surface(m):
                       cmap=cm.coolwarm, linewidth=0,
                       antialiased=True, shade=True)
 
-    plt.show()
+    __plt_help(filename)
 
-def plot_errmap(data1, data2):
+def plot_errmap(data1, data2, filename=''):
     err = data1-data2
 
     import matplotlib.pyplot as plt
@@ -131,7 +131,15 @@ def plot_errmap(data1, data2):
     colors = axes.imshow(err, cmap='bwr', interpolation='nearest')
     fig.colorbar(colors)
 
-    plt.show()
+    __plt_help(filename)
+
+def __plt_help(filename):
+    import matplotlib.pyplot as plt
+    if filename == '':
+        plt.show()
+    else:
+        plt.savefig(filename)
+        plt.savefig(filename+'.eps', format='eps', dpi=1000)
 
 def print_error_table(sim_grid, base):
     gs = sim_grid.shape[0]

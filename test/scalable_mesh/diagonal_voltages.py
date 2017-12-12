@@ -11,7 +11,7 @@ from analysis_utils import (aggregate_current_vectors,
                             energy_flow,
                             plot_heatmap)
 
-exp_prob_size = 5
+exp_prob_size = 4
 prob_size = 2**exp_prob_size
 source = (0, 0, 1, 1)
 sink = (prob_size-1, prob_size-1, 1, 1)
@@ -26,12 +26,16 @@ filename='tmp/diag_v_{}'
 mesh = ROCModel(prob_size)
 
 def get_results(mesh, cached=False):
-    if cached:
-        mesh.load_problem(hp)
-        mesh.init_from_cache(filename.format(mesh.w))
+    import os.path
+
+    mesh.load_problem(hp)
+    f = filename.format(mesh.w)
+    exists = os.path.exists(f+'.out')
+    if cached and exists:
+        print('Using cache' + f)
+        mesh.init_from_cache(f)
     else:
-        mesh.load_problem(hp)
-        mesh.run_spice_solver(filename.format(mesh.w))
+        mesh.run_spice_solver(f)
     return mesh.final_grid
 
 res_grid = get_results(mesh, cached=use_cached)
