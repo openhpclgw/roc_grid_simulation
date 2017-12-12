@@ -11,6 +11,8 @@ from analysis_utils import (aggregate_current_vectors,
                             energy_flow,
                             plot_heatmap)
 
+filename='tmp/diag_v_{}'
+
 exp_prob_size = 4
 prob_size = 2**exp_prob_size
 source = (0, 0, 1, 1)
@@ -18,12 +20,25 @@ sink = (prob_size-1, prob_size-1, 1, 1)
 cond_exp = -3
 conductance = 10**cond_exp
 hp = HeatProblem(prob_size, source, sink, conductance, src_val=1.)
+def main():
 
-use_cached = True 
+    use_cached = True 
 
-filename='tmp/diag_v_{}'
 
-mesh = ROCModel(prob_size)
+    mesh = ROCModel(prob_size)
+
+    res_grid = get_results(mesh, cached=use_cached)
+
+    rect = 0.1,0.2,0.8,0.7
+    fig = plt.figure(figsize=(15,5))
+    ax = fig.add_axes(rect)
+
+    prob_range = range(prob_size)
+    data = [res_grid[i,i] for i in prob_range]
+
+    custom_plot(ax, prob_range, data)
+
+    plt.show()
 
 def get_results(mesh, cached=False):
     import os.path
@@ -38,14 +53,6 @@ def get_results(mesh, cached=False):
         mesh.run_spice_solver(f)
     return mesh.final_grid
 
-res_grid = get_results(mesh, cached=use_cached)
-
-rect = 0.1,0.2,0.8,0.7
-fig = plt.figure(figsize=(15,5))
-ax = fig.add_axes(rect)
-
-prob_range = range(prob_size)
-data = [res_grid[i,i] for i in prob_range]
 
 def custom_plot(ax, x, y):
     ax.plot(x, y,  marker='o',
@@ -61,7 +68,7 @@ def custom_plot(ax, x, y):
 
     ax.set_ylabel('Potential')
 
-    ax.set_ylim((0, max(data)*1.1))
+    ax.set_ylim((0, max(y)*1.1))
     ax.set_xlim(0,prob_size-1)
 
     ax.grid(b=True, axis='x')
@@ -72,8 +79,5 @@ def custom_plot(ax, x, y):
     ax.spines['left'].set_linewidth(1)
     ax.spines['right'].set_linewidth(1)
 
-custom_plot(ax, prob_range, data)
-
-
-
-plt.show()
+if __name__=='__main__':
+    main()
