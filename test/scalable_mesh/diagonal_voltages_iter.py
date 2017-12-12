@@ -13,34 +13,58 @@ from analysis_utils import (aggregate_current_vectors,
 
 filename='tmp/diag_v_{}'
 
-exp_prob_size = 4
-prob_size = 2**exp_prob_size
-source = (0, 0, 1, 1)
-sink = (prob_size-1, prob_size-1, 1, 1)
-cond_exp = -3
-conductance = 10**cond_exp
-hp = HeatProblem(prob_size, source, sink, conductance, src_val=1.)
+exp_prob_size = 5
+max_prob_size = 2**exp_prob_size
 def main():
 
     use_cached = True 
-
-
-    mesh = ROCModel(prob_size)
-
-    res_grid = get_results(mesh, cached=use_cached)
 
     rect = 0.1,0.2,0.8,0.7
     fig = plt.figure(figsize=(15,5))
     ax = fig.add_axes(rect)
 
-    prob_range = range(prob_size)
-    data = [res_grid[i,i] for i in prob_range]
+    data = {}
 
-    custom_plot(ax, prob_range, data)
+    for exp_size in range(2, exp_prob_size+1):
+        prob_size = 2**exp_size
+        source = (0, 0, 1, 1)
+        sink = (prob_size-1, prob_size-1, 1, 1)
+        cond_exp = -3
+        conductance = 10**cond_exp
+        hp = HeatProblem(prob_size, source, sink, conductance, src_val=1.)
+        mesh = ROCModel(prob_size)
+        res_grid = get_results(mesh, hp, cached=use_cached)
+        prob_range = range(prob_size)
+        tmp_data = [res_grid[i,i] for i in prob_range]
+        data[prob_size] = tmp_data
+        exp_prob_range = range(0, 2**exp_prob_size,
+                                  int(2**exp_prob_size/prob_size))
+        custom_plot(ax, [i for i in exp_prob_range], tmp_data,
+                    label='{}-by-{}'.format(prob_size, prob_size))
 
+    plt.legend()
     plt.show()
 
-def get_results(mesh, cached=False):
+    # plt.cla()
+    # # ax = fig.add_axes(rect)
+
+    # base = data[max_prob_size]
+    # for exp_size in range(2, exp_prob_size):
+        # prob_size = 2**exp_size
+        # cur_data = data[prob_size]
+        # factor = int(max_prob_size/prob_size)
+        # err = [cur_data[i]-base[i*factor] for i in range(len(cur_data))]
+
+        # exp_prob_range = range(0, 2**exp_prob_size,
+                                  # int(2**exp_prob_size/prob_size))
+        # print(err)
+        # custom_plot(ax, [i for i in exp_prob_range], err,
+                    # label='{}-by-{}'.format(prob_size, prob_size))
+
+    # plt.legend()
+    # plt.show()
+
+def get_results(mesh, hp, cached=False):
     import os.path
 
     mesh.load_problem(hp)
@@ -53,14 +77,16 @@ def get_results(mesh, cached=False):
         mesh.run_spice_solver(f)
     return mesh.final_grid
 
+def custom_plot(ax, x, y, label=''):
+    ax.plot(x, y, label=label,
+                  marker='o',
+                  markerfacecolor='none',
+                  markeredgewidth=2)
 
-def custom_plot(ax, x, y):
-    ax.plot(x, y,  marker='o',
-                   markerfacecolor='none',
-                   markeredgewidth=2)
-
+    prob_size = len(x)
     # put only 8 ticks on x axis
-    ticks = [i for i in range(0, prob_size, int(prob_size/8))]
+    ticks = [i for i in range(0, prob_size, int(prob_size/8) if
+        prob_size >= 8 else 1)]
 
     ax.set_xlabel('Grid point')
     ax.set_xticks(ticks)
@@ -68,7 +94,7 @@ def custom_plot(ax, x, y):
 
     ax.set_ylabel('Potential')
 
-    ax.set_ylim((0, max(y)*1.1))
+    ax.set_ylim((min(y), max(y)*1.1))
     ax.set_xlim(0,prob_size-1)
 
     ax.grid(b=True, axis='x')
