@@ -13,7 +13,7 @@ from analysis_utils import (aggregate_current_vectors,
 
 filename='tmp/diag_v_{}'
 
-exp_prob_size = 5
+exp_prob_size = 6
 max_prob_size = 2**exp_prob_size
 def main():
 
@@ -27,19 +27,30 @@ def main():
 
     for exp_size in range(2, exp_prob_size+1):
         prob_size = 2**exp_size
-        source = (0, 0, 1, 1)
-        sink = (prob_size-1, prob_size-1, 1, 1)
+        comp_size = int(max_prob_size/prob_size)
+        print(comp_size)
+        source = (0, 0, comp_size, comp_size)
+        sink = (max_prob_size-comp_size, 
+                max_prob_size-comp_size, comp_size, comp_size)
+        print(source)
+        print(sink)
         cond_exp = -3
         conductance = 10**cond_exp
-        hp = HeatProblem(prob_size, source, sink, conductance, src_val=1.)
+        hp = HeatProblem(max_prob_size, source, sink, conductance, src_val=1.)
         mesh = ROCModel(prob_size)
+
         res_grid = get_results(mesh, hp, cached=use_cached)
-        prob_range = range(prob_size)
+        print(mesh.src_idxs)
+        print(mesh.snk_idxs)
+        prob_range = range(max_prob_size)
+        print(res_grid)
         tmp_data = [res_grid[i,i] for i in prob_range]
         data[prob_size] = tmp_data
-        exp_prob_range = range(0, 2**exp_prob_size,
-                                  int(2**exp_prob_size/prob_size))
-        custom_plot(ax, [i for i in exp_prob_range], tmp_data,
+        # exp_prob_range = range(0, 2**exp_prob_size,
+                                  # int(2**exp_prob_size/prob_size))
+
+        print(data)
+        custom_plot(ax, [i for i in prob_range], tmp_data,
                     label='{}-by-{}'.format(prob_size, prob_size))
 
     plt.legend()
