@@ -39,47 +39,46 @@ def main():
 
         res_grid = get_results(mesh, hp, cached=use_cached)
 
-        interp_res_grid = get_interp1d(
-                [res_grid[i,i] for i in range(len(res_grid))],
-                max_prob_size)
-
-        prob_range = range(max_prob_size)
-        tmp_data = interp_res_grid
-        print(tmp_data)
-
-        data[prob_size] = tmp_data
-        custom_plot(ax, prob_range, tmp_data,
-                    label='{}-by-{}'.format(prob_size, prob_size))
-
         prob_range = range(prob_size)
         tmp_data = [res_grid[i,i] for i in prob_range]
         data[prob_size] = tmp_data
+
+    # we have the raw data in the dictionary now
+    # let's do some plots
+
+
+    # main plot
+    for exp_size in range(2, max_exp_prob_size+1):
+        prob_size = 2**exp_size+1
         exp_prob_range = range(0, max_prob_size,
                                   int(2**(max_exp_prob_size-exp_size)))
-        custom_plot(ax, exp_prob_range, tmp_data,
+
+        custom_plot(ax, exp_prob_range, data[prob_size],
                     label='{}-by-{}'.format(prob_size, prob_size))
+
+    plt.legend()
+    # plt.show()
+    plt.savefig('test.png')
+
+    ax.clear()
+
+    # point errors
+    base_data = data[max_prob_size]
+    for exp_size in range(2, max_exp_prob_size):
+        prob_size = 2**exp_size+1
+        exp_prob_range = range(0, max_prob_size,
+                                  int(2**(max_exp_prob_size-exp_size)))
+
+        interp_res_grid = get_interp1d(data[prob_size], max_prob_size)
+
+        prob_range = range(max_prob_size)
+        custom_plot(ax, prob_range, interp_res_grid-base_data,
+                    label='{}-by-{}'.format(prob_size, prob_size))
+
 
     plt.legend()
     plt.show()
 
-    # plt.cla()
-    # # ax = fig.add_axes(rect)
-
-    # base = data[max_prob_size]
-    # for exp_size in range(2, max_exp_prob_size):
-        # prob_size = 2**exp_size
-        # cur_data = data[prob_size]
-        # factor = int(max_prob_size/prob_size)
-        # err = [cur_data[i]-base[i*factor] for i in range(len(cur_data))]
-
-        # exp_prob_range = range(0, 2**max_exp_prob_size,
-                                  # int(2**max_exp_prob_size/prob_size))
-        # print(err)
-        # custom_plot(ax, [i for i in exp_prob_range], err,
-                    # label='{}-by-{}'.format(prob_size, prob_size))
-
-    # plt.legend()
-    # plt.show()
 
 def get_results(mesh, hp, cached=False):
     import os.path
@@ -111,7 +110,7 @@ def custom_plot(ax, x, y, label=''):
 
     ax.set_ylabel('Potential')
 
-    ax.set_ylim((min(y), max(y)*1.1))
+    # ax.set_ylim((min(y), max(y)*1.1))
     ax.set_xlim(0,prob_size-1)
 
     ax.grid(b=True, axis='x')
