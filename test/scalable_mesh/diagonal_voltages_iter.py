@@ -14,7 +14,7 @@ from analysis_utils import (aggregate_current_vectors,
 
 filename='tmp/diag_v_{}'
 
-max_exp_prob_size = 5
+max_exp_prob_size = 7
 max_prob_size = 2**max_exp_prob_size+1
 def main():
 
