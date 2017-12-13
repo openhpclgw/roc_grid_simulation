@@ -10,6 +10,7 @@ from analysis_utils import (aggregate_current_vectors,
                             print_current_table,
                             energy_flow,
                             plot_errmap,
+                            plot_heatmap_from_grid,
                             plot_heatmap)
 
 filename='tmp/diag_v_{}'
@@ -107,8 +108,10 @@ def main():
         interp_res_grid = get_interp2d(full_data[prob_size],
                                        max_prob_size)
 
+        plot_heatmap_from_grid(interp_res_grid,
+                               filename='heat_map_{}'.format(prob_size))
         plot_errmap(interp_res_grid, base_data,
-                    filename='err_map_{}.png'.format(prob_size))
+                    filename='err_map_{}'.format(prob_size))
 
 
 def get_results(mesh, hp, cached=False):

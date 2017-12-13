@@ -78,26 +78,28 @@ def plot_virtual_heatmap(m, current_flow_plot=None):
     plt.show()
 
 def plot_heatmap(m, filename='', current_flow_plot=None):
+    plot_heatmap_from_grid(m.final_grid, filename, current_flow_plot)
+
+def plot_heatmap_from_grid(grid, filename='', current_flow_plot=None):
     import matplotlib.pyplot as plt
 
-    ms = m.h
-    potentials = m.final_grid 
     fig, axes = plt.subplots(1, 1)
-    axes.imshow(potentials, cmap='hot', interpolation='nearest')
+    axes.imshow(grid, cmap='hot', interpolation='nearest')
 
-    if current_flow_plot is not None:
-        U, V = aggregate_current_vectors(m)
-        if current_flow_plot == 'stream':
-            axes.streamplot(np.array([i for i in range(ms)]),
-                            np.array([i for i in range(ms)]),
-                            U, -V, color='green', linewidth=1,
-                            density=1)
-        elif current_flow_plot == 'quiver':
-            axes.quiver(np.array([i for i in range(ms)]),
-                        np.array([i for i in range(ms)]),
-                        U, V, color='green')
-        else:
-            print('Unrecognized current_flow_plot')
+    # we probably don't care about current flows anymore
+    # if current_flow_plot is not None:
+        # U, V = aggregate_current_vectors(m)
+        # if current_flow_plot == 'stream':
+            # axes.streamplot(np.array([i for i in range(ms)]),
+                            # np.array([i for i in range(ms)]),
+                            # U, -V, color='green', linewidth=1,
+                            # density=1)
+        # elif current_flow_plot == 'quiver':
+            # axes.quiver(np.array([i for i in range(ms)]),
+                        # np.array([i for i in range(ms)]),
+                        # U, V, color='green')
+        # else:
+            # print('Unrecognized current_flow_plot')
 
     __plt_help(filename)
 
