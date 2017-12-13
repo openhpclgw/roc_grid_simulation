@@ -25,8 +25,10 @@ def main():
     fig = plt.figure(figsize=(15,5))
     ax = fig.add_axes(rect)
 
-    data = {}
+    diag_data = {}
     full_data = {}
+    interp_data = {}
+    scale_data = {}
 
     for exp_size in range(2, max_exp_prob_size+1):
         prob_size = 2**exp_size+1
@@ -45,11 +47,15 @@ def main():
 
         prob_range = range(prob_size)
         tmp_data = [res_grid[i,i] for i in prob_range]
-        data[prob_size] = tmp_data
+        diag_data[prob_size] = tmp_data
+
+        interp_data[prob_size] = get_interp2d(res_grid, max_prob_size)
+        scale_data[prob_size] = get_scale2d(res_grid, max_prob_size)
 
     # we have the raw data in the dictionary now
     # let's do some plots
 
+    print('Finished reading data')
 
     # main plot
     for exp_size in range(2, max_exp_prob_size+1):
@@ -57,47 +63,52 @@ def main():
         exp_prob_range = range(0, max_prob_size,
                                   int(2**(max_exp_prob_size-exp_size)))
 
-        custom_plot(ax, exp_prob_range, data[prob_size],
+        custom_plot(ax, exp_prob_range, diag_data[prob_size],
                     label='{}-by-{}'.format(prob_size, prob_size))
 
     plt.legend()
     do_plot('scale_comparison')
     ax.clear()
 
+    print('Finished main plot')
+
     # point errors
-    base_data = data[max_prob_size]
+    base_data = diag_data[max_prob_size]
     for exp_size in range(2, max_exp_prob_size):
         prob_size = 2**exp_size+1
         exp_prob_range = range(0, max_prob_size,
                                   int(2**(max_exp_prob_size-exp_size)))
 
-        interp_res_grid = get_interp1d(data[prob_size], max_prob_size)
+        interp_res_grid = get_interp1d(diag_data[prob_size], max_prob_size)
 
         prob_range = range(max_prob_size)
         custom_plot(ax, prob_range, interp_res_grid-base_data,
                     label='{}-by-{}'.format(prob_size, prob_size))
 
 
+
     plt.legend()
     do_plot('error_vs_largest')
     ax.clear()
+
+    print('Finished point errors')
 
     # average absolute error
     aae_interp = {}
     aae_scale = {}
     for exp_size in range(2, max_exp_prob_size):
         prob_size = 2**exp_size+1
-        exp_prob_range = range(0, max_prob_size,
-                                  int(2**(max_exp_prob_size-exp_size)))
+        # exp_prob_range = range(0, max_prob_size,
+                                  # int(2**(max_exp_prob_size-exp_size)))
 
-        interp_res_grid = get_interp2d(full_data[prob_size],
-                                       max_prob_size)
-        sum_err = abs(interp_res_grid-base_data).sum()
+        # interp_res_grid = get_interp2d(full_data[prob_size],
+                                       # max_prob_size)
+        sum_err = abs(interp_data[prob_size]-base_data).sum()
         aae_interp[prob_size] = sum_err/(max_prob_size**2)
 
-        scale_res_grid = get_scale2d(full_data[prob_size],
-                                     max_prob_size)
-        sum_err = abs(scale_res_grid-base_data).sum()
+        # scale_res_grid = get_scale2d(full_data[prob_size],
+                                     # max_prob_size)
+        sum_err = abs(scale_data[prob_size]-base_data).sum()
         aae_scale[prob_size] = sum_err/(max_prob_size**2)
 
 
@@ -113,25 +124,27 @@ def main():
     plt.legend()
     do_plot('avg_abs_err')
 
+    print('Finished absolute errors')
+
     # error maps
     for exp_size in range(2, max_exp_prob_size):
         prob_size = 2**exp_size+1
-        exp_prob_range = range(0, max_prob_size,
-                                  int(2**(max_exp_prob_size-exp_size)))
+        # exp_prob_range = range(0, max_prob_size,
+                                  # int(2**(max_exp_prob_size-exp_size)))
 
-        interp_res_grid = get_interp2d(full_data[prob_size],
-                                       max_prob_size)
+        interp_res_grid = interp_data[prob_size]
         plot_heatmap_from_grid(interp_res_grid,
                                filename='heatmap_interp_{}'.format(prob_size))
         plot_errmap(interp_res_grid, base_data,
                     filename='errmap_interp{}'.format(prob_size))
 
-        scale_res_grid = get_scale2d(full_data[prob_size],
-                                     max_prob_size)
+        scale_res_grid = scale_data[prob_size]
         plot_heatmap_from_grid(scale_res_grid,
                                filename='heatmap_scale_{}'.format(prob_size))
         plot_errmap(scale_res_grid, base_data,
                     filename='errmap_scale{}'.format(prob_size))
+
+    print('Finished heat and error maps')
 
 def get_results(mesh, hp, cached=False):
     import os.path
@@ -140,7 +153,7 @@ def get_results(mesh, hp, cached=False):
     f = filename.format(mesh.w)
     exists = os.path.exists(f+'.out')
     if cached and exists:
-        print('Using cache' + f)
+        print('\t\tUsing cache ' + f)
         mesh.init_from_cache(f)
     else:
         mesh.run_spice_solver(f)
@@ -214,12 +227,8 @@ def get_interp2d(grid, interp_size):
         
         _tmp = (interp_size-1)/(grid_size-1)
         interp_factor = _tmp
-        # interp_range = range(0, grid_size, interp_factor)
 
         interp_vals = [i*interp_factor for i in range(0, grid_size)]
-        # interp_vals = np.linspace(0, interp_size, interp_factor)
-        print(interp_vals)
-
         return scipy.interpolate.interp2d(interp_vals,
                                           interp_vals,
                                           grid)
