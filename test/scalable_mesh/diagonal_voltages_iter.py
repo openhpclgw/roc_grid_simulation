@@ -107,12 +107,17 @@ def main():
 
         interp_res_grid = get_interp2d(full_data[prob_size],
                                        max_prob_size)
-
         plot_heatmap_from_grid(interp_res_grid,
-                               filename='heat_map_{}'.format(prob_size))
+                               filename='heatmap_interp_{}'.format(prob_size))
         plot_errmap(interp_res_grid, base_data,
-                    filename='err_map_{}'.format(prob_size))
+                    filename='errmap_interp{}'.format(prob_size))
 
+        scale_res_grid = get_scale2d(full_data[prob_size],
+                                     max_prob_size)
+        plot_heatmap_from_grid(scale_res_grid,
+                               filename='heatmap_scale_{}'.format(prob_size))
+        plot_errmap(scale_res_grid, base_data,
+                    filename='errmap_scale{}'.format(prob_size))
 
 def get_results(mesh, hp, cached=False):
     import os.path
@@ -210,6 +215,19 @@ def get_interp2d(grid, interp_size):
 
     for i,j in it.product(range(interp_size), range(interp_size)):
         res[i,j] = interpolator(i,j)
+
+    return res
+
+def get_scale2d(grid, scale_size):
+    assert grid.shape[0] == grid.shape[1]
+    grid_size = grid.shape[0]
+    assert scale_size >= grid_size
+    
+    scale_factor = scale_size/grid_size
+    res = np.zeros((scale_size, scale_size))
+
+    for i,j in it.product(range(scale_size), range(scale_size)):
+        res[i,j] = grid[int(i/scale_factor), int(j/scale_factor)]
 
     return res
 
