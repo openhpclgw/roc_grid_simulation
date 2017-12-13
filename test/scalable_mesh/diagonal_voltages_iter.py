@@ -60,9 +60,7 @@ def main():
                     label='{}-by-{}'.format(prob_size, prob_size))
 
     plt.legend()
-    # plt.show()
-    plt.savefig('test.png')
-
+    do_plot('scale_comparison')
     ax.clear()
 
     # point errors
@@ -79,8 +77,7 @@ def main():
                     label='{}-by-{}'.format(prob_size, prob_size))
 
 
-    plt.savefig('test2.png')
-
+    do_plot('error_vs_largest')
     ax.clear()
 
     # average absolute error
@@ -96,12 +93,10 @@ def main():
         sum_err = abs(interp_res_grid-base_data).sum()
         aae[prob_size] = sum_err/(max_prob_size**2)
 
-    print(aae)
-
     custom_plot(ax, [k for k,v in aae.items()],
                     [v for k,v in aae.items()],
                 ticks=[2**s+1 for s in range(2, max_exp_prob_size+1)])
-    plt.savefig('test3.png')
+    do_plot('avg_abs_err')
 
     # error maps
     for exp_size in range(2, max_exp_prob_size):
@@ -113,12 +108,7 @@ def main():
                                        max_prob_size)
 
         plot_errmap(interp_res_grid, base_data,
-                    filename='test{}.png'.format(prob_size))
-
-
-
-    # plt.legend()
-    # plt.show()
+                    filename='err_map_{}.png'.format(prob_size))
 
 
 def get_results(mesh, hp, cached=False):
@@ -220,6 +210,12 @@ def get_interp2d(grid, interp_size):
 
     return res
 
+def do_plot(filename=''):
+    if filename == '':
+        plt.show()
+    else:
+        plt.savefig(filename+'.png')
+        plt.savefig(filename+'.eps')
 
 if __name__=='__main__':
     main()
