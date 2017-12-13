@@ -13,8 +13,8 @@ from analysis_utils import (aggregate_current_vectors,
 
 filename='tmp/diag_v_{}'
 
-exp_prob_size = 5
-max_prob_size = 2**exp_prob_size
+max_exp_prob_size = 5
+max_prob_size = 2**max_exp_prob_size
 def main():
 
     use_cached = True 
@@ -25,33 +25,25 @@ def main():
 
     data = {}
 
-    for exp_size in range(2, exp_prob_size+1):
+    for exp_size in range(2, max_exp_prob_size+1):
         prob_size = 2**exp_size+1
         comp_size = 1
-        # print(comp_size)
         source = (0, 0, comp_size, comp_size)
         sink = (prob_size-comp_size, 
                 prob_size-comp_size,
                 comp_size, comp_size)
-        # print(source)
-        # print(sink)
         cond_exp = -3
         conductance = 10**cond_exp
         hp = HeatProblem(prob_size, source, sink, conductance, src_val=1.)
         mesh = ROCModel(prob_size)
 
         res_grid = get_results(mesh, hp, cached=use_cached)
-        # print(mesh.src_idxs)
-        # print(mesh.snk_idxs)
         prob_range = range(prob_size)
-        # print(res_grid)
         tmp_data = [res_grid[i,i] for i in prob_range]
         data[prob_size] = tmp_data
         exp_prob_range = range(0, max_prob_size+1,
-                                  int(2**(exp_prob_size-exp_size)))
+                                  int(2**(max_exp_prob_size-exp_size)))
 
-        print(tmp_data)
-        print(exp_prob_range)
         custom_plot(ax, exp_prob_range, tmp_data,
                     label='{}-by-{}'.format(prob_size, prob_size))
 
@@ -62,14 +54,14 @@ def main():
     # # ax = fig.add_axes(rect)
 
     # base = data[max_prob_size]
-    # for exp_size in range(2, exp_prob_size):
+    # for exp_size in range(2, max_exp_prob_size):
         # prob_size = 2**exp_size
         # cur_data = data[prob_size]
         # factor = int(max_prob_size/prob_size)
         # err = [cur_data[i]-base[i*factor] for i in range(len(cur_data))]
 
-        # exp_prob_range = range(0, 2**exp_prob_size,
-                                  # int(2**exp_prob_size/prob_size))
+        # exp_prob_range = range(0, 2**max_exp_prob_size,
+                                  # int(2**max_exp_prob_size/prob_size))
         # print(err)
         # custom_plot(ax, [i for i in exp_prob_range], err,
                     # label='{}-by-{}'.format(prob_size, prob_size))
