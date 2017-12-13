@@ -9,6 +9,7 @@ from heat_problem import HeatProblem
 from analysis_utils import (aggregate_current_vectors,
                             print_current_table,
                             energy_flow,
+                            plot_errmap,
                             plot_heatmap)
 
 filename='tmp/diag_v_{}'
@@ -24,6 +25,7 @@ def main():
     ax = fig.add_axes(rect)
 
     data = {}
+    full_data = {}
 
     for exp_size in range(2, max_exp_prob_size+1):
         prob_size = 2**exp_size+1
@@ -38,6 +40,7 @@ def main():
         mesh = ROCModel(prob_size)
 
         res_grid = get_results(mesh, hp, cached=use_cached)
+        full_data[prob_size] = res_grid
 
         prob_range = range(prob_size)
         tmp_data = [res_grid[i,i] for i in prob_range]
@@ -76,8 +79,26 @@ def main():
                     label='{}-by-{}'.format(prob_size, prob_size))
 
 
-    plt.legend()
-    plt.show()
+    plt.savefig('test2.png')
+
+    ax.clear()
+
+    # error maps
+    for exp_size in range(2, max_exp_prob_size):
+        prob_size = 2**exp_size+1
+        exp_prob_range = range(0, max_prob_size,
+                                  int(2**(max_exp_prob_size-exp_size)))
+
+        interp_res_grid = get_interp2d(full_data[prob_size],
+                                       max_prob_size)
+
+        plot_errmap(interp_res_grid, base_data,
+                    filename='test{}.png'.format(prob_size))
+
+
+
+    # plt.legend()
+    # plt.show()
 
 
 def get_results(mesh, hp, cached=False):

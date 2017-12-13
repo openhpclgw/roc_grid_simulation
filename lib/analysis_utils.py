@@ -128,6 +128,7 @@ def plot_errmap(data1, data2, filename=''):
     import matplotlib.pyplot as plt
     fig, axes = plt.subplots(1, 1)
 
+    print(err.shape)
     colors = axes.imshow(err, cmap='bwr', interpolation='nearest')
     fig.colorbar(colors)
 
