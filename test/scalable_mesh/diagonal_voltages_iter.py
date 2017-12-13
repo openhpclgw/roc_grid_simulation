@@ -15,7 +15,7 @@ from analysis_utils import (aggregate_current_vectors,
 
 filename='tmp/diag_v_{}'
 
-max_exp_prob_size = 7
+max_exp_prob_size = 4
 max_prob_size = 2**max_exp_prob_size+1
 def main():
 
@@ -78,11 +78,13 @@ def main():
                     label='{}-by-{}'.format(prob_size, prob_size))
 
 
+    plt.legend()
     do_plot('error_vs_largest')
     ax.clear()
 
     # average absolute error
-    aae = {}
+    aae_interp = {}
+    aae_scale = {}
     for exp_size in range(2, max_exp_prob_size):
         prob_size = 2**exp_size+1
         exp_prob_range = range(0, max_prob_size,
@@ -90,13 +92,25 @@ def main():
 
         interp_res_grid = get_interp2d(full_data[prob_size],
                                        max_prob_size)
-
         sum_err = abs(interp_res_grid-base_data).sum()
-        aae[prob_size] = sum_err/(max_prob_size**2)
+        aae_interp[prob_size] = sum_err/(max_prob_size**2)
 
-    custom_plot(ax, [k for k,v in aae.items()],
-                    [v for k,v in aae.items()],
-                ticks=[2**s+1 for s in range(2, max_exp_prob_size+1)])
+        scale_res_grid = get_scale2d(full_data[prob_size],
+                                     max_prob_size)
+        sum_err = abs(scale_res_grid-base_data).sum()
+        aae_scale[prob_size] = sum_err/(max_prob_size**2)
+
+
+    custom_plot(ax, [k for k,v in aae_interp.items()],
+                    [v for k,v in aae_interp.items()],
+                ticks=[2**s+1 for s in range(2, max_exp_prob_size+1)],
+                label='Interpolated')
+    custom_plot(ax, [k for k,v in aae_scale.items()],
+                    [v for k,v in aae_scale.items()],
+                ticks=[2**s+1 for s in range(2, max_exp_prob_size+1)],
+                label='Scaled')
+
+    plt.legend()
     do_plot('avg_abs_err')
 
     # error maps
