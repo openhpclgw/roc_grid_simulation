@@ -14,7 +14,7 @@ from analysis_utils import (aggregate_current_vectors,
 filename='tmp/diag_v_{}'
 
 max_exp_prob_size = 5
-max_prob_size = 2**max_exp_prob_size
+max_prob_size = 2**max_exp_prob_size+1
 def main():
 
     use_cached = True 
@@ -38,12 +38,24 @@ def main():
         mesh = ROCModel(prob_size)
 
         res_grid = get_results(mesh, hp, cached=use_cached)
+
+        interp_res_grid = get_interp1d(
+                [res_grid[i,i] for i in range(len(res_grid))],
+                max_prob_size)
+
+        prob_range = range(max_prob_size)
+        tmp_data = interp_res_grid
+        print(tmp_data)
+
+        data[prob_size] = tmp_data
+        custom_plot(ax, prob_range, tmp_data,
+                    label='{}-by-{}'.format(prob_size, prob_size))
+
         prob_range = range(prob_size)
         tmp_data = [res_grid[i,i] for i in prob_range]
         data[prob_size] = tmp_data
-        exp_prob_range = range(0, max_prob_size+1,
+        exp_prob_range = range(0, max_prob_size,
                                   int(2**(max_exp_prob_size-exp_size)))
-
         custom_plot(ax, exp_prob_range, tmp_data,
                     label='{}-by-{}'.format(prob_size, prob_size))
 
@@ -109,6 +121,61 @@ def custom_plot(ax, x, y, label=''):
     ax.spines['bottom'].set_linewidth(1)
     ax.spines['left'].set_linewidth(1)
     ax.spines['right'].set_linewidth(1)
+
+def get_interp1d(grid, interp_size):
+
+    def get_interpolator():
+        import scipy.interpolate
+        grid_size = len(grid)
+
+        assert interp_size >= grid_size
+        
+        _tmp = (interp_size-1)/(grid_size-1)
+        interp_factor = _tmp
+
+        interp_vals = [i*interp_factor for i in range(0, grid_size)]
+
+        return scipy.interpolate.interp1d(interp_vals,
+                                          grid)
+
+    interpolator = get_interpolator()
+    # res = np.zeros(interp_size)
+    # for i in range(interp_size):
+        # res[i] = interpolator(i)
+
+    # return res
+
+    return interpolator(range(interp_size))
+
+def get_interp2d(grid, interp_size):
+
+    def get_interpolator():
+        import scipy.interpolate
+        assert grid.shape[0] == grid.shape[1]
+        grid_size = grid.shape[0]
+
+        assert interp_size >= grid_size
+        
+        _tmp = (interp_size-1)/(grid_size-1)
+        interp_factor = _tmp
+        # interp_range = range(0, grid_size, interp_factor)
+
+        interp_vals = [i*interp_factor for i in range(0, grid_size)]
+        # interp_vals = np.linspace(0, interp_size, interp_factor)
+        print(interp_vals)
+
+        return scipy.interpolate.interp2d(interp_vals,
+                                          interp_vals,
+                                          grid)
+
+    interpolator = get_interpolator()
+    res = np.zeros((interp_size, interp_size))
+
+    for i,j in it.product(range(interp_size), range(interp_size)):
+        res[i,j] = interpolator(i,j)
+
+    return res
+
 
 if __name__=='__main__':
     main()
