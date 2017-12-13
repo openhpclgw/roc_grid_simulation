@@ -15,7 +15,7 @@ from analysis_utils import (aggregate_current_vectors,
 
 filename='tmp/diag_v_{}'
 
-max_exp_prob_size = 4
+max_exp_prob_size = 7
 max_prob_size = 2**max_exp_prob_size+1
 def main():
 
@@ -94,8 +94,10 @@ def main():
     print('Finished point errors')
 
     # average absolute error
+    base_data = full_data[max_prob_size]
     aae_interp = {}
     aae_scale = {}
+    aae_pwise = {}
     for exp_size in range(2, max_exp_prob_size):
         prob_size = 2**exp_size+1
         # exp_prob_range = range(0, max_prob_size,
@@ -111,7 +113,19 @@ def main():
         sum_err = abs(scale_data[prob_size]-base_data).sum()
         aae_scale[prob_size] = sum_err/(max_prob_size**2)
 
+        factor = int((max_prob_size-1)/(prob_size-1))
+        my_fdata = full_data[prob_size]
+        raw_data = [abs(my_fdata[i][j]-base_data[i*factor][j*factor]) 
+                      for i,j in it.product(range(prob_size),
+                                            range(prob_size))]
+        sum_err = sum(raw_data)
+        aae_pwise[prob_size] = sum_err/(prob_size**2)
 
+
+    custom_plot(ax, [k for k,v in aae_pwise.items()],
+                    [v for k,v in aae_pwise.items()],
+                ticks=[2**s+1 for s in range(2, max_exp_prob_size+1)],
+                label='Pointwise')
     custom_plot(ax, [k for k,v in aae_interp.items()],
                     [v for k,v in aae_interp.items()],
                 ticks=[2**s+1 for s in range(2, max_exp_prob_size+1)],
@@ -129,18 +143,18 @@ def main():
     # error maps
     for exp_size in range(2, max_exp_prob_size):
         prob_size = 2**exp_size+1
-        # exp_prob_range = range(0, max_prob_size,
-                                  # int(2**(max_exp_prob_size-exp_size)))
 
         interp_res_grid = interp_data[prob_size]
         plot_heatmap_from_grid(interp_res_grid,
-                               filename='heatmap_interp_{}'.format(prob_size))
+                               filename='heatmap_interp_{}'.format(
+                                                             prob_size))
         plot_errmap(interp_res_grid, base_data,
                     filename='errmap_interp{}'.format(prob_size))
 
         scale_res_grid = scale_data[prob_size]
         plot_heatmap_from_grid(scale_res_grid,
-                               filename='heatmap_scale_{}'.format(prob_size))
+                               filename='heatmap_scale_{}'.format(
+                                                            prob_size))
         plot_errmap(scale_res_grid, base_data,
                     filename='errmap_scale{}'.format(prob_size))
 
