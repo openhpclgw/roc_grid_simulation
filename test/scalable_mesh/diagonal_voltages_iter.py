@@ -83,6 +83,26 @@ def main():
 
     ax.clear()
 
+    # average absolute error
+    aae = {}
+    for exp_size in range(2, max_exp_prob_size):
+        prob_size = 2**exp_size+1
+        exp_prob_range = range(0, max_prob_size,
+                                  int(2**(max_exp_prob_size-exp_size)))
+
+        interp_res_grid = get_interp2d(full_data[prob_size],
+                                       max_prob_size)
+
+        sum_err = abs(interp_res_grid-base_data).sum()
+        aae[prob_size] = sum_err/(max_prob_size**2)
+
+    print(aae)
+
+    custom_plot(ax, [k for k,v in aae.items()],
+                    [v for k,v in aae.items()],
+                ticks=[2**s+1 for s in range(2, max_exp_prob_size+1)])
+    plt.savefig('test3.png')
+
     # error maps
     for exp_size in range(2, max_exp_prob_size):
         prob_size = 2**exp_size+1
@@ -114,16 +134,20 @@ def get_results(mesh, hp, cached=False):
         mesh.run_spice_solver(f)
     return mesh.final_grid
 
-def custom_plot(ax, x, y, label=''):
+def custom_plot(ax, x, y, label='', ticks=None):
     ax.plot(x, y, label=label,
                   marker='o',
                   markerfacecolor='none',
                   markeredgewidth=2)
 
-    prob_size = len(x)
-    # put only 8 ticks on x axis
-    ticks = [i for i in range(0, prob_size, int(prob_size/8) if
-        prob_size >= 8 else 1)]
+    if ticks is None:
+        prob_size = len(x)
+        # put only 8 ticks on x axis
+        ticks = [i for i in range(0, prob_size, int(prob_size/8) if
+            prob_size >= 8 else 1)]
+
+    else:
+        prob_size = max([int(t) for t in ticks])
 
     ax.set_xlabel('Grid point')
     ax.set_xticks(ticks)
