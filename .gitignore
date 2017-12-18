@@ -5,6 +5,7 @@ __pycache__
 *.eps
 *.out
 *.dat
+*.tar.gz
 tests
 img
 notes
