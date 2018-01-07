@@ -1,6 +1,7 @@
 import numpy as np
 import itertools as it
 from spice_gen import SpiceGenerator
+from interconnect_gen import InterconnectGenerator
 from common import *
 
 
@@ -502,6 +503,26 @@ class ROCModel(object):
         sg.create_script(self)
         sg.get_results(self, cached_file=True)
         self.final_grid = self.create_grid()
+
+    def run_interconnect_solver(self, filename='', 
+                         cleanup=False, virtualize=False,
+                         vstep_size=0):
+        if virtualize:
+            print('Virtualization with Interconnect is not supported')
+        mesh_size = self.h
+        grid_size = self.hp.N
+
+        ig = InterconnectGenerator(filename=filename)
+        ig.create_script(self)
+        # sg.run()
+        # sg.get_results(self)
+        # grid = self.create_grid()
+        # count = 0
+
+        # self.final_grid = grid
+
+        if cleanup:
+            sg.rm_tmp_files()
 
     def run_spice_solver(self, filename='', 
                          cleanup=False, virtualize=False,
