@@ -60,11 +60,12 @@ class InterconnectGenerator(object):
         self.__commentfrmt = '* {c}'
         self.__bcommentfrmt = '\n*\n* {c}\n*'
 
+        self.__schfrmt = 'sch_x={sch_x:4.2f} sch_y={sch_y:4.2f} sch_r=0 sch_f=f lay_x=0 lay_y=0'
         self.__nfrmt = 'N{n[0]:}_{n[1]:}'
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
         self.__v2frmt = 'V'+cg+'{uname} {nn1} {nn2} DC {v}'
-        self.__r2frmt = 'R'+cg+'{uname} {nn1} {nn2} {r}'
+        self.__r2frmt = 'X_FIBER_'+cg+'{uname} {nn1} {nn2} \"Optical Linear Fiber\" attenuation={r} ' + self.__schfrmt
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
@@ -210,12 +211,14 @@ class InterconnectGenerator(object):
         else:
             return ''
 
-    def add_r2(self, r):
+    def add_r2(self, r, sch_x=0, sch_y=0):
         ret = self.gen(self.__r2frmt.format(i=r.uid,
                                      uname='', # FIXME
                                      nn1=r.node1,
                                      nn2=r.node2,
-                                     r=r.r))
+                                     r=r.r,
+                                     sch_x=sch_x,
+                                     sch_y=sch_y))
 
         self.r_counter += 1
 
