@@ -11,6 +11,7 @@ class InterconnectGenerator(object):
         # init component counters
         self.r_counter = 0
         self.v_counter = 0
+        self.osc_counter = 0
         self.tmp_folder = 'tmp'
 
         self.cache_only = cache_only
@@ -67,6 +68,8 @@ class InterconnectGenerator(object):
         self.__v2frmt = 'V'+cg+'{uname} {nn1} {nn2} DC {v}'
         self.__r2frmt = 'X_FIBER_'+cg+'{uname} {nn1} {nn2} \"Optical Linear Fiber\" attenuation={r} ' + self.__schfrmt
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
+
+        self.__oscfrmt = 'X_OOSC_'+cg+' \"Optical Oscilloscope\"  '+ self.__schfrmt
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
         self.__icfrmt = '.IC V({node}) {val}'
@@ -241,8 +244,25 @@ class InterconnectGenerator(object):
         self.v_counter += 1
         return ret
 
+    def add_osc(self, osc, sch_x=0, sch_y=0):
+        ret = ''
+        ret = self.gen(
+                self.__oscfrmt.format(i=osc.uid,
+                                     uname='',
+                                     nn1=osc.node1,
+                                     nn2=osc.node2,
+                                     sch_x=sch_x,
+                                     sch_y=sch_y))
+        self.osc_counter += 1
+        return ret
+
     def component_codegen(self, c):
-        if isinstance(c, rm.VoltageSource):
+        # In interconnect, we need to catch some subclasses first to
+        # make sure they are not generated as they are parent classes.
+        # This is a subtle but still ugly workaround for now.
+        if isinstance(c, rm.Ammeter):
+            tmp_name = self.add_osc(c)
+        elif isinstance(c, rm.VoltageSource):
             tmp_name = self.add_v2(c)
         elif isinstance(c, rm.Resistance):
             tmp_name = self.add_r2(c)
