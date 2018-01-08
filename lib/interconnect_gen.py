@@ -66,7 +66,7 @@ class InterconnectGenerator(object):
         self.__nfrmt = 'N{n[0]:}_{n[1]:}'
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
-        self.__v2frmt = 'V'+cg+'{uname} {nn1} {nn2} DC {v}'
+        self.__v2frmt = 'X_CWL_'+cg+' {nn1} \"CW Laser\" \"internal seed\"=7434 '+self.__schfrmt
         self.__r2frmt = 'X_FIBER_'+cg+'{uname} {nn1} {nn2} \"Optical Linear Fiber\" attenuation={r} ' + self.__schfrmt
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
 
@@ -228,7 +228,7 @@ class InterconnectGenerator(object):
 
         self.r_counter += 1
 
-    def add_v2(self, v):
+    def add_v2(self, v, sch_x=0, sch_y=0):
         ret = ''
         if v.v >= 0:
             ret = self.gen(
@@ -236,7 +236,9 @@ class InterconnectGenerator(object):
                                         uname='',
                                         nn1=v.node1,
                                         nn2=v.node2,
-                                        v=v.v))
+                                        v=v.v,
+                                        sch_x=sch_x,
+                                        sch_y=sch_y))
         elif v.v < 0:
             print("How?")
             self.__v2frmt.format(i=v.uid,
@@ -278,6 +280,7 @@ class InterconnectGenerator(object):
         self.sparam_counter += 1
         return ret
 
+    # TODO this should be recursive
     def component_codegen(self, c):
         # In interconnect, we need to catch some subclasses first to
         # make sure they are not generated as they are parent classes.
