@@ -12,6 +12,7 @@ class InterconnectGenerator(object):
         self.r_counter = 0
         self.v_counter = 0
         self.osc_counter = 0
+        self.sparam_counter = 0
         self.tmp_folder = 'tmp'
 
         self.cache_only = cache_only
@@ -70,6 +71,8 @@ class InterconnectGenerator(object):
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
 
         self.__oscfrmt = 'X_OOSC_'+cg+' \"Optical Oscilloscope\"  '+ self.__schfrmt
+        self.__sparamfrmt = 'X_SPAR_'+cg+' '+ng(1)+' '+ng(2)+' '+ng(3)+' '+ng(4)+' \"Optical N Port S-Parameter\" \"s parameters filename\"=\"{coord}.txt\" '+ self.__schfrmt
+
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
         self.__icfrmt = '.IC V({node}) {val}'
@@ -256,12 +259,37 @@ class InterconnectGenerator(object):
         self.osc_counter += 1
         return ret
 
+    def add_sparam(self, conn, sch_x=0, sch_y=0):
+        ret = ''
+        ret = self.gen(
+                self.__sparamfrmt.format(i=conn.uid,
+                                     uname='',
+                                     n1=conn.coord,
+                                     n2=conn.coord,
+                                     n3=conn.coord,
+                                     n4=conn.coord,
+                                     d1='E',
+                                     d2='W',
+                                     d3='N',
+                                     d4='S',
+                                     coord=str(conn.coord),
+                                     sch_x=sch_x,
+                                     sch_y=sch_y))
+        self.sparam_counter += 1
+        return ret
+
     def component_codegen(self, c):
         # In interconnect, we need to catch some subclasses first to
         # make sure they are not generated as they are parent classes.
         # This is a subtle but still ugly workaround for now.
         if isinstance(c, rm.Ammeter):
             tmp_name = self.add_osc(c)
+        elif isinstance(c, rm.ConnectionPoint):
+            # This is what it is going to look like for Electrical
+            # for item in c.components():
+                # self.component_codegen(item)
+            # tmp_name = c.nodename
+            tmp_name = self.add_sparam(c)
         elif isinstance(c, rm.VoltageSource):
             tmp_name = self.add_v2(c)
         elif isinstance(c, rm.Resistance):

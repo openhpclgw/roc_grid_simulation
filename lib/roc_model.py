@@ -108,6 +108,30 @@ class MeshResistance(object):
             return 'E' if self.orientation == 'H' else 'S'
 
 
+class ConnectionPoint(object):
+    def __init__(self, coord, nodename, in_dirs, cntrs):
+        self.uid = cntrs.con
+        self.nodename = nodename
+        self.coord=coord
+        cntrs.con += 1
+
+        self.directions = {'E': 'Ecp',
+                           'W': 'Wcp',
+                           'N': 'Ncp',
+                           'S': 'Scp'}
+        self.rs = {}
+
+        self.sname = ''
+        for d in self.directions:
+            self.rs[d] = Resistance(node1=nodename+d,
+                                    node2=nodename,
+                                    r=0,
+                                    cntrs=cntrs)
+
+    def components(self):
+        for d,r in self.rs.items():
+            yield r
+
 class NodeBlock(object):
     def __init__(self, coord, mesh_size, cntrs):
         def gen_node_name(coord, d=''):
@@ -128,15 +152,22 @@ class NodeBlock(object):
 
         # TODO this should go to some sort of a global config file
         self.directions = ('E', 'W', 'N', 'S')
+        in_dirs = [d for d in self.inward_directions()]
 
-        for d in self.inward_directions():
+        self.conn_point = ConnectionPoint(self.coord,
+                                              self.nodename,
+                                              in_dirs,
+                                              cntrs)
+
+        for d in in_dirs:
             tmp_subnode = gen_node_name(coord, d)
             self.subnodes[d] = tmp_subnode
             self.ammeters[d] = Ammeter(node1=tmp_subnode,
-                                       node2=self.nodename,
+                                       node2=self.nodename+'cp',
                                        cntrs=cntrs)
 
     def components(self):
+        yield self.conn_point
         for d, a in self.ammeters.items():
             yield a
 
@@ -207,6 +238,8 @@ class CounterSet(object):
     def __init__(self):
         self.r = 0
         self.v = 0
+        self.con = 0
+
 
 class ROCModel(object):
     def __init__(self, N):
