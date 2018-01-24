@@ -14,7 +14,7 @@ hp = HeatProblem(N, source, sink, conductance, src_val=100.)
 
 m = ROCModel(mesh_size)
 m.load_problem(hp)
-m.run_interconnect_solver()
+m.run_interconnect_solver(filename='interconnect_test')
 
 # surface3d = True
 
