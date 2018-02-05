@@ -217,6 +217,17 @@ class ROCModel(object):
 
         self.cntrs = CounterSet()
 
+        self.nodes = []
+        self.links = []
+
+        self.src_bboxs = []
+        self.src_idxs = set()
+        self.src = []
+
+        self.snk_bboxs = []
+        self.snk_idxs = set()
+        self.snk = []
+
     def create_mesh(self, grid):
 
         def direct_copy(grid):
@@ -331,7 +342,6 @@ class ROCModel(object):
         short_range = range(self.w-1)
 
         # generate row resistors
-        self.links = []
         for i, j in it.product(full_range, short_range):
             self.links.append(MeshResistance(self.prob_conductance,
                                              self.nodes[i][j],
@@ -407,7 +417,6 @@ class ROCModel(object):
                               for s in hp.sources]
         else:
             mesh_bbox = BoundingBox(vslice.left,vslice.top,self.w,self.h)
-            self.src_bboxs = []
             for s in hp.sources:
                 tmp = mesh_bbox&s
                 if tmp is not None:
@@ -415,8 +424,6 @@ class ROCModel(object):
                             tmp.lo(-vslice.left).to(-vslice.top))
             # print(self.src_bboxs)
 
-        self.src_idxs = set()
-        self.src = []
         for s in self.src_bboxs:
             self.src_idxs |= {idx for idx in s}
 
@@ -456,14 +463,11 @@ class ROCModel(object):
                               for s in hp.sinks]
         else:
             mesh_bbox = BoundingBox(vslice.left,vslice.top,self.w,self.h)
-            self.snk_bboxs = []
             for s in hp.sinks:
                 tmp = mesh_bbox&s
                 if tmp is not None:
                     self.snk_bboxs.append(tmp.lo(-vslice.left).to(-vslice.top))
 
-        self.snk_idxs = set()
-        self.snk = []
         for s in self.snk_bboxs:
             self.snk_idxs |= {idx for idx in s}
 
