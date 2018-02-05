@@ -14,7 +14,7 @@ class Resistance(object):
         # self.uname = uname
         cntrs.r += 1
 
-
+# TODO VoltageSource->BoundaryCondition
 # VoltageSource objects can be connected to any kind of node
 class VoltageSource(object):
     def __init__(self, v, node1, node2, cntrs): 
@@ -43,13 +43,7 @@ class VoltageSource(object):
 
         cntrs.v += 1
 
-
-class Ground(VoltageSource):
-    def __init__(self, node, cntrs):
-        VoltageSource.__init__(self, v=0, node1=node, node2='0',
-                               cntrs=cntrs)
-
-
+# TODO decouple from VoltageSource, change name to CurrentMeter
 class Ammeter(VoltageSource):
     def __init__(self, node1, node2, cntrs):
         VoltageSource.__init__(self, v=0, node1=node1, node2=node2,
@@ -202,6 +196,7 @@ class NodeBlock(object):
         v = curs['N']-curs['S']
         return u, v
 
+# TODO can we move the counter logic to the generators?
 class CounterSet(object):
     def __init__(self):
         self.r = 0
@@ -470,8 +465,10 @@ class ROCModel(object):
         self.snk_idxs -= self.src_idxs
 
         for i, j in self.snk_idxs:
-            self.snk.append(Ground(self.nodes[i][j],
-                                   self.cntrs))
+            self.snk.append(VoltageSource(v=0,
+                                          node1=self.nodes[i][j],
+                                          node2=0,
+                                          cntrs=self.cntrs))
 
     def src_nodeblocks(self):
         for i, j in self.src_idxs:
