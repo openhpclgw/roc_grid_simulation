@@ -237,13 +237,13 @@ class SpiceGenerator(object):
         return ret
 
     def component_codegen(self, c):
-        if isinstance(c, rm.VoltageSource):
+        if isinstance(c, rm.BoundaryCond):
             tmp_name = self.add_v2(c)
         elif isinstance(c, rm.Resistance):
             tmp_name = self.add_r2(c)
         elif isinstance(c, rm.CurrentMeter):
             # Currently, current meter fields are still corresponfing to
-            # the same names in the VoltageSource, therefore a current
+            # the same names in the BoundaryCond, therefore a current
             # meter instance can be passed to add_v2 directly.
             tmp_name = self.add_v2(c)
         else:

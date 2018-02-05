@@ -14,9 +14,8 @@ class Resistance(object):
         # self.uname = uname
         cntrs.r += 1
 
-# TODO VoltageSource->BoundaryCondition
-# VoltageSource objects can be connected to any kind of node
-class VoltageSource(object):
+# BoundaryCond objects can be connected to any kind of node
+class BoundaryCond(object):
     def __init__(self, v, node1, node2, cntrs): 
         self.uid = cntrs.v
         self.v = v
@@ -422,7 +421,7 @@ class ROCModel(object):
             self.src_idxs |= {idx for idx in s}
 
         for i, j in self.src_idxs:
-            self.src.append(VoltageSource(self.mesh[i][j],
+            self.src.append(BoundaryCond(self.mesh[i][j],
                                           self.nodes[i][j],
                                           0,
                                           self.cntrs))
@@ -439,7 +438,7 @@ class ROCModel(object):
             if len(self.src_idxs) == 0:
                 for i, j in self.boundaries():
                     if (i,j) not in self.snk_idxs:
-                        self.src.append(VoltageSource(self.mesh[i][j],
+                        self.src.append(BoundaryCond(self.mesh[i][j],
                                                       self.nodes[i][j],
                                                       0,
                                                       self.cntrs))
@@ -471,7 +470,7 @@ class ROCModel(object):
         self.snk_idxs -= self.src_idxs
 
         for i, j in self.snk_idxs:
-            self.snk.append(VoltageSource(v=0,
+            self.snk.append(BoundaryCond(v=0,
                                           node1=self.nodes[i][j],
                                           node2=0,
                                           cntrs=self.cntrs))
