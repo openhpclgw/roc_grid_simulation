@@ -44,11 +44,18 @@ class VoltageSource(object):
         cntrs.v += 1
 
 # TODO decouple from VoltageSource, change name to CurrentMeter
-class CurrentMeter(VoltageSource):
+class CurrentMeter(object):
     def __init__(self, node1, node2, cntrs):
-        VoltageSource.__init__(self, v=0, node1=node1, node2=node2,
-                               cntrs=cntrs)
+        self.uid = cntrs.v
+        self.node1 = node1
+        self.node2 = node2
         self.current = 0.
+
+        # Ammeters are used to inject potential within the mesh to do
+        # current split analysis.
+        self.v = 0
+
+        cntrs.v += 1
 
     def set_bias(self, v):
         self.v = v

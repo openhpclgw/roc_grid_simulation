@@ -241,6 +241,11 @@ class SpiceGenerator(object):
             tmp_name = self.add_v2(c)
         elif isinstance(c, rm.Resistance):
             tmp_name = self.add_r2(c)
+        elif isinstance(c, rm.CurrentMeter):
+            # Currently, current meter fields are still corresponfing to
+            # the same names in the VoltageSource, therefore a current
+            # meter instance can be passed to add_v2 directly.
+            tmp_name = self.add_v2(c)
         else:
             tmp_name = ''
             print("error")
