@@ -43,10 +43,9 @@ class VoltageSource(object):
 
         cntrs.v += 1
 
-# TODO decouple from VoltageSource, change name to CurrentMeter
 class CurrentMeter(object):
     def __init__(self, node1, node2, cntrs):
-        self.uid = cntrs.v
+        self.uid = cntrs.v # this counter logic needs to go
         self.node1 = node1
         self.node2 = node2
         self.current = 0.
