@@ -9,11 +9,11 @@ def print_current_table(m, print_checksum=False):
     print(frs.format('Terminal1', 'Terminal2', 'Current', 'Direction'))
     checksum = 0.
     for mr in m.links:
-        abs_current = abs(mr.ammeter.current)
+        abs_current = abs(mr.curmeter.current)
         print(frs.format(str(mr.nodeblock1.coord),
                          str(mr.nodeblock2.coord),
                          '{:>10.6e}'.format(abs_current),
-                         mr.cur_direction(mr.ammeter.current)))
+                         mr.cur_direction(mr.curmeter.current)))
         checksum += abs_current
 
     if print_checksum:
@@ -57,7 +57,7 @@ def aggregate_current_vectors(m):
 
 
 def nodal_current_dict(node):
-    return {d: node.ammeters[d].current if d in node.ammeters else 0.
+    return {d: node.curmeters[d].current if d in node.curmeters else 0.
             for d in node.directions}
 
 
@@ -194,8 +194,8 @@ def run_current_split_analysis(m, verbose=False):
         fin_splits = final_nodal_current_splits[i][j]
 
         for d in node.directions:
-            if d in node.ammeters:
-                a = node.ammeters[d]
+            if d in node.curmeters:
+                a = node.curmeters[d]
                 if verbose:
                     sys.stdout.write(
                             '\rRunning bias: {}, {}'.format(str((i, j)),

@@ -113,12 +113,12 @@ class SpiceGenerator(object):
         self.add_block_comment("Analysis code")
         self.add_transtmt()
         for i, j in it.product(full_range, full_range):
-            for _,a in roc_model.nodes[i][j].ammeters.items():
+            for _,a in roc_model.nodes[i][j].curmeters.items():
                 self.add_iprintstmt(a.sname)
             self.add_vprintstmt((i,j))
 
         for mr in roc_model.links:
-            self.add_iprintstmt(mr.ammeter.sname)
+            self.add_iprintstmt(mr.curmeter.sname)
 
         if not self.cache_only:
             self.file.close()
@@ -158,10 +158,10 @@ class SpiceGenerator(object):
         result_dict = self.generate_result_dict(suffix, cached_file)
 
         for mr in roc_model.links:
-            mr.ammeter.current = result_dict[mr.ammeter.sname]
+            mr.curmeter.current = result_dict[mr.curmeter.sname]
 
         for node in roc_model.iter_nodes():
-            for _,a in node.ammeters.items():
+            for _,a in node.curmeters.items():
                 a.current = result_dict[a.sname]
 
             sym = 'V('+node.sname+')'

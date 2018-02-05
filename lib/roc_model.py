@@ -44,7 +44,7 @@ class VoltageSource(object):
         cntrs.v += 1
 
 # TODO decouple from VoltageSource, change name to CurrentMeter
-class Ammeter(VoltageSource):
+class CurrentMeter(VoltageSource):
     def __init__(self, node1, node2, cntrs):
         VoltageSource.__init__(self, v=0, node1=node1, node2=node2,
                                cntrs=cntrs)
@@ -81,16 +81,16 @@ class MeshResistance(object):
         self.resistance = Resistance(r, self.node1, self.node2,
                                      cntrs)
 
-        # add internal subnode to attach the ammeter
+        # add internal subnode to attach the curmeter
         self.innodeid = str(self.resistance.uid)+'sub'
 
-        # add ammeter
-        self.ammeter = Ammeter(self.node1, self.innodeid, cntrs)
+        # add curmeter
+        self.curmeter = CurrentMeter(self.node1, self.innodeid, cntrs)
         self.resistance.node1 = self.innodeid
 
     def components(self):
         yield self.resistance
-        yield self.ammeter
+        yield self.curmeter
 
     def cur_direction(self, val):
         if val == 0:
@@ -110,7 +110,7 @@ class NodeBlock(object):
         self.nodename = gen_node_name(coord)
         self.sname = self.nodename
         self.subnodes = {}
-        self.ammeters = {}
+        self.curmeters = {}
 
         self.mesh_size = mesh_size
 
@@ -125,12 +125,12 @@ class NodeBlock(object):
         for d in self.inward_directions():
             tmp_subnode = gen_node_name(coord, d)
             self.subnodes[d] = tmp_subnode
-            self.ammeters[d] = Ammeter(node1=tmp_subnode,
+            self.curmeters[d] = CurrentMeter(node1=tmp_subnode,
                                        node2=self.nodename,
                                        cntrs=cntrs)
 
     def components(self):
-        for d, a in self.ammeters.items():
+        for d, a in self.curmeters.items():
             yield a
 
     def inward_directions(self):
@@ -169,20 +169,20 @@ class NodeBlock(object):
 
     def sum_reduce_in_curs(self):
         ret = 0.
-        for _, a in self.ammeters.items():
+        for _, a in self.curmeters.items():
             if a.current > 0:
                 ret += a.current
         return abs(ret)
 
     def sum_reduce_out_curs(self):
         ret = 0.
-        for _, a in self.ammeters.items():
+        for _, a in self.curmeters.items():
             if a.current < 0:
                 ret += a.current
         return abs(ret)
 
     def aggregate_current_vector(self):
-        a = self.ammeters
+        a = self.curmeters
         curs = {}
         for d in self.directions:
             if d in a:
