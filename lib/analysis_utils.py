@@ -270,7 +270,8 @@ def load_grid_from_comsol_csv(filename):
 
 # this function should be included in the interconnect generator in the
 # future
-def generate_sparams_from_splits(splits):
+def generate_sparams_from_splits(splits, dirname='tmp',
+                                         file_format='{},{}.txt'):
     mesh_size = len(splits)
 
     header = (
@@ -288,7 +289,7 @@ def generate_sparams_from_splits(splits):
     dir_to_port = { 'E': 1, 'W': 2, 'N': 3, 'S': 4 } 
 
 
-    filename = '{},{}.txt'
+    filename = dirname+'/'+file_format
     for i, j in it.product(range(mesh_size), range(mesh_size)):
         f = open(filename.format(i,j), 'w')
         f.write(header)
