@@ -18,19 +18,21 @@ m.run_spice_solver()
 
 surface3d = True
 
-print('Node Potentials')
-print('---------------')
-print_node_potentials(m)
-print()
-print('Node Currents')
-print('-------------')
-print_node_currents(m)
-print()
-# print('Node Current Splits')
+# print('Node Potentials')
+# print('---------------')
+# print_node_potentials(m)
+# print()
+# print('Node Currents')
 # print('-------------')
-# print_current_splits(run_current_split_analysis(m))
+# print_node_currents(m)
+# print()
+print('Node Current Splits')
+print('-------------')
+splits = run_current_split_analysis(m)
+print_current_splits(splits)
+generate_sparams_from_splits(splits)
 
-if not surface3d:
-    plot_heatmap(m, current_flow_plot=None)
-else:
-    plot_surface(m)
+# if not surface3d:
+    # plot_heatmap(m, current_flow_plot=None)
+# else:
+    # plot_surface(m)

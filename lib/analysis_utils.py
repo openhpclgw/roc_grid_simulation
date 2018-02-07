@@ -267,3 +267,29 @@ def load_grid_from_comsol_csv(filename):
                 count += 1
 
         return grid
+
+# this function should be included in the interconnect generator in the
+# future
+def generate_sparams_from_splits(splits):
+    header = '["port 2","LEFT"]\n["port 1","RIGHT"]\n["port 3","TOP"]\n["port 4","BOTTOM"]\n\n'
+
+    line = '("port {entry}","TE",1,"port {exit}",1,"transmission")\n(1,3)\n1.93100000E+14\t{val}\t\t0\n'
+
+    dir_to_port = { 'E': 1, 'W': 2, 'N': 3, 'S': 4 } 
+
+    mesh_size = len(splits)
+
+    filename = '{},{}.txt'
+
+    for i, j in it.product(range(mesh_size), range(mesh_size)):
+        f = open(filename.format(i,j), 'w')
+        f.write(header)
+        tmp_splits = splits[i][j]
+
+        for in_dir, out_vals in tmp_splits.items():
+            for out_dir, out_val in out_vals.items():
+                if in_dir != out_dir:
+                    f.write(line.format(entry=dir_to_port[in_dir],
+                                        exit=dir_to_port[out_dir],
+                                        val=out_val))
+        f.close()
