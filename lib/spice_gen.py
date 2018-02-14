@@ -64,6 +64,7 @@ class SpiceGenerator(object):
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
         self.__v2frmt = 'V'+cg+'{uname} {nn1} {nn2} DC {v}'
+        self.__ifrmt = 'I'+cg+'{uname} {nn1} {nn2} PWL 0 {cur}'
         self.__r2frmt = 'R'+cg+'{uname} {nn1} {nn2} {r}'
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
@@ -98,16 +99,23 @@ class SpiceGenerator(object):
             if n.ic != 0.:
                 self.ic_codegen(n.sname, n.ic)
 
-        # generate source
-        self.add_block_comment("Sources")
-        for v in roc_model.src:
-            self.component_codegen(v)
+        if not roc_model.norton:
+            # generate source
+            self.add_block_comment("Sources")
+            for v in roc_model.src:
+                self.component_codegen(v)
 
-        # generate sink
-        self.add_block_comment("Sinks")
-        for s in roc_model.snk:
-            self.component_codegen(s)
-
+            # generate sink
+            self.add_block_comment("Sinks")
+            for s in roc_model.snk:
+                self.component_codegen(s)
+        else:
+            # generate loop components for Norton circuit
+            self.add_block_comment('Loop Components')
+            for loop in roc_model.loops:
+                self.add_comment('Loop ' + str(loop.coord))
+                for c in loop.components:
+                    self.component_codegen(c)
 
         # self.generate measurement/analysis components
         self.add_block_comment("Analysis code")
@@ -236,6 +244,13 @@ class SpiceGenerator(object):
         self.v_counter += 1
         return ret
 
+    def add_i(self, i):
+        ret = self.gen(self.__ifrmt.format(i=i.uid,
+                                           uname='',
+                                           nn1=i.node1,
+                                           nn2=i.node2,
+                                           cur=i.i))
+
     def component_codegen(self, c):
         if isinstance(c, rm.BoundaryCond):
             tmp_name = self.add_v2(c)
@@ -246,6 +261,8 @@ class SpiceGenerator(object):
             # the same names in the BoundaryCond, therefore a current
             # meter instance can be passed to add_v2 directly.
             tmp_name = self.add_v2(c)
+        elif isinstance(c, rm.CurrentSource):
+            tmp_name = self.add_i(c)
         else:
             tmp_name = ''
             print("error")

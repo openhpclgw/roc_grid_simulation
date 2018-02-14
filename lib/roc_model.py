@@ -14,6 +14,16 @@ class Resistance(object):
         # self.uname = uname
         cntrs.r += 1
 
+# CurrentSource is a simple spice object
+class CurrentSource(object):
+    def __init__(self, i, node1, node2, cntrs):
+        self.uid = cntrs.i
+        self.i = i
+        self.node1 = node1
+        self.node2 = node2
+        # self.uname = uname
+        cntrs.i += 1
+
 # BoundaryCond objects can be connected to any kind of node
 class BoundaryCond(object):
     def __init__(self, v, node1, node2, cntrs): 
@@ -64,7 +74,7 @@ class CurrentMeter(object):
 
 # MeshResistances must connect two node block objects
 class MeshResistance(object):
-    def __init__(self, r, nodeblock1, nodeblock2, cntrs): 
+    def __init__(self, r, nodeblock1, nodeblock2, cntrs, norton=False): 
         # check if nodeblock2 comes "after" nodeblock1
         if not (nodeblock2 > nodeblock1):
             print('2nd NodeBlock of MeshResistance must come after the\
@@ -80,7 +90,13 @@ class MeshResistance(object):
         self.nodeblock1 = nodeblock1
         self.nodeblock2 = nodeblock2
 
-        self.node1, self.node2 = ts
+        if not norton:
+            self.node1, self.node2 = ts
+        else:
+            # set offset nodes
+            offset_node_frmt='{node}_off'
+            self.node1 = offset_node_frmt.format(node=ts[0])
+            self.node2 = offset_node_frmt.format(node=ts[1])
 
         self.orientation = 'H' if nodeblock1.is_h(nodeblock2) else 'V'
         self.resistance = Resistance(r, self.node1, self.node2,
@@ -201,16 +217,125 @@ class NodeBlock(object):
         v = curs['N']-curs['S']
         return u, v
 
+    def __repr__(self):
+        return 'NodeBlock'+str(self.coord)
+
 # TODO can we move the counter logic to the generators?
 class CounterSet(object):
     def __init__(self):
         self.r = 0
         self.v = 0
+        self.i = 0
+
+class NortonLoop(object):
+    def __init__(self, coord, nw, ne, sw, se, cntrs,
+                 sides=None, boundary_cond=None):
+        # if not isinstance(nodes, list):
+            # print('Nodes must be a list')
+        # if len(nodes) != 4:
+            # print('Nodes must contain 4 NodeBlock objects')
+
+        self.coord = coord
+        # establish nodes from the coord
+        self.nw = nw
+        self.ne = ne
+        self.sw = sw
+        self.se = se
+
+        self.edges = {'N': (self.nw, self.ne),
+                      'E': (self.ne, self.se),
+                      'S': (self.se, self.sw),
+                      'W': (self.sw, self.nw)}
+
+        self.components = []
+
+        self.finalize(sides, boundary_cond, cntrs)
+
+    def finalize(self, sides, boundary_cond, cntrs):
+        # add the components depending on the location of the loop
+        # and the location of sources and sinks
+
+        # options
+        # 1. Loop is on the side and source: Add current source on the
+        # outer edge of the loop, 0 resistances on the other edges 2.
+        # 2. Loop is on the side and sink: Connect the dangling
+        # nodeblock nodes on the sideto ground, add 0 resistances on
+        # other edges
+        # 3. Loop is not on the side: Add 0 resistances on all edges
+
+        # options 1 and 2 are handled in finalize_edge
+        if sides is not None:
+            if boundary_cond is None:
+                bound_conn_type = 'short'
+            else:
+                bound_conn_type = boundary_cond
+
+            for d,e in self.edges.items():
+                if d in sides:
+                    self.finalize_edge(e, bound_conn_type, cntrs)
+                else:
+                    self.finalize_edge(e, 'no_resistance', cntrs)
+
+        elif side is None:
+            assert boundary_cond is None
+            for _,e in self.edges.items():
+                self.finalize_edge(e, 'no_resistance', cntrs)
+
+    def finalize_edge(self, edge, conn_type, cntrs):
+        print(edge)
+        nb1 = edge[0]
+        nb2 = edge[1]
+        facing_nodes = nb1.get_facing_subnodes(nb2);
+        n1 = facing_nodes[0]
+        n2 = facing_nodes[1]
+        oft = '{node}_off'
+        if conn_type == 'no_resistance':
+            self.components.append(Resistance(r=0,
+                                              node1=n1,
+                                              node2=oft.format(node=n1),
+                                              cntrs=cntrs))
+            self.components.append(Resistance(r=0,
+                                              node1=n2,
+                                              node2=oft.format(node=n2),
+                                              cntrs=cntrs))
+        elif conn_type == 'short':
+            self.components.append(Resistance(r=0,
+                                              node1=n1,
+                                              node2=n2,
+                                              cntrs=cntrs))
+        elif conn_type == 'source':
+            self.components.append(Resistance(r=0,
+                                              node1=n1,
+                                              node2=oft.format(node=n1),
+                                              cntrs=cntrs))
+            self.components.append(CurrentSource(i=1,
+                                               node1=n2,
+                                               node2=oft.format(node=n2),
+                                               cntrs=cntrs))
+        elif conn_type == 'sink':
+            self.components.append(Resistance(r=0,
+                                              node1=n1,
+                                              node2=0,
+                                              cntrs=cntrs))
+            self.components.append(Resistance(r=0,
+                                              node1=n2,
+                                              node2=0,
+                                              cntrs=cntrs))
+        else:
+            print('Unrecognized conn_type: ' + conn_type)
+            assert False
+            
 
 class ROCModel(object):
-    def __init__(self, N):
+    def __init__(self, N, norton=False):
+        self.norton = norton
         self.h = N
         self.w = N
+
+        if self.norton:
+            self.h += 1
+            self.w += 1
+
         self.r_counter = 0
         self.v_counter = 0
         self.mesh = np.zeros((self.h, self.w))
@@ -219,6 +344,8 @@ class ROCModel(object):
 
         self.nodes = []
         self.links = []
+        if norton:
+            self.loops = []
 
         self.src_bboxs = []
         self.src_idxs = set()
@@ -346,14 +473,16 @@ class ROCModel(object):
             self.links.append(MeshResistance(self.prob_conductance,
                                              self.nodes[i][j],
                                              self.nodes[i][j+1],
-                                             self.cntrs))
+                                             self.cntrs,
+                                             self.norton))
 
         # generate column resistors
         for i, j in it.product(short_range, full_range):
             self.links.append(MeshResistance(self.prob_conductance,
                                              self.nodes[i][j],
                                              self.nodes[i+1][j],
-                                             self.cntrs))
+                                             self.cntrs,
+                                             self.norton))
 
     def load_problem(self, hp):
         self.hp = hp
@@ -361,13 +490,41 @@ class ROCModel(object):
         self.prob_conductance = hp.conductance
         self.init_mesh(grid)
 
+    # this needs to be called after source and sink is initialized
+    def init_norton_loops(self):
+        full_range = range(self.w-1)  # mesh size is always node-wise
+
+        for i, j in it.product(full_range, full_range):
+            sides = set()
+            if i == 0: sides.add('N')
+            if i == self.w-2 : sides.add('S')
+            if j == 0: sides.add('W')
+            if j == self.w-2 : sides.add('E')
+
+            if (i,j) in self.src_idxs:
+                boundary_cond = 'source'
+            elif (i,j) in self.snk_idxs:
+                boundary_cond = 'sink'
+
+            self.loops.append(NortonLoop(Coord(i,j),
+                                         self.nodes[i+0][j+0],
+                                         self.nodes[i+0][j+1],
+                                         self.nodes[i+1][j+0],
+                                         self.nodes[i+1][j+1],
+                                         self.cntrs,
+                                         sides,
+                                         boundary_cond))
+
     def init_mesh(self, grid):
         self.create_mesh(grid)
         self.init_nodes()
         self.init_links()
         self.init_source(self.hp) # FIXME hp can go away
         self.init_sink(self.hp)
-        self.init_ics(self.hp)
+        if self.norton:
+            self.init_norton_loops()
+        else:
+            self.init_ics(self.hp)  # TODO this can go away
 
     def init_virtualized_mesh(self, grid, vslice):
         print('Initializing virtualized mesh')
