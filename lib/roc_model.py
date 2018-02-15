@@ -190,7 +190,8 @@ class NodeBlock(object):
 
     def sum_reduce_in_curs(self):
         ret = 0.
-        for _, a in self.curmeters.items():
+        for d, a in self.curmeters.items():
+            # print('\t', self.coord, ' ', d, ' ', a.current)
             if a.current > 0:
                 ret += a.current
         return abs(ret)
@@ -230,16 +231,18 @@ class CounterSet(object):
 class NortonLoop(object):
     def __init__(self, coord, nw, ne, sw, se, cntrs,
                  sides=None, boundary_cond=None):
-        # if not isinstance(nodes, list):
-            # print('Nodes must be a list')
-        # if len(nodes) != 4:
-            # print('Nodes must contain 4 NodeBlock objects')
 
         self.coord = coord
         self.nw = nw
         self.ne = ne
         self.sw = sw
         self.se = se
+        self.nodeblocks = (nw, ne, sw, se)
+
+        self.nodeblock_outdirs =  ((     'W', 'N'     ),
+                                   ('E',      'N'     ),
+                                   (     'W',      'S'),
+                                   ('E',           'S'))
 
         self.edges = {'N': (self.nw, self.ne),
                       'E': (self.ne, self.se),
@@ -248,9 +251,38 @@ class NortonLoop(object):
 
         self.components = []
         self.gnd_nbs = set()
+        self.short_nbs = set()
 
         self.finalize(sides, boundary_cond, cntrs)
 
+    def get_loop_current(self):
+        cur = 0.
+        # for nb in self.nodeblocks:
+            # for d, curmeter in nb.curmeters.items():
+                # c = curmeter.current
+                # print(self.coord, ' ', nb.coord, ' ', d, ' ', c)
+        for nb, dirs in zip(self.nodeblocks, self.nodeblock_outdirs):
+            for d in dirs:
+                if d in nb.curmeters:
+                    c = nb.curmeters[d].current
+                    print(self.coord, ' ', nb.coord, ' ', d, ' ', c)
+                    if c > 0:
+                        cur += c
+        return cur
+
+    def sum_reduce_in_curs(self):
+        ret = 0.
+        for nb in self.nodeblocks:
+            cur = nb.sum_reduce_in_curs()
+            ret += cur
+        return abs(ret)
+
+    def sum_reduce_out_curs(self):
+        ret = 0.
+        for nb in self.nodeblocks:
+            cur = nb.sum_reduce_out_curs()
+            ret += cur
+        return abs(ret)
 
     def finalize(self, sides, boundary_cond, cntrs):
         # add the components depending on the location of the loop
@@ -309,6 +341,8 @@ class NortonLoop(object):
                                               node1=n1,
                                               node2=n2,
                                               cntrs=cntrs))
+            self.short_nbs.add(nb1)
+            self.short_nbs.add(nb2)
         elif conn_type == 'source':
             # self.components.append(BoundaryCond(v=0.001,
                                               # node1=n1,
@@ -492,7 +526,7 @@ class ROCModel(object):
         # needs to change if we start considering source/sink in the
         # middle meshes
         # if self.norton:
-            # full_range = range(1, self.w-1)
+            # full_range = range(1, self.w-1True[
             # short_range = range(1, self.w-2)
         # else:
         full_range = range(self.w)
@@ -549,6 +583,7 @@ class ROCModel(object):
         # nodes they need grounded. These nodes are stored in this set.
         # Elements must be NodeBlock objects 
         sink_nodes = set()
+        shorted_nodes = set()
 
         for i, j in it.product(full_range, full_range):
             sides = set()
@@ -574,21 +609,25 @@ class ROCModel(object):
                                          sides,
                                          boundary_cond)
 
+            shorted_nodes |= loop.short_nbs
+
+
+            self.loops.append(loop)
+
+        for l in self.loops:
             # now we have sink_nodes set storing all the nodeblocks that
             # needs to be grounded. But the question is which nodeblocks
             # that this loop owns are new (i.e. not been grounded
             # before)
-            for nb in loop.gnd_nbs - sink_nodes:
-                loop.components.append(BoundaryCond(v=0,
+            for nb in l.gnd_nbs - sink_nodes - shorted_nodes:
+                l.components.append(BoundaryCond(v=0,
                                                     node1=nb,
                                                     node2=0,
                                                     cntrs=self.cntrs))
 
             # or the new nodeblocks into the nodes that have already
             # been grounded
-            sink_nodes |= loop.gnd_nbs
-
-            self.loops.append(loop)
+            sink_nodes |= l.gnd_nbs
 
 
     def init_mesh(self, grid):

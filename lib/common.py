@@ -25,6 +25,9 @@ class Coord(object):
     def __gt__(self, o):
         return self.i > o.i or (self.i == o.i and self.j > o.j)
 
+    def idx(self):
+        return self.__coord
+
 
 class BoundingBox(object):
     # bbox : (left, top, width, height)

@@ -8,12 +8,14 @@ size = int(sys.argv[1])
 N = size
 mesh_size = size
 source = (0, 0, 1, size)
-# sink = [(1, 0, size-1, 1), (size-1, 0, 1, size-1), (1, size-1, size-1, 1)]
-sink = [(size-1, 0, 1, size)]
+# sink = [(2, 0, size-2, 1), (size-1, 0, 1, size-1), (2, size-1, size-2, 1)]
+# sink = [(size-1, 0, 1, size)]
 conductance = 10**-3  # this'll be used as resistance directly
 hp = HeatProblem(N, source, sink, conductance, src_val=100.)
 
-m = ROCModel(mesh_size, norton=True)
+norton = True
+
+m = ROCModel(mesh_size, norton=norton)
 m.load_problem(hp)
 m.run_spice_solver()
 
@@ -33,7 +35,9 @@ print()
 # print_current_splits(splits)
 # generate_sparams_from_splits(splits)
 
-if not surface3d:
+if norton:
+    plot_heatmap_from_grid(generate_loop_current_table(m))
+elif not surface3d:
     plot_heatmap(m, current_flow_plot=None)
 else:
     plot_surface(m)
