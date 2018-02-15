@@ -316,8 +316,8 @@ class NortonLoop(object):
                                               # node2=n2,
                                               # cntrs=cntrs))
             self.components.append(CurrentSource(i=1,
-                                               node1=n2,
-                                               node2=oft.format(node=n2),
+                                               node1=n1,
+                                               node2=n2,
                                                cntrs=cntrs))
         elif conn_type == 'sink':
             self.gnd_nbs.add(nb1)
@@ -560,10 +560,12 @@ class ROCModel(object):
 
             if (i,j) in self.src_idxs:
                 boundary_cond = 'source'
+                print((i,j))
             elif (i,j) in self.snk_idxs:
                 boundary_cond = 'sink'
             else:
                 boundary_cond = None
+
 
             loop = NortonLoop(Coord(i,j),self.nodes[i+0][j+0],
                                          self.nodes[i+0][j+1],
