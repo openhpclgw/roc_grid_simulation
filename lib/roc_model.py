@@ -311,14 +311,14 @@ class NortonLoop(object):
                                               node2=n2,
                                               cntrs=cntrs))
         elif conn_type == 'source':
-            self.components.append(BoundaryCond(v=0.001,
-                                              node1=n1,
-                                              node2=n2,
-                                              cntrs=cntrs))
-            # self.components.append(CurrentSource(i=1,
-                                               # node1=n2,
-                                               # node2=oft.format(node=n2),
-                                               # cntrs=cntrs))
+            # self.components.append(BoundaryCond(v=0.001,
+                                              # node1=n1,
+                                              # node2=n2,
+                                              # cntrs=cntrs))
+            self.components.append(CurrentSource(i=1,
+                                               node1=n2,
+                                               node2=oft.format(node=n2),
+                                               cntrs=cntrs))
         elif conn_type == 'sink':
             self.gnd_nbs.add(nb1)
             self.gnd_nbs.add(nb2)
