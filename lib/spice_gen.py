@@ -75,7 +75,7 @@ class SpiceGenerator(object):
         if not self.cache_only:
             self.file = open(self.rel_in_path(suffix), 'w')
         # mesh size
-        self.mesh_size = len(roc_model.mesh)
+        self.mesh_size = roc_model.w  # not meaningful_size!
         self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
 
         full_range = range(self.mesh_size)
@@ -89,6 +89,7 @@ class SpiceGenerator(object):
 
         # generate nodes 
         self.add_block_comment("Node subcircuits")
+        print(full_range)
         for i, j in it.product(full_range, full_range):
             n = roc_model.nodes[i][j]
             self.add_comment("Node " + str((i, j)))
