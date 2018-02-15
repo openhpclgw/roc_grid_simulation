@@ -236,7 +236,6 @@ class NortonLoop(object):
             # print('Nodes must contain 4 NodeBlock objects')
 
         self.coord = coord
-        # establish nodes from the coord
         self.nw = nw
         self.ne = ne
         self.sw = sw
