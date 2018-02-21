@@ -303,17 +303,4 @@ def generate_sparams_from_splits(splits, dirname='tmp',
         f.close()
 
 def generate_loop_current_table(m):
-    if not m.norton:
-        print('Mesh is not Nortonian')
-        assert False
-    
-    size = m.w-1
-
-    table = np.zeros((size, size))
-
-    for l in m.iter_loops():
-        # print(l.coord, ' ', l.sum_reduce_in_curs(), ' ', 
-                            # l.sum_reduce_out_curs())
-        table[l.coord.idx()] = l.get_loop_current()
-
-    return table
+    return m.calc_norton_loop_currents()

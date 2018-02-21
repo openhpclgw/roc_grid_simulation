@@ -77,12 +77,12 @@ class MeshResistance(object):
     def __init__(self, r, nodeblock1, nodeblock2, cntrs, norton=False): 
         # check if nodeblock2 comes "after" nodeblock1
         if nodeblock1 > nodeblock2:
-            self.nodeblock1 = nodeblock1
-            self.nodeblock2 = nodeblock2
-
-        elif nodeblock2 > nodeblock1:
             self.nodeblock1 = nodeblock2
             self.nodeblock2 = nodeblock1
+
+        elif nodeblock2 > nodeblock1:
+            self.nodeblock1 = nodeblock1
+            self.nodeblock2 = nodeblock2
         else:
             print('Legs of MeshResistance cannot be same')
 
@@ -155,6 +155,12 @@ class NodeBlock(object):
             self.curmeters[d] = CurrentMeter(node1=tmp_subnode,
                                        node2=self.nodename,
                                        cntrs=cntrs)
+
+    def __eq__(self, o):
+        return self.coord == o.coord
+
+    def __hash__(self):
+        return hash(self.coord)
 
     def components(self):
         for d, a in self.curmeters.items():
@@ -259,34 +265,29 @@ class NortonLoop(object):
         self.gnd_nbs = set()
         self.short_nbs = set()
 
-        self.finalize(sides, boundary_cond, cntrs)
-
         self.current = 0.
         self.fixed_current = False
         self.current_branch = None
 
+        self.finalize(sides, boundary_cond, cntrs)
+
+
     def get_loop_current(self):
+        has_result = False
         if self.fixed_current:
             # we will return self.current at the end of the method
             # anyways, nothing to do here
-            pass
+            has_result = True
+            print('\t\tfixed current')
         elif self.current_branch is not None:
             self.current = self.current_branch.get_current()
+            has_result = True
+            print('\t\tside loop ', self.current)
         else:
-            # for nb in self.nodeblocks:
-                # for d, curmeter in nb.curmeters.items():
-                    # c = curmeter.current
-                    # print(self.coord, ' ', nb.coord, ' ', d, ' ', c)
-            cur = 0.
-            for nb, dirs in zip(self.nodeblocks, self.nodeblock_outdirs):
-                for d in dirs:
-                    if d in nb.curmeters:
-                        c = nb.curmeters[d].current
-                        print(self.coord, ' ', nb.coord, ' ', d, ' ', c)
-                        if c > 0:
-                            cur += c
-            self.current = cur
-        return self.current
+            # nothing to do, current must be calculated from the
+            # neighbors
+            pass
+        return (has_result, self.current)
 
     def sum_reduce_in_curs(self):
         ret = 0.
@@ -678,14 +679,68 @@ class ROCModel(object):
             # been grounded
             sink_nodes |= l.gnd_nbs
 
-    # def calc_norton_loop_currents(self):
-        # table = np.zeros((size, size))
+    def find_shared_resistance(self, loop1, loop2):
+        nbs = []
+        for nb1, nb2 in it.product(loop1.nodeblocks, loop2.nodeblocks):
+            if nb1 == nb2:
+                nbs.append(nb1)
 
-        # iter_size = self.w-1
-        # for l in self.loops:
-            # if l
+        assert len(nbs) == 2
 
-        
+        if nbs[0].coord > nbs[1].coord: # swap order
+            nb2, nb1 = tuple(nbs)
+        else:
+            nb1, nb2 = tuple(nbs)
+
+        for r in self.links:
+            if r.nodeblock1 == nb1 and r.nodeblock2 == nb2:
+                return r
+
+        assert False
+
+    def calc_norton_loop_currents(self):
+        size = self.w-1
+        table = np.ndarray(shape=(size, size), dtype=float)
+        table.fill(-1.)
+        full_range = range(size)
+
+        missing_curs = True
+        while missing_curs:
+            missing_curs = False
+            for i,j in it.product(full_range, full_range):
+                # print('Calculating loop current ', (i,j))
+                l = self.loops[i,j]
+                has_current, cur = l.get_loop_current()
+                if has_current:
+                    # print('\t has direct current')
+                    table[i,j] = cur
+                else:  # check if there is a neighbor with known current
+                    neighbor = None
+                    if i > 0:
+                        if table[i-1,j] != -1:
+                            neighbor = self.loops[i-1,j]
+                    elif i < size:
+                        if table[i+1,j] != -1:
+                            neighbor = self.loops[i+1,j]
+                    elif j > 0:
+                        if table[i,j-1] != -1:
+                            neighbor = self.loops[i,j-1]
+                    elif j < size:
+                        if table[i,j+1] != -1:
+                            neighbor = self.loops[i,j+1]
+
+                    if neighbor is None:
+                        missing_curs = True
+                        # nothing else to do
+                    else:
+                        # print('\t calculating from neighbor',
+                                # neighbor.coord)
+                        r = self.find_shared_resistance(l,
+                                                        neighbor)
+                        table[i,j] = abs(neighbor.current -
+                                r.get_current())
+                        l.current = table[i,j]
+        return table
 
     def init_mesh(self, grid):
         self.create_mesh(grid)

@@ -36,7 +36,9 @@ print()
 # generate_sparams_from_splits(splits)
 
 if norton:
-    plot_heatmap_from_grid(generate_loop_current_table(m))
+    t = generate_loop_current_table(m)
+    print(t)
+    plot_heatmap_from_grid(t)
 elif not surface3d:
     plot_heatmap(m, current_flow_plot=None)
 else:

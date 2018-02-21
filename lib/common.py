@@ -25,6 +25,12 @@ class Coord(object):
     def __gt__(self, o):
         return self.i > o.i or (self.i == o.i and self.j > o.j)
 
+    def __eq__(self, o):
+        return self.i==o.i and self.j==o.j
+
+    def __hash__(self):
+        return hash(self.__coord)
+
     def idx(self):
         return self.__coord
 
