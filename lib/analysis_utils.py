@@ -311,7 +311,7 @@ def generate_loop_current_table(m):
 
     table = np.zeros((size, size))
 
-    for l in m.loops:
+    for l in m.iter_loops():
         # print(l.coord, ' ', l.sum_reduce_in_curs(), ' ', 
                             # l.sum_reduce_out_curs())
         table[l.coord.idx()] = l.get_loop_current()

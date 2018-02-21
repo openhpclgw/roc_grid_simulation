@@ -76,9 +76,15 @@ class CurrentMeter(object):
 class MeshResistance(object):
     def __init__(self, r, nodeblock1, nodeblock2, cntrs, norton=False): 
         # check if nodeblock2 comes "after" nodeblock1
-        if not (nodeblock2 > nodeblock1):
-            print('2nd NodeBlock of MeshResistance must come after the\
-                  1st in ij ordering')
+        if nodeblock1 > nodeblock2:
+            self.nodeblock1 = nodeblock1
+            self.nodeblock2 = nodeblock2
+
+        elif nodeblock2 > nodeblock1:
+            self.nodeblock1 = nodeblock2
+            self.nodeblock2 = nodeblock1
+        else:
+            print('Legs of MeshResistance cannot be same')
 
         # get corresponding terminals between NodeBlocks
         ts = nodeblock1.get_facing_subnodes(nodeblock2)
@@ -86,9 +92,6 @@ class MeshResistance(object):
             print('MeshResistance can be created only between\
                     neighboring NodeBlocks')
 
-        # self.r = r
-        self.nodeblock1 = nodeblock1
-        self.nodeblock2 = nodeblock2
 
         # if not norton:
         self.node1, self.node2 = ts
@@ -108,6 +111,9 @@ class MeshResistance(object):
         # add curmeter
         self.curmeter = CurrentMeter(self.node1, self.innodeid, cntrs)
         self.resistance.node1 = self.innodeid
+
+    def get_current(self):
+        return self.curmeter.current
 
     def components(self):
         yield self.resistance
@@ -249,26 +255,38 @@ class NortonLoop(object):
                       'S': (self.se, self.sw),
                       'W': (self.sw, self.nw)}
 
-        self.components = []
+        self._components = []
         self.gnd_nbs = set()
         self.short_nbs = set()
 
         self.finalize(sides, boundary_cond, cntrs)
 
+        self.current = 0.
+        self.fixed_current = False
+        self.current_branch = None
+
     def get_loop_current(self):
-        cur = 0.
-        # for nb in self.nodeblocks:
-            # for d, curmeter in nb.curmeters.items():
-                # c = curmeter.current
-                # print(self.coord, ' ', nb.coord, ' ', d, ' ', c)
-        for nb, dirs in zip(self.nodeblocks, self.nodeblock_outdirs):
-            for d in dirs:
-                if d in nb.curmeters:
-                    c = nb.curmeters[d].current
-                    print(self.coord, ' ', nb.coord, ' ', d, ' ', c)
-                    if c > 0:
-                        cur += c
-        return cur
+        if self.fixed_current:
+            # we will return self.current at the end of the method
+            # anyways, nothing to do here
+            pass
+        elif self.current_branch is not None:
+            self.current = self.current_branch.get_current()
+        else:
+            # for nb in self.nodeblocks:
+                # for d, curmeter in nb.curmeters.items():
+                    # c = curmeter.current
+                    # print(self.coord, ' ', nb.coord, ' ', d, ' ', c)
+            cur = 0.
+            for nb, dirs in zip(self.nodeblocks, self.nodeblock_outdirs):
+                for d in dirs:
+                    if d in nb.curmeters:
+                        c = nb.curmeters[d].current
+                        print(self.coord, ' ', nb.coord, ' ', d, ' ', c)
+                        if c > 0:
+                            cur += c
+            self.current = cur
+        return self.current
 
     def sum_reduce_in_curs(self):
         ret = 0.
@@ -302,6 +320,17 @@ class NortonLoop(object):
                 bound_conn_type = 'short'
             else:
                 bound_conn_type = boundary_cond
+                if boundary_cond == 'source':
+                    self.current = 1.0  # FIXME
+                    self.fixed_current = True
+                elif boundary_cond == 'sink':
+                    self.current = 0.0
+                    self.fixed_current = True
+                elif boundary_cond == 'short':
+                    # finalize edge will set self.current_branch once
+                    # the MeshResistance object is initialized. Nothing
+                    # to do here
+                    pass
 
             for d,e in self.edges.items():
                 if d in sides:
@@ -337,18 +366,20 @@ class NortonLoop(object):
                                               # node2=oft.format(node=n2),
                                               # cntrs=cntrs))
         elif conn_type == 'short':
-            self.components.append(Resistance(r=0,
-                                              node1=n1,
-                                              node2=n2,
-                                              cntrs=cntrs))
+            mesh_r = MeshResistance(r=0,
+                                    nodeblock1=nb1,
+                                    nodeblock2=nb2,
+                                    cntrs=cntrs)
+            self._components.append(mesh_r)
             self.short_nbs.add(nb1)
             self.short_nbs.add(nb2)
+            self.current_branch = mesh_r
         elif conn_type == 'source':
             # self.components.append(BoundaryCond(v=0.001,
                                               # node1=n1,
                                               # node2=n2,
                                               # cntrs=cntrs))
-            self.components.append(CurrentSource(i=1,
+            self._components.append(CurrentSource(i=1,
                                                node1=n1,
                                                node2=n2,
                                                cntrs=cntrs))
@@ -366,6 +397,14 @@ class NortonLoop(object):
         else:
             print('Unrecognized conn_type: ' + conn_type)
             assert False
+
+    def components(self):
+        for c in self._components:
+            if isinstance(c, MeshResistance):
+                for cc in c.components():
+                    yield cc
+            else:
+                yield c
             
 
 class ROCModel(object):
@@ -389,7 +428,8 @@ class ROCModel(object):
         self.nodes = []
         self.links = []
         if norton:
-            self.loops = []
+            self.loops = np.ndarray(shape=(self.w-1, self.w-1),
+                                    dtype=NortonLoop)
 
         self.src_bboxs = []
         self.src_idxs = set()
@@ -573,6 +613,13 @@ class ROCModel(object):
 
         return snk_nbors
 
+    def iter_loops(self):
+        assert self.norton
+
+        full_range = range(self.w-1)  # mesh size is always node-wise
+        for i, j in it.product(full_range, full_range):
+            yield self.loops[i,j]
+
 
     # this needs to be called after source and sink is initialized
     def init_norton_loops(self):
@@ -612,15 +659,17 @@ class ROCModel(object):
             shorted_nodes |= loop.short_nbs
 
 
-            self.loops.append(loop)
+            self.loops[i,j] = loop
 
-        for l in self.loops:
+        # for l in np.nditer(self.loops, flags=['refs_ok']):
+        for i, j in it.product(full_range, full_range):
+            l = self.loops[i,j]
             # now we have sink_nodes set storing all the nodeblocks that
             # needs to be grounded. But the question is which nodeblocks
             # that this loop owns are new (i.e. not been grounded
             # before)
             for nb in l.gnd_nbs - sink_nodes - shorted_nodes:
-                l.components.append(BoundaryCond(v=0,
+                l._components.append(BoundaryCond(v=0,
                                                     node1=nb,
                                                     node2=0,
                                                     cntrs=self.cntrs))
@@ -629,6 +678,14 @@ class ROCModel(object):
             # been grounded
             sink_nodes |= l.gnd_nbs
 
+    # def calc_norton_loop_currents(self):
+        # table = np.zeros((size, size))
+
+        # iter_size = self.w-1
+        # for l in self.loops:
+            # if l
+
+        
 
     def init_mesh(self, grid):
         self.create_mesh(grid)

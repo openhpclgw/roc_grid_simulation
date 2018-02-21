@@ -9,7 +9,7 @@ N = size
 mesh_size = size
 source = (0, 0, 1, size)
 # sink = [(2, 0, size-2, 1), (size-1, 0, 1, size-1), (2, size-1, size-2, 1)]
-# sink = [(size-1, 0, 1, size)]
+sink = [(size-1, 0, 1, size)]
 conductance = 10**-3  # this'll be used as resistance directly
 hp = HeatProblem(N, source, sink, conductance, src_val=100.)
 

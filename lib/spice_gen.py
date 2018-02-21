@@ -113,9 +113,9 @@ class SpiceGenerator(object):
         else:
             # generate loop components for Norton circuit
             self.add_block_comment('Loop Components')
-            for loop in roc_model.loops:
+            for loop in roc_model.iter_loops():
                 self.add_comment('Loop ' + str(loop.coord))
-                for c in loop.components:
+                for c in loop.components():
                     self.component_codegen(c)
 
         # self.generate measurement/analysis components
