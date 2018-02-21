@@ -397,6 +397,11 @@ class NortonLoop(object):
                                               # node1=n2,
                                               # node2=0,
                                               # cntrs=cntrs))
+            # mesh_r = MeshResistance(r=99000000,
+                                    # nodeblock1=nb1,
+                                    # nodeblock2=nb2,
+                                    # cntrs=cntrs)
+            # self._components.append(mesh_r)
         else:
             print('Unrecognized conn_type: ' + conn_type)
             assert False
@@ -408,6 +413,11 @@ class NortonLoop(object):
                     yield cc
             else:
                 yield c
+
+    def curmeters(self):
+        for c in self._components:
+            if isinstance(c, MeshResistance):
+                yield c.curmeter
             
 
 class ROCModel(object):
@@ -626,7 +636,56 @@ class ROCModel(object):
 
     # this needs to be called after source and sink is initialized
     def init_norton_loops(self):
+
+        # this iterator currently does a cw iteration across the
+        # boundary nodes, yielding coordinates
+        def iter_norton_boundaries():
+            for j in range(self.w-1):
+                yield (0, j)
+            for i in range(1, self.w-2):
+                yield (i, self.w-1)
+            for j in range(self.w-1, 0, -1):
+                yield (self.w-1, j)
+            for i in range(self.w-2, 1, -1):
+                yield (i, 0)
+
         full_range = range(self.w-1)  # mesh size is always node-wise
+
+
+        # initialize inner loops. These currently cannot be source or
+        # sink. So there is not much decision making there
+        # inner_range = range(1, self.w-2)
+        # for i, j in it.product(inner_range, inner_range):
+            # loop = NortonLoop(Coord(i,j),self.nodes[i+0][j+0],
+                                         # self.nodes[i+0][j+1],
+                                         # self.nodes[i+1][j+0],
+                                         # self.nodes[i+1][j+1],
+                                         # self.cntrs,
+                                         # set(),
+                                         # None)
+
+
+        # prev_bc = None
+        # for i, j in iter_norton_boundaries():
+            # sides = set()
+            # if i == 0: sides.add('N')
+            # if i == self.w-2 : sides.add('S')
+            # if j == 0: sides.add('W')
+            # if j == self.w-2 : sides.add('E')
+
+            # if (i,j) in self.src_idxs:
+                # boundary_cond = 'source'
+                # print((i,j))
+            # elif (i,j) in self.snk_idxs:
+                # boundary_cond = 'sink'
+            # else:
+                # boundary_cond = None
+
+            # if boundary_cond == 'sink' and prev_bc != 'sink':
+
+            # prev_bc = boundary_cond
+
+
 
         # SPICE doesn't like the same node to be grounded multiple
         # times. Once NortonLoop objects are created we query for the

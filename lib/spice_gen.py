@@ -129,6 +129,11 @@ class SpiceGenerator(object):
         for mr in roc_model.links:
             self.add_iprintstmt(mr.curmeter.sname)
 
+        if roc_model.norton:
+            for nl in roc_model.iter_loops():
+                for c in nl.curmeters():
+                    self.add_iprintstmt(c.sname)
+
         if not self.cache_only:
             self.file.close()
 
@@ -175,6 +180,10 @@ class SpiceGenerator(object):
 
             sym = 'V('+node.sname+')'
             node.potential = result_dict[sym]
+
+        for loop in roc_model.iter_loops():
+            for c in loop.curmeters():
+                c.current = result_dict[c.sname]
 
     def generate_result_dict(self, suffix, cached_file=False):
         header_regexp = '^Index\s+time\s+(.*)$'
