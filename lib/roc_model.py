@@ -271,6 +271,8 @@ class NortonLoop(object):
 
         self.finalize(sides, boundary_cond, cntrs)
 
+        # NOTE: be careful adding anything after finalize
+
 
     def get_loop_current(self):
         has_result = False
