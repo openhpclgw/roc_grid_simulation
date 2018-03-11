@@ -231,7 +231,14 @@ class InterconnectGenerator(object):
         return (coord.j*coord_to_sch_ratio,
                 coord.i*coord_to_sch_ratio)
 
-    def add_r2(self, r, sch_x=0, sch_y=0):
+    def add_r2(self, r, parent=None):
+        if parent is not None:
+            node1_sch = self.node_sch_coord(parent.nodeblock1.coord)
+            node2_sch = self.node_sch_coord(parent.nodeblock2.coord)
+            sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
+        else:
+            sch_x, sch_y = 0, 0
+
         ret = self.gen(self.__r2frmt.format(i=r.uid,
                                      uname='', # FIXME
                                      nn1=r.node1,
@@ -364,7 +371,7 @@ class InterconnectGenerator(object):
         elif isinstance(c, rm.VoltageSource):
             tmp_name = self.add_v2(c)
         elif isinstance(c, rm.Resistance):
-            tmp_name = self.add_r2(c)
+            tmp_name = self.add_r2(c, parent)
         else:
             tmp_name = ''
             print("error")
