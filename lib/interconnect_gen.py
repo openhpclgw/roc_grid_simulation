@@ -87,8 +87,13 @@ class InterconnectGenerator(object):
         self.__icfrmt = '.IC V({node}) {val}'
         self.sparam_lsf_format = ('addelement("Optical N Port S-Parameter");\n'
                                   'set("name","SPAR_'+cg+'");\n'
+                                  'set("load from file",true);\n'
+                                  'set("s parameters filename","spar.txt");\n'
                                   'set("x position", {sch_x:4.2f});\n'
-                                  'set("y position", {sch_y:4.2f});\n')
+                                  'set("y position", {sch_y:4.2f});\n'
+                                  '{conns}\n')
+        self.conn_frmt = ('connect("SPAR_'+cg+'","{this_port}",'
+                                  ' "{other}", "{other_port}");\n')
 
     def create_script(self, roc_model, suffix=''):
         if not self.cache_only:
@@ -117,7 +122,7 @@ class InterconnectGenerator(object):
             n = roc_model.nodes[i][j]
             self.add_comment("Node " + str((i, j)))
             for c in n.components():
-                self.component_codegen(c, n)
+                self.component_codegen(c, n, model=roc_model)
 
             # generate the initial condition
             if n.ic != 0.:
@@ -424,7 +429,7 @@ class InterconnectGenerator(object):
         return s.split()[0]
 
     # TODO this should be recursive
-    def component_codegen(self, c, parent=None):
+    def component_codegen(self, c, parent=None, model=None):
         # In interconnect, we need to catch some subclasses first to
         # make sure they are not generated as they are parent classes.
         # This is a subtle but still ugly workaround for now.
@@ -438,9 +443,31 @@ class InterconnectGenerator(object):
             # tmp_name = self.add_sparam(c)
             sch_x, sch_y = self.node_sch_coord(c.coord)
             # note: positions and sch_* have 200 times difference
+
+            ooscs = model.nodes[c.coord[0]][c.coord[1]].ammeters
+
+
+            conns = ''
+
+            dir_to_port = { 'E':'1', 'W':'2', 'S':'3', 'N':'4' }
+
+            ooscs_list = [i for i in ooscs.values()]
+            print(ooscs_list)
+
+            if len(ooscs) == 4:
+                for i, oosc in enumerate(ooscs_list):
+                    conns += self.conn_frmt.format(
+                                        i=c.uid,
+                                        this_port='port '+str(i+1),
+                                        other=oosc.sname,
+                                        other_port='input')
+            
             self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
-                                                  sch_y=200*sch_y))
+                                                  sch_y=200*sch_y,
+                                                  conns=conns))
+
+
                                                   
             tmp_name='junk'
         elif isinstance(c, rm.VoltageSource):

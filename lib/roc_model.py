@@ -169,9 +169,9 @@ class NodeBlock(object):
                                        cntrs=cntrs)
 
     def components(self):
-        yield self.conn_point
         for d, a in self.ammeters.items():
             yield a
+        yield self.conn_point
 
     def inward_directions(self):
         if self.coord.i > 0:
