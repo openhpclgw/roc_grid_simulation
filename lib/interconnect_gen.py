@@ -4,8 +4,8 @@ import itertools as it
 import numpy as np
 import subprocess as sp
 
-coord_to_sch_ratio = 10.
-sch_offset = 1.
+coord_to_sch_ratio = 5.
+sch_offset = 0.8
 
 class InterconnectGenerator(object):
 
@@ -72,7 +72,7 @@ class InterconnectGenerator(object):
         self.__r2frmt = 'X_FIBER_'+cg+'{uname} {nn1} {nn2} \"Optical Linear Fiber\" attenuation={r} ' + self.__schfrmt
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
 
-        self.__oscfrmt = 'X_OOSC_'+cg+' \"Optical Oscilloscope\"  '+ self.__schfrmt
+        self.__oscfrmt = 'X_OOSC_'+cg+' {nn2} \"Optical Oscilloscope\"  '+ self.__schfrmt
         self.__sparamfrmt = 'X_SPAR_'+cg+' '+ng(1)+' '+ng(2)+' '+ng(3)+' '+ng(4)+' \"Optical N Port S-Parameter\" \"s parameters filename\"=\"{coord}.txt\" '+ self.__schfrmt
 
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
@@ -105,7 +105,7 @@ class InterconnectGenerator(object):
             n = roc_model.nodes[i][j]
             self.add_comment("Node " + str((i, j)))
             for c in n.components():
-                self.component_codegen(c)
+                self.component_codegen(c, n)
 
             # generate the initial condition
             if n.ic != 0.:
@@ -135,6 +135,10 @@ class InterconnectGenerator(object):
 
         # if not self.cache_only:
             # self.file.close()
+
+    def nodename_to_coord(self, name):
+        coord_str = name[1:].split('_')
+        return (int(coord_str[0]), int(coord_str[1]))
 
     #
     # codegen Functions
@@ -228,8 +232,8 @@ class InterconnectGenerator(object):
             return ((sch_coord1[0]+sch_coord2[0])/2, sch_coord1[1])
 
     def node_sch_coord(self, coord):
-        return (coord.j*coord_to_sch_ratio,
-                coord.i*coord_to_sch_ratio)
+        return (coord[1]*coord_to_sch_ratio,
+                coord[0]*coord_to_sch_ratio)
 
     def add_r2(self, r, parent=None):
         if parent is not None:
@@ -249,8 +253,25 @@ class InterconnectGenerator(object):
 
         self.r_counter += 1
 
-    def add_v2(self, v, sch_x=0, sch_y=0):
+    def add_v2(self, v):
         ret = ''
+
+        if isinstance(v.node1, str):
+            sch_x, sch_y = self.node_sch_coord(
+                                self.nodename_to_coord(v.node1))
+        else:
+            sch_x, sch_y = self.node_sch_coord(v.node1)
+        
+        if sch_x == 0:
+            sch_x -= sch_offset*2
+        else:
+            sch_x += sch_offset*2
+        if sch_y == 0:
+            sch_y -= sch_offset*2
+        else:
+            sch_y += sch_offset*2
+
+
         if v.v >= 0:
             ret = self.gen(
                     self.__v2frmt.format(i=v.uid,
@@ -277,9 +298,28 @@ class InterconnectGenerator(object):
                 node2_sch = self.node_sch_coord(parent.nodeblock2.coord)
                 sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
 
-                sch_y += sch_offset
-                # sch_x = node_sch_x + sch_offset
-                # sch_y = node_sch_y + sch_offset
+                if parent.orientation == 'H':
+                    sch_y += sch_offset*0.7
+                else:
+                    sch_x -= sch_offset*1.1
+
+            elif isinstance(parent, rm.NodeBlock):
+                print(parent.coord)
+                sch_x, sch_y = self.node_sch_coord(parent.coord)
+                d = osc.node1[-1]
+                if d == 'E':
+                    sch_x += sch_offset
+                    sch_y += sch_offset
+                elif d == 'W':
+                    sch_x -= sch_offset
+                    sch_y -= sch_offset
+                elif d == 'N':
+                    sch_x -= sch_offset
+                    sch_y += sch_offset
+                elif d == 'S':
+                    sch_x += sch_offset
+                    sch_y -= sch_offset
+
         else:
             sch_x, sch_y = 0, 0
         ret = ''
