@@ -95,6 +95,8 @@ class MeshResistance(object):
         self.ammeter = Ammeter(self.node1, self.innodeid, cntrs)
         self.resistance.node1 = self.innodeid
 
+        self.cname = ''
+
     def components(self):
         yield self.resistance
         yield self.ammeter

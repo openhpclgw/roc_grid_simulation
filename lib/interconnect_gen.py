@@ -259,6 +259,7 @@ class InterconnectGenerator(object):
                                      custom=custom))
 
         self.r_counter += 1
+        return ret
 
     def add_v2(self, v):
         ret = ''
