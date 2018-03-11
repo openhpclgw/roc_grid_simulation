@@ -292,7 +292,8 @@ class InterconnectGenerator(object):
             # for item in c.components():
                 # self.component_codegen(item)
             # tmp_name = c.nodename
-            tmp_name = self.add_sparam(c)
+            # tmp_name = self.add_sparam(c)
+            tmp_name='junk'
         elif isinstance(c, rm.VoltageSource):
             tmp_name = self.add_v2(c)
         elif isinstance(c, rm.Resistance):
