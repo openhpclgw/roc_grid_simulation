@@ -86,6 +86,8 @@ class InterconnectGenerator(object):
 
         self.add_block_comment('Auto-generated for Interconnect')
 
+        self.gen_header()
+
         full_range = range(self.mesh_size)
         short_range = range(self.mesh_size-1)
 
@@ -120,17 +122,17 @@ class InterconnectGenerator(object):
 
         # self.generate measurement/analysis components
         self.add_block_comment("Analysis code")
-        self.add_transtmt()
-        for i, j in it.product(full_range, full_range):
-            for _,a in roc_model.nodes[i][j].ammeters.items():
-                self.add_iprintstmt(a.sname)
-            self.add_vprintstmt((i,j))
+        # self.add_transtmt()
+        # for i, j in it.product(full_range, full_range):
+            # for _,a in roc_model.nodes[i][j].ammeters.items():
+                # self.add_iprintstmt(a.sname)
+            # self.add_vprintstmt((i,j))
 
-        for mr in roc_model.links:
-            self.add_iprintstmt(mr.ammeter.sname)
+        # for mr in roc_model.links:
+            # self.add_iprintstmt(mr.ammeter.sname)
 
-        if not self.cache_only:
-            self.file.close()
+        # if not self.cache_only:
+            # self.file.close()
 
     #
     # codegen Functions
@@ -279,6 +281,46 @@ class InterconnectGenerator(object):
                                      sch_y=sch_y))
         self.sparam_counter += 1
         return ret
+
+    def gen_header(self):
+        self.file.write('{}\n'.format( (
+        '.MODEL "CW Laser" ellipticity=0 "enable RIN"=0\n'
+        '+ "orthogonal identifier 1"=1 "label 1"="X" seed=1\n'
+        '+ "automatic seed"=1 linewidth=0 "orthogonal identifier 2"=2\n'
+        '+ power=0.001 frequency=193.1T "reference power"=0.001 RIN=-140\n'
+        '+ phase=0 "label 2"="Y" azimuth=0\n'
+        '+ "number of output signals"={%number of output signals%}\n'
+        '+ "output signal mode"={%output signal mode%}\n'
+        '+ "sample rate"={%sample rate%} "time window"={%time window%}\n'
+        '\n'
+        '.MODEL "Optical Linear Fiber" "filter fit tolerance"=0.001\n'
+        '+ "number of fir taps"=64 "dispersion slope"=80\n'
+        '+ "single tap filter"=0 "run diagnostic"=0\n'
+        '+ configuration="bidirectional" "reference frequency"=193.1T\n'
+        '+ "diagnostic size"=1024 length=0.001\n'
+        '+ "estimate number of taps"=1 dispersion=16u modes="X,Y" \n'
+        '+ "window function"="rectangular"\n'
+        '\n'
+        '.MODEL "Optical N Port S-Parameter" "passivity tolerance"=1u\n'
+        '+ configuration="bidirectional" "digital filter type"="FIR"\n'
+        '+ passivity="ignore" "number of iir taps"=4\n'
+        '+ "filter fit tolerance"=0.05 "maximum number of iir taps"=20\n'
+        '+ order=1 "number of fir taps"=64 "remove disconnected ports"=0\n'
+        '+ "run diagnostic"=0 "filter fit rolloff"=0.05\n'
+        '+ reciprocity="ignore" "window function"="rectangular"\n'
+        '+ "filter fit number of iterations"=50\n'
+        '+ "estimate number of taps"=0 "load from file"=1\n'
+        '+ "diagnostic size"=1024 temperature={%temperature%}\n'
+        '\n'
+        '.MODEL "Optical Oscilloscope" "input signal selection"="last"\n'
+        '+ "refresh length"=1024 seed=1 refresh=1 "automatic seed"=1\n'
+        '+ "display memory length"=2048 "limit display memory"=1\n'
+        '+ "power unit"="W" frequency=193.1T "plot format"="power"\n'
+        '+ "limit time range"=0 "internal seed"=0 "include delays"=0\n'
+        '+ "frequency at max power"=1 "input signal index"=1\n'
+        '+ "stop time"=1 "start time"=0 sensitivity=100f\n'
+        '+ "convert noise bins"=1\n'
+        )))
 
     # TODO this should be recursive
     def component_codegen(self, c):
