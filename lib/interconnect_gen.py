@@ -42,6 +42,13 @@ class InterconnectGenerator(object):
             return '{}/{}_{}.cir'.format(self.tmp_folder,
                                          self.filename,
                                          suffix)
+    def rel_lsf_path(self, suffix=''):
+        if self.user_fname:
+            return '{}.lsf'.format(self.filename)
+        else:
+            return '{}/{}_{}.lsf'.format(self.tmp_folder,
+                                         self.filename,
+                                         suffix)
 
     def rm_tmp_files(self):
         sp.run('rm -f {} {}'.format(self.rel_in_path(),
@@ -78,10 +85,15 @@ class InterconnectGenerator(object):
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
         self.__icfrmt = '.IC V({node}) {val}'
+        self.sparam_lsf_format = ('addelement("Optical N Port S-Parameter");\n'
+                                  'set("name","SPAR_'+cg+'");\n'
+                                  'set("x position", {sch_x:4.2f});\n'
+                                  'set("y position", {sch_y:4.2f});\n')
 
     def create_script(self, roc_model, suffix=''):
         if not self.cache_only:
             self.file = open(self.rel_in_path(suffix), 'w')
+            self.lsffile = open(self.rel_lsf_path(suffix), 'w')
         # mesh size
         self.mesh_size = len(roc_model.mesh)
         self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
@@ -133,8 +145,9 @@ class InterconnectGenerator(object):
         # for mr in roc_model.links:
             # self.add_iprintstmt(mr.ammeter.sname)
 
-        # if not self.cache_only:
-            # self.file.close()
+        if not self.cache_only:
+            self.file.close()
+            self.lsffile.close()
 
     def nodename_to_coord(self, name):
         coord_str = name[1:].split('_')
@@ -406,6 +419,9 @@ class InterconnectGenerator(object):
         )))
 
 
+    def gen_lsf(self, s):
+        self.lsffile.write('{}\n'.format(s))
+        return s.split()[0]
 
     # TODO this should be recursive
     def component_codegen(self, c, parent=None):
@@ -420,6 +436,12 @@ class InterconnectGenerator(object):
                 # self.component_codegen(item)
             # tmp_name = c.nodename
             # tmp_name = self.add_sparam(c)
+            sch_x, sch_y = self.node_sch_coord(c.coord)
+            # note: positions and sch_* have 200 times difference
+            self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
+                                                  sch_x=200*sch_x,
+                                                  sch_y=-200*sch_y))
+                                                  
             tmp_name='junk'
         elif isinstance(c, rm.VoltageSource):
             tmp_name = self.add_v2(c)
@@ -437,5 +459,6 @@ class InterconnectGenerator(object):
         if not self.cache_only:
             self.file.write('{}\n'.format(s))
         return s.split()[0]
+
 
 
