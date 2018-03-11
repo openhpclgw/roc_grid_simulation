@@ -95,7 +95,7 @@ class MeshResistance(object):
         self.ammeter = Ammeter(self.node1, self.innodeid, cntrs)
         self.resistance.node1 = self.innodeid
 
-        self.cname = ''
+        self.sname = ''
 
     def components(self):
         yield self.resistance
@@ -203,6 +203,9 @@ class NodeBlock(object):
 
     def is_h(self, other):
         return self.coord.is_h(other.coord)
+
+    def __eq__(self, other):
+        return self.coord == other.coord
 
     def __gt__(self, other):
         return self.coord > other.coord
@@ -408,6 +411,32 @@ class ROCModel(object):
         self.init_sink(self.hp, vslice)
         self.init_ics(self.hp, vslice)
         print('Initialized virtualized mesh')
+
+    def get_adjacent_link(self, nodeblock, d=''):
+        assert d != ''
+
+        if d == 'E':
+            for l in self.links:
+                if l.orientation == 'H':
+                    if l.nodeblock1 == nodeblock:
+                        return l
+        elif d == 'W':
+            for l in self.links:
+                if l.orientation == 'H':
+                    if l.nodeblock2 == nodeblock:
+                        return l
+        elif d == 'N':
+            for l in self.links:
+                if l.orientation == 'V':
+                    if l.nodeblock2 == nodeblock:
+                        return l
+        elif d == 'S':
+            for l in self.links:
+                if l.orientation == 'V':
+                    if l.nodeblock1 == nodeblock:
+                        return l
+
+        return None
 
     def create_grid(self):
         ef = self.exp_factor

@@ -449,19 +449,25 @@ class InterconnectGenerator(object):
 
             conns = ''
 
-            dir_to_port = { 'E':'1', 'W':'2', 'S':'3', 'N':'4' }
+            dir_to_port = { 'E':'1', 'W':'2', 'N':'3', 'S':'4' }
+            dir_to_port_fiber = { 'E':'1', 'W':'2', 'N':'2', 'S':'1' }
 
-            # TODO this should have been unnecessary by now
-            ooscs_list = [i for i in ooscs.values()]
-            print(ooscs_list)
-
-            for i, oosc in enumerate(ooscs_list):
+            for d, oosc in ooscs.items():
                 conns += self.conn_frmt.format(
                                     i=c.uid,
-                                    this_port='port '+str(i+1),
+                                    this_port='port '+dir_to_port[d],
                                     other=oosc.sname,
                                     other_port='input')
-            
+
+            for d,p in dir_to_port.items():
+                l = model.get_adjacent_link(parent, d=d)
+                if l is not None:
+                    conns += self.conn_frmt.format(
+                            i=c.uid,
+                            this_port='port '+dir_to_port[d],
+                            other=l.resistance.sname,
+                            other_port='port '+dir_to_port_fiber[d])
+
             self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
                                                   sch_y=200*sch_y,
