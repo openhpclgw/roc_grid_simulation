@@ -64,7 +64,7 @@ class InterconnectGenerator(object):
         self.__commentfrmt = '* {c}'
         self.__bcommentfrmt = '\n*\n* {c}\n*'
 
-        self.__schfrmt = 'sch_x={sch_x:4.2f} sch_y={sch_y:4.2f} sch_r=0 sch_f=f lay_x=0 lay_y=0'
+        self.__schfrmt = 'sch_x={sch_x:4.2f} sch_y={sch_y:4.2f} sch_r=0 sch_f=f lay_x=0 lay_y=0 {custom}'
         self.__nfrmt = 'N{n[0]:}_{n[1]:}'
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
@@ -236,12 +236,18 @@ class InterconnectGenerator(object):
                 coord[0]*coord_to_sch_ratio)
 
     def add_r2(self, r, parent=None):
+        custom = ''
         if parent is not None:
             node1_sch = self.node_sch_coord(parent.nodeblock1.coord)
             node2_sch = self.node_sch_coord(parent.nodeblock2.coord)
             sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
+
+            if parent.orientation == 'V':
+                custom = '"rotated"=true'
         else:
             sch_x, sch_y = 0, 0
+
+        
 
         ret = self.gen(self.__r2frmt.format(i=r.uid,
                                      uname='', # FIXME
@@ -249,7 +255,8 @@ class InterconnectGenerator(object):
                                      nn2=r.node2,
                                      r=r.r,
                                      sch_x=sch_x,
-                                     sch_y=sch_y))
+                                     sch_y=sch_y,
+                                     custom=custom))
 
         self.r_counter += 1
 
@@ -280,7 +287,8 @@ class InterconnectGenerator(object):
                                         nn2=v.node2,
                                         v=v.v,
                                         sch_x=sch_x,
-                                        sch_y=sch_y))
+                                        sch_y=sch_y,
+                                        custom=''))
         elif v.v < 0:
             print("How?")
             self.__v2frmt.format(i=v.uid,
@@ -292,6 +300,7 @@ class InterconnectGenerator(object):
         return ret
 
     def add_osc(self, osc, parent=None):
+        custom=''
         if parent is not None:
             if isinstance(parent, rm.MeshResistance):
                 node1_sch = self.node_sch_coord(parent.nodeblock1.coord)
@@ -301,6 +310,7 @@ class InterconnectGenerator(object):
                 if parent.orientation == 'H':
                     sch_y += sch_offset*0.7
                 else:
+                    custom = '"rotated"=true'
                     sch_x -= sch_offset*1.1
 
             elif isinstance(parent, rm.NodeBlock):
@@ -329,7 +339,8 @@ class InterconnectGenerator(object):
                                      nn1=osc.node1,
                                      nn2=osc.node2,
                                      sch_x=sch_x,
-                                     sch_y=sch_y))
+                                     sch_y=sch_y,
+                                     custom=custom))
         self.osc_counter += 1
         return ret
 
@@ -348,7 +359,8 @@ class InterconnectGenerator(object):
                                      d4='S',
                                      coord=str(conn.coord),
                                      sch_x=sch_x,
-                                     sch_y=sch_y))
+                                     sch_y=sch_y,
+                                     custom=''))
         self.sparam_counter += 1
         return ret
 
