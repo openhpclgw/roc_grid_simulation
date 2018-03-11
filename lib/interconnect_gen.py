@@ -268,7 +268,7 @@ class InterconnectGenerator(object):
                                      nn2=r.node2,
                                      r=r.r,
                                      sch_x=sch_x,
-                                     sch_y=sch_y,
+                                     sch_y=0-sch_y,
                                      custom=custom))
 
         self.r_counter += 1
@@ -301,7 +301,7 @@ class InterconnectGenerator(object):
                                         nn2=v.node2,
                                         v=v.v,
                                         sch_x=sch_x,
-                                        sch_y=sch_y,
+                                        sch_y=0-sch_y,
                                         custom=''))
         elif v.v < 0:
             print("How?")
@@ -353,7 +353,7 @@ class InterconnectGenerator(object):
                                      nn1=osc.node1,
                                      nn2=osc.node2,
                                      sch_x=sch_x,
-                                     sch_y=sch_y,
+                                     sch_y=0-sch_y,
                                      custom=custom))
         self.osc_counter += 1
         return ret
@@ -373,7 +373,7 @@ class InterconnectGenerator(object):
                                      d4='S',
                                      coord=str(conn.coord),
                                      sch_x=sch_x,
-                                     sch_y=sch_y,
+                                     sch_y=0-sch_y,
                                      custom=''))
         self.sparam_counter += 1
         return ret
@@ -440,7 +440,7 @@ class InterconnectGenerator(object):
             # note: positions and sch_* have 200 times difference
             self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
-                                                  sch_y=-200*sch_y))
+                                                  sch_y=200*sch_y))
                                                   
             tmp_name='junk'
         elif isinstance(c, rm.VoltageSource):
