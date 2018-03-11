@@ -4,6 +4,8 @@ import itertools as it
 import numpy as np
 import subprocess as sp
 
+coord_to_sch_ratio = 10.
+sch_offset = 1.
 
 class InterconnectGenerator(object):
 
@@ -95,7 +97,7 @@ class InterconnectGenerator(object):
         self.add_block_comment('Resistors')
         for r in roc_model.links:
             for c in r.components():
-                self.component_codegen(c)
+                self.component_codegen(c, r)
 
         # generate nodes 
         self.add_block_comment("Node subcircuits")
@@ -219,6 +221,16 @@ class InterconnectGenerator(object):
         else:
             return ''
 
+    def midpoint(self, sch_coord1, sch_coord2):
+        if sch_coord1[0] == sch_coord2[0]:
+            return (sch_coord1[0], (sch_coord1[1]+sch_coord2[1])/2)
+        else:
+            return ((sch_coord1[0]+sch_coord2[0])/2, sch_coord1[1])
+
+    def node_sch_coord(self, coord):
+        return (coord.j*coord_to_sch_ratio,
+                coord.i*coord_to_sch_ratio)
+
     def add_r2(self, r, sch_x=0, sch_y=0):
         ret = self.gen(self.__r2frmt.format(i=r.uid,
                                      uname='', # FIXME
@@ -251,7 +263,18 @@ class InterconnectGenerator(object):
         self.v_counter += 1
         return ret
 
-    def add_osc(self, osc, sch_x=0, sch_y=0):
+    def add_osc(self, osc, parent=None):
+        if parent is not None:
+            if isinstance(parent, rm.MeshResistance):
+                node1_sch = self.node_sch_coord(parent.nodeblock1.coord)
+                node2_sch = self.node_sch_coord(parent.nodeblock2.coord)
+                sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
+
+                sch_y += sch_offset
+                # sch_x = node_sch_x + sch_offset
+                # sch_y = node_sch_y + sch_offset
+        else:
+            sch_x, sch_y = 0, 0
         ret = ''
         ret = self.gen(
                 self.__oscfrmt.format(i=osc.uid,
@@ -322,13 +345,15 @@ class InterconnectGenerator(object):
         '+ "convert noise bins"=1\n'
         )))
 
+
+
     # TODO this should be recursive
-    def component_codegen(self, c):
+    def component_codegen(self, c, parent=None):
         # In interconnect, we need to catch some subclasses first to
         # make sure they are not generated as they are parent classes.
         # This is a subtle but still ugly workaround for now.
         if isinstance(c, rm.Ammeter):
-            tmp_name = self.add_osc(c)
+            tmp_name = self.add_osc(c, parent)
         elif isinstance(c, rm.ConnectionPoint):
             # This is what it is going to look like for Electrical
             # for item in c.components():
