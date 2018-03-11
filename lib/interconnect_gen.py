@@ -343,11 +343,11 @@ class InterconnectGenerator(object):
                     sch_x -= sch_offset
                     sch_y -= sch_offset
                 elif d == 'N':
-                    sch_x -= sch_offset
-                    sch_y += sch_offset
-                elif d == 'S':
                     sch_x += sch_offset
                     sch_y -= sch_offset
+                elif d == 'S':
+                    sch_x -= sch_offset
+                    sch_y += sch_offset
 
         else:
             sch_x, sch_y = 0, 0
@@ -451,16 +451,16 @@ class InterconnectGenerator(object):
 
             dir_to_port = { 'E':'1', 'W':'2', 'S':'3', 'N':'4' }
 
+            # TODO this should have been unnecessary by now
             ooscs_list = [i for i in ooscs.values()]
             print(ooscs_list)
 
-            if len(ooscs) == 4:
-                for i, oosc in enumerate(ooscs_list):
-                    conns += self.conn_frmt.format(
-                                        i=c.uid,
-                                        this_port='port '+str(i+1),
-                                        other=oosc.sname,
-                                        other_port='input')
+            for i, oosc in enumerate(ooscs_list):
+                conns += self.conn_frmt.format(
+                                    i=c.uid,
+                                    this_port='port '+str(i+1),
+                                    other=oosc.sname,
+                                    other_port='input')
             
             self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
