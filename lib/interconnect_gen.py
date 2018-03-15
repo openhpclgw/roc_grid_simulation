@@ -6,6 +6,7 @@ import subprocess as sp
 
 coord_to_sch_ratio = 20.
 mid_distance = coord_to_sch_ratio/2
+q_distance = mid_distance/2
 sch_offset = 0.8
 
 class InterconnectGenerator(object):
@@ -96,11 +97,16 @@ class InterconnectGenerator(object):
                                   'set("x position", {sch_x:4.2f});\n'
                                   'set("y position", {sch_y:4.2f});\n'
                                   '{conns}\n')
-        self.conn_frmt = ('connect("SPAR_'+cg+'","{this_port}",'
+        self.conn_frmt = ('connect("{i}","{this_port}",'
                                   ' "{other}", "{other_port}");\n')
         self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
         self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
         self.__ringfrmt = 'X_RING_'+cg+' {nn1} {nn2} \"Single Bus Ring Resonator\" frequency=230T '+self.__schfrmt
+        self.ring_lsf_format = ('addelement("Single Bus Ring Resonator");\n'
+                                'set("name","RING'+cg+'");\n'
+                                'set("x position", {sch_x:4.2f});\n'
+                                'set("y position", {sch_y:4.2f});\n'
+                                '{conns}\n')
 
     def create_script(self, roc_model, suffix=''):
         if not self.cache_only:
@@ -342,7 +348,9 @@ class InterconnectGenerator(object):
                     sch_y += sch_offset*0.7
                 else:
                     custom = '"rotated"=true'
-                    sch_x -= sch_offset*1.1
+                    sch_x += sch_offset*1.1
+
+                conn_p = parent.resistance.sname[3]
 
             elif isinstance(parent, rm.NodeBlock):
                 print(parent.coord)
@@ -361,14 +369,16 @@ class InterconnectGenerator(object):
                     sch_x -= sch_offset
                     sch_y += sch_offset
 
+                conn_p = osc.node2
+
         else:
             sch_x, sch_y = 0, 0
         ret = ''
         ret = self.gen(
                 self.__oscfrmt.format(i=osc.uid,
                                      uname='',
-                                     nn1=osc.node1,
-                                     nn2=osc.node2,
+                                     # nn1=osc.node1,
+                                     nn2=conn_p,
                                      sch_x=sch_x,
                                      sch_y=0-sch_y,
                                      custom=custom))
@@ -437,8 +447,14 @@ class InterconnectGenerator(object):
 
 
     def gen_lsf(self, s):
+        import re
         self.lsffile.write('{}\n'.format(s))
-        return s.split()[0]
+
+        reobj = re.compile('set\("name","(.*)"\);')
+        for line in s.splitlines():
+            m = reobj.match(line)
+            if m:
+                return m.group(1)
 
     # TODO this should be recursive
     def component_codegen(self, c, parent=None, model=None):
@@ -462,33 +478,59 @@ class InterconnectGenerator(object):
             conns = ''
 
             dir_to_port = { 'E':'1', 'W':'2', 'N':'3', 'S':'4' }
-            dir_to_port_fiber = { 'E':'1', 'W':'2', 'N':'2', 'S':'1' }
+            dir_to_port_fiber = { 'E':0, 'W':1, 'N':1, 'S':0 }
 
-            for d, oosc in ooscs.items():
-                conns += self.conn_frmt.format(
-                                    i=c.uid,
-                                    this_port='port '+dir_to_port[d],
-                                    other=oosc.sname,
-                                    other_port='input')
 
+            resonators = {
+            'E': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid)+'E',
+                                 sch_x=200*(sch_x+q_distance),
+                                 sch_y=200*sch_y, conns='')),
+            'W': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid)+'W',
+                                 sch_x=200*(sch_x-q_distance),
+                                 sch_y=200*sch_y, conns='')),
+            'N': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid)+'N',
+                                 sch_x=200*sch_x,
+                                 sch_y=200*(sch_y-q_distance), conns='')),
+            'S': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid)+'S',
+                                 sch_x=200*sch_x,
+                                 sch_y=200*(sch_y+q_distance), conns=''))}
+
+            # connection to adjacent links
             for d,p in dir_to_port.items():
                 l = model.get_adjacent_link(parent, d=d)
                 if l is not None:
                     print('helloo')
                     print('sname ', l.resistance.sname)
                     conns += self.conn_frmt.format(
-                            i=c.uid,
-                            this_port='port '+dir_to_port[d],
-                            other=l.resistance.sname,
-                            other_port='port '+dir_to_port_fiber[d])
+                            i=resonators[d],
+                            this_port='port 2',
+                            other=l.resistance.sname[dir_to_port_fiber[d]],
+                            other_port='port 1')
 
 
-            ret = self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
+            spar = self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
                                                   sch_y=200*sch_y,
                                                   conns=conns))
+
+            # connection to node oscillators
+            for d, oosc in ooscs.items():
+                conns += self.conn_frmt.format(
+                                    i=spar,
+                                    this_port='port '+dir_to_port[d],
+                                    other=oosc.sname,
+                                    other_port='input')
+
+            for d,p in dir_to_port.items():
+                self.gen_lsf(self.conn_frmt.format(i=spar,
+                            this_port='port '+str(dir_to_port[d]),
+                            other=resonators[d],
+                            other_port='port 1'))
+
+            
                                                   
-            tmp_name=ret
+            tmp_name=spar
+
         elif isinstance(c, rm.VoltageSource):
             # tmp_name = self.add_v2(c)
             tmp_name = self.add_source_compound(c, model)
@@ -506,18 +548,14 @@ class InterconnectGenerator(object):
         pos = self.nodename_to_coord(c.node1)
         sch_x, sch_y = self.node_sch_coord(pos)
         
-        if sch_x == 0:
-            # sch_x -= sch_offset*3
+        if pos[1] == 0:
             sch_x -= mid_distance
-        elif sch_x == size-1:
-            # sch_x += sch_offset*3
+        elif pos[1] == size-1:
             sch_x += mid_distance
-        elif sch_y == 0:
-            # sch_y -= sch_offset*8
-            sch_y -= mid_distance*2
-        elif sch_y == size-1:
-            # sch_y += sch_offset*8
-            sch_y += mid_distance*2
+        elif pos[0] == 0:
+            sch_y -= mid_distance
+        elif pos[0] == size-1:
+            sch_y += mid_distance
 
         # the ring resonator at the entry point
         ret = self.gen(self.__ringfrmt.format(i=self.counters['ring'],
@@ -618,7 +656,7 @@ class InterconnectGenerator(object):
                                       custom=''))
         self.counters['cwl'] += 1
 
-        return left, right
+        return left, right, name+'_07', name+'_04'
 
         
     def ic_codegen(self, node, val):
