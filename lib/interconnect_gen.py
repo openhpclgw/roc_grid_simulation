@@ -280,7 +280,7 @@ class InterconnectGenerator(object):
         return ret
 
 
-    self.node_to_bc = {}
+    # self.node_to_bc = {}
     def add_v2(self, v):
         ret = ''
 
@@ -318,7 +318,7 @@ class InterconnectGenerator(object):
         self.v_counter += 1
 
         
-        self.node_to_bc[v.node1] = ret
+        # self.node_to_bc[v.node1] = ret
         return ret
 
     def add_osc(self, osc, parent=None):
