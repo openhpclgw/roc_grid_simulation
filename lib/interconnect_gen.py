@@ -279,14 +279,13 @@ class InterconnectGenerator(object):
         self.r_counter += 1
         return ret
 
+
+    self.node_to_bc = {}
     def add_v2(self, v):
         ret = ''
 
-        if isinstance(v.node1, str):
-            sch_x, sch_y = self.node_sch_coord(
-                                self.nodename_to_coord(v.node1))
-        else:
-            sch_x, sch_y = self.node_sch_coord(v.node1)
+        sch_x, sch_y = self.node_sch_coord(
+                            self.nodename_to_coord(v.node1))
         
         if sch_x == 0:
             sch_x -= sch_offset*2
@@ -298,16 +297,17 @@ class InterconnectGenerator(object):
             sch_y += sch_offset*2
 
 
+
         if v.v >= 0:
             ret = self.gen(
                     self.__v2frmt.format(i=v.uid,
-                                        uname='',
-                                        nn1=v.node1,
-                                        nn2=v.node2,
-                                        v=v.v,
-                                        sch_x=sch_x,
-                                        sch_y=0-sch_y,
-                                        custom=''))
+                                         uname='',
+                                         nn1=v.node1,
+                                         nn2=v.node2,
+                                         v=v.v,
+                                         sch_x=sch_x,
+                                         sch_y=0-sch_y,
+                                         custom=''))
         elif v.v < 0:
             print("How?")
             self.__v2frmt.format(i=v.uid,
@@ -316,6 +316,9 @@ class InterconnectGenerator(object):
                                 nn2=v.node1,
                                 v=v.v)
         self.v_counter += 1
+
+        
+        self.node_to_bc[v.node1] = ret
         return ret
 
     def add_osc(self, osc, parent=None):
@@ -468,14 +471,13 @@ class InterconnectGenerator(object):
                             other=l.resistance.sname,
                             other_port='port '+dir_to_port_fiber[d])
 
-            self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
+
+            ret = self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
                                                   sch_y=200*sch_y,
                                                   conns=conns))
-
-
                                                   
-            tmp_name='junk'
+            tmp_name=ret
         elif isinstance(c, rm.VoltageSource):
             tmp_name = self.add_v2(c)
         elif isinstance(c, rm.Resistance):
