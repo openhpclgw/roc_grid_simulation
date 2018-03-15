@@ -4,7 +4,7 @@ import itertools as it
 import numpy as np
 import subprocess as sp
 
-coord_to_sch_ratio = 5.
+coord_to_sch_ratio = 10.
 sch_offset = 0.8
 
 class InterconnectGenerator(object):
@@ -26,6 +26,9 @@ class InterconnectGenerator(object):
         else:
             self.user_fname = True
             self.filename = filename
+
+        self.counters = { 'ring': 0, 'y': 0, 'pwm': 0, 'cwl': 0,
+                          'fiber': 1000 }
 
     def rel_out_path(self, suffix=''):
         if self.user_fname:
@@ -71,7 +74,7 @@ class InterconnectGenerator(object):
         self.__commentfrmt = '* {c}'
         self.__bcommentfrmt = '\n*\n* {c}\n*'
 
-        self.__schfrmt = 'sch_x={sch_x:4.2f} sch_y={sch_y:4.2f} sch_r=0 sch_f=f lay_x=0 lay_y=0 {custom}'
+        self.__schfrmt = ' sch_x={sch_x:4.2f} sch_y={sch_y:4.2f} sch_f=f lay_x=0 lay_y=0 {custom}'
         self.__nfrmt = 'N{n[0]:}_{n[1]:}'
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
@@ -94,6 +97,9 @@ class InterconnectGenerator(object):
                                   '{conns}\n')
         self.conn_frmt = ('connect("SPAR_'+cg+'","{this_port}",'
                                   ' "{other}", "{other_port}");\n')
+        self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
+        self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
+        self.__ringfrmt = 'X_RING_'+cg+' {nn1} {nn2} \"Single Bus Ring Resonator\" frequency=230T '+self.__schfrmt
 
     def create_script(self, roc_model, suffix=''):
         if not self.cache_only:
@@ -131,12 +137,12 @@ class InterconnectGenerator(object):
         # generate source
         self.add_block_comment("Sources")
         for v in roc_model.src:
-            self.component_codegen(v)
+            self.component_codegen(v, model=roc_model)
 
         # generate sink
         self.add_block_comment("Sinks")
         for s in roc_model.snk:
-            self.component_codegen(s)
+            self.component_codegen(s, model=roc_model)
 
 
         # self.generate measurement/analysis components
@@ -479,13 +485,124 @@ class InterconnectGenerator(object):
                                                   
             tmp_name=ret
         elif isinstance(c, rm.VoltageSource):
-            tmp_name = self.add_v2(c)
+            # tmp_name = self.add_v2(c)
+            tmp_name = self.add_source_compound(c, model)
         elif isinstance(c, rm.Resistance):
             tmp_name = self.add_r2(c, parent)
         else:
             tmp_name = ''
             print("error")
         c.sname = tmp_name
+
+    def add_source_compound(self, c, model):
+
+        size = len(model.mesh)
+        pos = self.nodename_to_coord(c.node1)
+        sch_x, sch_y = self.node_sch_coord(pos)
+        
+        if sch_x == 0:
+            sch_x -= sch_offset*3
+        elif sch_x == size-1:
+            sch_x += sch_offset*3
+        elif sch_y == 0:
+            sch_y -= sch_offset*8
+        elif sch_y == size-1:
+            sch_y += sch_offset*8
+
+        # the ring resonator at the entry point
+        ret = self.gen(self.__ringfrmt.format(i=self.counters['ring'],
+                                              nn1=c.node1+'_04',
+                                              nn2=c.node1,
+                                              sch_x=sch_x,
+                                              sch_y=-sch_y,
+                                              custom=''))
+        self.counters['ring'] += 1
+
+        # first Y branch
+        self.gen(self.__yfrmt.format(i=self.counters['y'],
+                                     nn1=c.node1+'_04',
+                                     nn2=c.node1+'_05',
+                                     nn3=c.node1+'_03',
+                                     sch_x=sch_x-1,
+                                     sch_y=-sch_y,
+                                     custom='sch_r=180'))
+        self.counters['y'] += 1
+
+        # second Y branch
+        self.gen(self.__yfrmt.format(i=self.counters['y'],
+                                     nn1=c.node1+'_03',
+                                     nn2=c.node1+'_02',
+                                     nn3=c.node1+'_01',
+                                     sch_x=sch_x-2,
+                                     sch_y=-sch_y+1,
+                                     custom='sch_r=180'))
+        self.counters['y'] += 1
+
+        self.gen(self.__v2frmt.format(i=self.counters['cwl'],
+                                      nn1=c.node1+'_01',
+                                      sch_x=sch_x-3,
+                                      sch_y=-sch_y+2,
+                                      custom=''))
+        self.counters['cwl'] += 1
+
+        self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
+                                       nn1=c.node1+'_02',
+                                       sch_x=sch_x-3,
+                                       sch_y=-sch_y,
+                                       custom=''))
+        self.counters['pwm'] += 1
+
+        self.gen(self.__r2frmt.format(i=self.counters['fiber'],
+                                      r=0.1,
+                                      uname='',
+                                      nn1=c.node1+'_06',
+                                      nn2=c.node1+'_05',
+                                      sch_x=sch_x-2,
+                                      sch_y=-sch_y-1,
+                                      custom=''))
+        self.counters['fiber'] += 1
+
+        self.gen(self.__yfrmt.format(i=self.counters['y'],
+                                     nn1=c.node1+'_07',
+                                     nn2=c.node1+'_06',
+                                     nn3=c.node1+'_08',
+                                     sch_x=sch_x-3,
+                                     sch_y=-sch_y-2,
+                                     custom=''))
+        self.counters['y'] += 1
+
+        self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
+                                       nn1=c.node1+'_07',
+                                       sch_x=sch_x-4,
+                                       sch_y=-sch_y-2,
+                                       custom=''))
+        self.counters['pwm'] += 1
+
+        self.gen(self.__yfrmt.format(i=self.counters['y'],
+                                     nn1=c.node1+'_08',
+                                     nn2=c.node1+'_09',
+                                     nn3=c.node1+'_10',
+                                     sch_x=sch_x-2,
+                                     sch_y=-sch_y-3,
+                                     custom=''))
+        self.counters['y'] += 1
+
+        self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
+                                       nn1=c.node1+'_10',
+                                       sch_x=sch_x-1,
+                                       sch_y=-sch_y-4,
+                                       custom=''))
+        self.counters['pwm'] += 1
+
+        self.gen(self.__v2frmt.format(i=self.counters['cwl'],
+                                      nn1=c.node1+'_09',
+                                      sch_x=sch_x-1,
+                                      sch_y=-sch_y-2,
+                                      custom=''))
+        self.counters['cwl'] += 1
+
+        return ret
+
         
     def ic_codegen(self, node, val):
         self.gen(self.__icfrmt.format(node=node, val=val))
