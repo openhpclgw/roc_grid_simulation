@@ -558,13 +558,13 @@ class InterconnectGenerator(object):
             sch_y += mid_distance
 
         # the ring resonator at the entry point
-        ret = self.gen(self.__ringfrmt.format(i=self.counters['ring'],
-                                              nn1=c.node1+'_04',
-                                              nn2=c.node1,
-                                              sch_x=sch_x,
-                                              sch_y=-sch_y,
-                                              custom=''))
-        self.counters['ring'] += 1
+        # ret = self.gen(self.__ringfrmt.format(i=self.counters['ring'],
+                                              # nn1=c.node1+'_04',
+                                              # nn2=c.node1,
+                                              # sch_x=sch_x,
+                                              # sch_y=-sch_y,
+                                              # custom=''))
+        # self.counters['ring'] += 1
 
         ret = self.create_link_compound('bc'+str(c.uid), sch_x, sch_y)
 
@@ -574,6 +574,10 @@ class InterconnectGenerator(object):
                                        sch_y=-sch_y-2,
                                        custom=''))
         self.counters['pwm'] += 1
+
+        self.gen_lsf(self.conn_frmt.format(i=ret[1],
+                                           this_port='port 1',
+                                           other=
 
         return ret
 
