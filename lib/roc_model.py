@@ -249,8 +249,13 @@ class NortonLoop(object):
         self.ne = ne
         self.sw = sw
         self.se = se
-        self.nodeblocks = (nw, ne, sw, se)
+        # self.nodeblocks = (nw, ne, sw, se)
 
+        # I could do much better then this. FIXME
+        self.nodeblocks = { 'NW': nw, 'NE': ne, 'SW': sw, 'SE': se }
+
+        self.nodeblocks_sym = { 'NW': nw, 'NE': ne, 'SW': sw, 'SE': se,
+                                'WN': nw, 'EN': ne, 'WS': sw, 'ES': se} 
         self.nodeblock_outdirs =  ((     'W', 'N'     ),
                                    ('E',      'N'     ),
                                    (     'W',      'S'),
@@ -268,6 +273,11 @@ class NortonLoop(object):
         self.current = 0.
         self.fixed_current = False
         self.current_branch = None
+
+        # in case the loop is on the corner and has a potentially
+        # disconnected NB. In this case, the disconnected nb needs to be
+        # grounded seperately
+        self.disconnected_nb = None
 
         self.finalize(sides, boundary_cond, cntrs)
 
@@ -293,14 +303,14 @@ class NortonLoop(object):
 
     def sum_reduce_in_curs(self):
         ret = 0.
-        for nb in self.nodeblocks:
+        for nb in self.nodeblocks.values():
             cur = nb.sum_reduce_in_curs()
             ret += cur
         return abs(ret)
 
     def sum_reduce_out_curs(self):
         ret = 0.
-        for nb in self.nodeblocks:
+        for nb in self.nodeblocks.values():
             cur = nb.sum_reduce_out_curs()
             ret += cur
         return abs(ret)
@@ -309,7 +319,7 @@ class NortonLoop(object):
         # add the components depending on the location of the loop
         # and the location of sources and sinks
 
-        # options
+        # options (this comment needs to be updated)
         # 1. Loop is on the side and source: Add current source on the
         # outer edge of the loop, 0 resistances on the other edges 2.
         # 2. Loop is on the side and sink: Connect the dangling
@@ -324,11 +334,24 @@ class NortonLoop(object):
             else:
                 bound_conn_type = boundary_cond
                 if boundary_cond == 'source':
-                    self.current = 1.0  # FIXME
+                    self.current = 10.  # FIXME
                     self.fixed_current = True
                 elif boundary_cond == 'sink':
                     self.current = 0.0
                     self.fixed_current = True
+                    if len(sides) == 2:
+                        # this is a corner node that happens to be sink.
+                        # The lack of shorts on the sink loops will
+                        # leave the corner nodeblock orphaned which
+                        # needs to be grounded separately as it is not
+                        # connected to the rest of the mesh
+
+                        # build the corner direction
+                        corner_dir = ''
+                        for s in sides:
+                            corner_dir += s
+                        self.disconnected_nb = self.nodeblocks_sym[corner_dir]
+                        # bound_conn_type = 'no_change'
                 elif boundary_cond == 'short':
                     # finalize edge will set self.current_branch once
                     # the MeshResistance object is initialized. Nothing
@@ -350,7 +373,7 @@ class NortonLoop(object):
                 self.finalize_edge(e, 'no_change', cntrs)
 
     def finalize_edge(self, edge, conn_type, cntrs):
-        print(edge)
+        print(edge, ' ', conn_type)
         nb1 = edge[0]
         nb2 = edge[1]
         facing_nodes = nb1.get_facing_subnodes(nb2);
@@ -369,6 +392,17 @@ class NortonLoop(object):
                                               # node2=oft.format(node=n2),
                                               # cntrs=cntrs))
         elif conn_type == 'short':
+            # if self.coord[1] == 1:
+                # mesh_r = MeshResistance(r=10000000,
+                                        # nodeblock1=nb1,
+                                        # nodeblock2=nb2,
+                                        # cntrs=cntrs)
+                # self._components.append(mesh_r)
+                # self.short_nbs.add(nb1)
+                # self.short_nbs.add(nb2)
+
+            # else:
+            # if self.coord[1] != 1:
             mesh_r = MeshResistance(r=0,
                                     nodeblock1=nb1,
                                     nodeblock2=nb2,
@@ -377,12 +411,14 @@ class NortonLoop(object):
             self.short_nbs.add(nb1)
             self.short_nbs.add(nb2)
             self.current_branch = mesh_r
+            # else:
+                # print('Skipped ', self.coord)
         elif conn_type == 'source':
-            # self.components.append(BoundaryCond(v=0.001,
+            # self._components.append(BoundaryCond(v=0.001,
                                               # node1=n1,
                                               # node2=n2,
                                               # cntrs=cntrs))
-            self._components.append(CurrentSource(i=1,
+            self._components.append(CurrentSource(i=10.,
                                                node1=n1,
                                                node2=n2,
                                                cntrs=cntrs))
@@ -397,7 +433,8 @@ class NortonLoop(object):
                                               # node1=n2,
                                               # node2=0,
                                               # cntrs=cntrs))
-            # mesh_r = MeshResistance(r=99000000,
+            # print('Shorting ', nb1.coord, ' ', nb2.coord)
+            # mesh_r = MeshResistance(r=0,
                                     # nodeblock1=nb1,
                                     # nodeblock2=nb2,
                                     # cntrs=cntrs)
@@ -585,12 +622,17 @@ class ROCModel(object):
         full_range = range(self.w)
         short_range = range(self.w-1)
 
+        if self.norton:
+            res = 1.0/self.prob_conductance
+        else:
+            res = self.prob_conductance
+
         # generate row resistors
         for i, j in it.product(full_range, short_range):
             if self.norton:
                 if i == 0 or i == self.w-1:
                     continue
-            self.links.append(MeshResistance(self.prob_conductance,
+            self.links.append(MeshResistance(res,
                                              self.nodes[i][j],
                                              self.nodes[i][j+1],
                                              self.cntrs,
@@ -601,7 +643,7 @@ class ROCModel(object):
             if self.norton:
                 if j == 0 or j == self.w-1:
                     continue
-            self.links.append(MeshResistance(self.prob_conductance,
+            self.links.append(MeshResistance(res,
                                              self.nodes[i][j],
                                              self.nodes[i+1][j],
                                              self.cntrs,
@@ -710,6 +752,7 @@ class ROCModel(object):
                 boundary_cond = None
 
 
+            # print((i,j), ' ', boundary_cond)
             loop = NortonLoop(Coord(i,j),self.nodes[i+0][j+0],
                                          self.nodes[i+0][j+1],
                                          self.nodes[i+1][j+0],
@@ -730,19 +773,53 @@ class ROCModel(object):
             # needs to be grounded. But the question is which nodeblocks
             # that this loop owns are new (i.e. not been grounded
             # before)
-            for nb in l.gnd_nbs - sink_nodes - shorted_nodes:
-                l._components.append(BoundaryCond(v=0,
-                                                    node1=nb,
-                                                    node2=0,
-                                                    cntrs=self.cntrs))
+            # for nb in l.gnd_nbs - sink_nodes - shorted_nodes:
+            # for nb in l.gnd_nbs - sink_nodes:
+                # l._components.append(BoundaryCond(v=0,
+                                                    # node1=nb,
+                                                    # node2=0,
+                                                    # cntrs=self.cntrs))
 
             # or the new nodeblocks into the nodes that have already
             # been grounded
-            sink_nodes |= l.gnd_nbs
+            # print('Coming from the loop ', l.gnd_nbs)
+            # print('Sink nodes ', sink_nodes)
+            sink_nodes ^= l.gnd_nbs
+            
+            # print('XOR  nodes ', sink_nodes)
 
+            if l.disconnected_nb is not None:
+                sink_nodes ^= set((l.disconnected_nb,))
+                print('Found a disconnected nodeblock ', l.coord)
+                l._components.append(BoundaryCond(v=0,
+                                                  node1=l.disconnected_nb,
+                                                  node2=0,
+                                                  cntrs=self.cntrs))
+
+        # this loop is pathologically bad: we ar eappending all the sink
+        # conditions to the last norton loop from the previous loop.
+        # Ground generation needs a major overhaul, likely through using
+        # some graph library to do some connected components analysis
+        for n in sink_nodes:
+            # if n.coord == (0,3):
+                # continue
+            # print('Appending ground to ', n.coord)
+            l._components.append(BoundaryCond(v=0,
+                                              node1=n,
+                                              node2=0,
+                                              cntrs=self.cntrs))
+            # print('Appeneded a ground bc ', n.coord)
+            # test
+            break
+
+        
+            
+
+    # loop2 must be the loop whose current is known
     def find_shared_resistance(self, loop1, loop2):
         nbs = []
-        for nb1, nb2 in it.product(loop1.nodeblocks, loop2.nodeblocks):
+        for nb1, nb2 in it.product(loop1.nodeblocks.values(),
+                                   loop2.nodeblocks.values()):
             if nb1 == nb2:
                 nbs.append(nb1)
 
@@ -753,11 +830,32 @@ class ROCModel(object):
         else:
             nb1, nb2 = tuple(nbs)
 
+        ret = None
         for r in self.links:
             if r.nodeblock1 == nb1 and r.nodeblock2 == nb2:
-                return r
+                ret = r
 
-        assert False
+        assert ret is not None
+
+        d = None
+        if nb1.coord[0] == nb2.coord[0]:
+            # the resistance is horizontal
+            if nb1.coord[0] == loop2.coord[0]:
+                # the resistance is to the north of base loop
+                d = 'N'
+            else:
+                d = 'S'
+        else:
+            assert nb1.coord[1] == nb2.coord[1]
+            if nb1.coord[1] == loop2.coord[1]:
+                d = 'W'
+            else:
+                d = 'E'
+
+        assert d is not None
+
+        return d, ret
+
 
     def calc_norton_loop_currents(self):
         size = self.w-1
@@ -777,29 +875,35 @@ class ROCModel(object):
                     table[i,j] = cur
                 else:  # check if there is a neighbor with known current
                     neighbor = None
-                    if i > 0:
+
+                    if neighbor is None and i > 0:
                         if table[i-1,j] != -1:
                             neighbor = self.loops[i-1,j]
-                    elif i < size:
+                    if neighbor is None and i < size:
                         if table[i+1,j] != -1:
                             neighbor = self.loops[i+1,j]
-                    elif j > 0:
+                    if neighbor is None and j > 0:
                         if table[i,j-1] != -1:
                             neighbor = self.loops[i,j-1]
-                    elif j < size:
+                    if neighbor is None and j < size:
                         if table[i,j+1] != -1:
                             neighbor = self.loops[i,j+1]
 
                     if neighbor is None:
+                        # print('\t no neighbor for ', (i,j))
                         missing_curs = True
                         # nothing else to do
                     else:
-                        # print('\t calculating from neighbor',
-                                # neighbor.coord)
-                        r = self.find_shared_resistance(l,
-                                                        neighbor)
-                        table[i,j] = abs(neighbor.current -
-                                r.get_current())
+                        d,r = self.find_shared_resistance(l, neighbor)
+
+                        if d == 'W' or d == 'S':
+                            res = -r.get_current()
+                        else:
+                            res = r.get_current()
+
+                        print('\t calculated from ', neighbor.coord)
+
+                        table[i,j] = neighbor.current - res
                         l.current = table[i,j]
         return table
 
@@ -995,6 +1099,18 @@ class ROCModel(object):
                 print()
 
         sg = SpiceGenerator(filename=filename)
+
+        # post process for test
+        # for r in self.links:
+            # if r.nodeblock1.coord[1] == 0:
+                # # this resistance must be shorted
+                # r.resistance.r = 0
+
+        # for r in self.links:
+            # if r.nodeblock1.coord[1] == self.w-2:
+                # # this resistance must be opened
+                # r.resistance.r = 10000000
+
         sg.create_script(self)
         sg.run()
         sg.get_results(self)

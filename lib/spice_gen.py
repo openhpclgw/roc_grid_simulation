@@ -181,9 +181,10 @@ class SpiceGenerator(object):
             sym = 'V('+node.sname+')'
             node.potential = result_dict[sym]
 
-        for loop in roc_model.iter_loops():
-            for c in loop.curmeters():
-                c.current = result_dict[c.sname]
+        if roc_model.norton:
+            for loop in roc_model.iter_loops():
+                for c in loop.curmeters():
+                    c.current = result_dict[c.sname]
 
     def generate_result_dict(self, suffix, cached_file=False):
         header_regexp = '^Index\s+time\s+(.*)$'

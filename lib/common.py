@@ -26,7 +26,8 @@ class Coord(object):
         return self.i > o.i or (self.i == o.i and self.j > o.j)
 
     def __eq__(self, o):
-        return self.i==o.i and self.j==o.j
+        # use indices for o to be able to compare with tuples
+        return self.i==o[0] and self.j==o[1]
 
     def __hash__(self):
         return hash(self.__coord)
