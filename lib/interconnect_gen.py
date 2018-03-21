@@ -103,7 +103,7 @@ class InterconnectGenerator(object):
         self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
         self.__ringfrmt = 'X_RING_'+cg+' {nn1} {nn2} \"Single Bus Ring Resonator\" frequency=230T '+self.__schfrmt
         self.ring_lsf_format = ('addelement("Single Bus Ring Resonator");\n'
-                                'set("name","RING'+cg+'");\n'
+                                'set("name","RING'+cg+'{ringdir}");\n'
                                 'set("x position", {sch_x:4.2f});\n'
                                 'set("y position", {sch_y:4.2f});\n'
                                 '{conns}\n')
@@ -482,16 +482,20 @@ class InterconnectGenerator(object):
 
 
             resonators = {
-            'E': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid)+'E',
+            'E': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid),
+                                 ringdir='E',
                                  sch_x=200*(sch_x+q_distance),
                                  sch_y=200*sch_y, conns='')),
-            'W': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid)+'W',
+            'W': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid),
+                                 ringdir='W',
                                  sch_x=200*(sch_x-q_distance),
                                  sch_y=200*sch_y, conns='')),
-            'N': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid)+'N',
+            'N': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid),
+                                 ringdir='N',
                                  sch_x=200*sch_x,
                                  sch_y=200*(sch_y-q_distance), conns='')),
-            'S': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid)+'S',
+            'S': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid),
+                                 ringdir='S',
                                  sch_x=200*sch_x,
                                  sch_y=200*(sch_y+q_distance), conns=''))}
 
@@ -575,9 +579,18 @@ class InterconnectGenerator(object):
                                        custom=''))
         self.counters['pwm'] += 1
 
+        # name of the ring resonator must be found
+        if pos[1] == 0:
+            ringdir = 'W'
+        else:
+            ringdir = 'E'
+
         self.gen_lsf(self.conn_frmt.format(i=ret[1],
-                                           this_port='port 1',
-                                           other=
+            this_port='port 1',
+            other='RING'+
+                self.cid_gr.format(i=model.nodes[pos[0]][pos[1]].conn_point.uid)+
+                ringdir,
+            other_port='port 2'))
 
         return ret
 
