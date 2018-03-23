@@ -461,7 +461,7 @@ class InterconnectGenerator(object):
         # In interconnect, we need to catch some subclasses first to
         # make sure they are not generated as they are parent classes.
         # This is a subtle but still ugly workaround for now.
-        if isinstance(c, rm.Ammeter):
+        if isinstance(c, rm.CurrentMeter):
             tmp_name = self.add_osc(c, parent)
         elif isinstance(c, rm.ConnectionPoint):
             # This is what it is going to look like for Electrical
@@ -472,7 +472,7 @@ class InterconnectGenerator(object):
             sch_x, sch_y = self.node_sch_coord(c.coord)
             # note: positions and sch_* have 200 times difference
 
-            ooscs = model.nodes[c.coord[0]][c.coord[1]].ammeters
+            ooscs = model.nodes[c.coord[0]][c.coord[1]].curmeters
 
 
             conns = ''
@@ -535,7 +535,7 @@ class InterconnectGenerator(object):
                                                   
             tmp_name=spar
 
-        elif isinstance(c, rm.VoltageSource):
+        elif isinstance(c, rm.BoundaryCond):
             # tmp_name = self.add_v2(c)
             tmp_name = self.add_source_compound(c, model)
         elif isinstance(c, rm.Resistance):

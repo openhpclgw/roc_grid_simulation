@@ -13,11 +13,15 @@ sink = [(size-1, 0, 1, size)]
 conductance = 10**-3  # this'll be used as resistance directly
 hp = HeatProblem(N, source, sink, conductance)
 
+interconnect = True
 norton = True
 
 m = ROCModel(mesh_size, norton=norton)
 m.load_problem(hp)
-m.run_interconnect_solver(filename='interconnect_test')
+if interconnect:
+    m.run_interconnect_solver(filename='interconnect_test')
+else:
+    m.run_spice_solver()
 
 surface3d = False
 
@@ -32,11 +36,12 @@ surface3d = False
 # print_current_splits(splits)
 # generate_sparams_from_splits(splits)
 
-if norton:
-    t = generate_loop_current_table(m)
-    print(t)
-    plot_heatmap_from_grid(t)
-elif not surface3d:
-    plot_heatmap(m, current_flow_plot=None)
-else:
-    plot_surface(m)
+if not interconnect:
+    if norton:
+        t = generate_loop_current_table(m)
+        print(t)
+        plot_heatmap_from_grid(t)
+    elif not surface3d:
+        plot_heatmap(m, current_flow_plot=None)
+    else:
+        plot_surface(m)

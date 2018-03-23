@@ -185,7 +185,7 @@ class NodeBlock(object):
         for d in in_dirs:
             tmp_subnode = gen_node_name(coord, d)
             self.subnodes[d] = tmp_subnode
-            self.ammeters[d] = CurrentMeter(node1=tmp_subnode,
+            self.curmeters[d] = CurrentMeter(node1=tmp_subnode,
                                        node2=self.nodename+'cp',
                                        cntrs=cntrs)
 
