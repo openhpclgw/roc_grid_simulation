@@ -1,6 +1,7 @@
 import numpy as np
 import itertools as it
 from spice_gen import SpiceGenerator
+from interconnect_gen import InterconnectGenerator
 from common import *
 
 
@@ -112,6 +113,8 @@ class MeshResistance(object):
         self.curmeter = CurrentMeter(self.node1, self.innodeid, cntrs)
         self.resistance.node1 = self.innodeid
 
+        self.sname = ''
+
     def get_current(self):
         return self.curmeter.current
 
@@ -127,6 +130,30 @@ class MeshResistance(object):
         if val > 0:
             return 'E' if self.orientation == 'H' else 'S'
 
+
+class ConnectionPoint(object):
+    def __init__(self, coord, nodename, in_dirs, cntrs):
+        self.uid = cntrs.con
+        self.nodename = nodename
+        self.coord=coord
+        cntrs.con += 1
+
+        self.directions = {'E': 'Ecp',
+                           'W': 'Wcp',
+                           'N': 'Ncp',
+                           'S': 'Scp'}
+        self.rs = {}
+
+        self.sname = ''
+        for d in self.directions:
+            self.rs[d] = Resistance(node1=nodename+d,
+                                    node2=nodename,
+                                    r=0,
+                                    cntrs=cntrs)
+
+    def components(self):
+        for d,r in self.rs.items():
+            yield r
 
 class NodeBlock(object):
     def __init__(self, coord, mesh_size, cntrs):
@@ -148,12 +175,18 @@ class NodeBlock(object):
 
         # TODO this should go to some sort of a global config file
         self.directions = ('E', 'W', 'N', 'S')
+        in_dirs = [d for d in self.inward_directions()]
 
-        for d in self.inward_directions():
+        self.conn_point = ConnectionPoint(self.coord,
+                                              self.nodename,
+                                              in_dirs,
+                                              cntrs)
+
+        for d in in_dirs:
             tmp_subnode = gen_node_name(coord, d)
             self.subnodes[d] = tmp_subnode
-            self.curmeters[d] = CurrentMeter(node1=tmp_subnode,
-                                       node2=self.nodename,
+            self.ammeters[d] = CurrentMeter(node1=tmp_subnode,
+                                       node2=self.nodename+'cp',
                                        cntrs=cntrs)
 
     def __eq__(self, o):
@@ -165,6 +198,7 @@ class NodeBlock(object):
     def components(self):
         for d, a in self.curmeters.items():
             yield a
+        yield self.conn_point
 
     def inward_directions(self):
         if self.coord.i > 0:
@@ -196,6 +230,9 @@ class NodeBlock(object):
 
     def is_h(self, other):
         return self.coord.is_h(other.coord)
+
+    def __eq__(self, other):
+        return self.coord == other.coord
 
     def __gt__(self, other):
         return self.coord > other.coord
@@ -238,6 +275,7 @@ class CounterSet(object):
     def __init__(self):
         self.r = 0
         self.v = 0
+        self.con = 0
         self.i = 0
 
 class NortonLoop(object):
@@ -932,6 +970,32 @@ class ROCModel(object):
         self.init_ics(self.hp, vslice)
         print('Initialized virtualized mesh')
 
+    def get_adjacent_link(self, nodeblock, d=''):
+        assert d != ''
+
+        if d == 'E':
+            for l in self.links:
+                if l.orientation == 'H':
+                    if l.nodeblock1 == nodeblock:
+                        return l
+        elif d == 'W':
+            for l in self.links:
+                if l.orientation == 'H':
+                    if l.nodeblock2 == nodeblock:
+                        return l
+        elif d == 'N':
+            for l in self.links:
+                if l.orientation == 'V':
+                    if l.nodeblock2 == nodeblock:
+                        return l
+        elif d == 'S':
+            for l in self.links:
+                if l.orientation == 'V':
+                    if l.nodeblock1 == nodeblock:
+                        return l
+
+        return None
+
     def create_grid(self):
         ef = self.exp_factor
         if int(ef) != ef:
@@ -1057,6 +1121,26 @@ class ROCModel(object):
         sg.create_script(self)
         sg.get_results(self, cached_file=True)
         self.final_grid = self.create_grid()
+
+    def run_interconnect_solver(self, filename='', 
+                         cleanup=False, virtualize=False,
+                         vstep_size=0):
+        if virtualize:
+            print('Virtualization with Interconnect is not supported')
+        mesh_size = self.h
+        grid_size = self.hp.N
+
+        ig = InterconnectGenerator(filename=filename)
+        ig.create_script(self)
+        # sg.run()
+        # sg.get_results(self)
+        # grid = self.create_grid()
+        # count = 0
+
+        # self.final_grid = grid
+
+        if cleanup:
+            sg.rm_tmp_files()
 
     def run_spice_solver(self, filename='', 
                          cleanup=False, virtualize=False,

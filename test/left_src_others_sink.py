@@ -17,20 +17,17 @@ norton = True
 
 m = ROCModel(mesh_size, norton=norton)
 m.load_problem(hp)
-m.run_spice_solver()
+m.run_interconnect_solver(filename='interconnect_test')
 
 surface3d = False
 
-print('Node Potentials')
-print('---------------')
-print_node_potentials(m)
-print()
-print('Node Currents')
-print('-------------')
-print_node_currents(m)
-print()
-# print('Node Current Splits')
+# print('Node Potentials')
+# print('---------------')
+# print_node_potentials(m)
+# print()
+# print('Node Currents')
 # print('-------------')
+
 # splits = run_current_split_analysis(m)
 # print_current_splits(splits)
 # generate_sparams_from_splits(splits)
