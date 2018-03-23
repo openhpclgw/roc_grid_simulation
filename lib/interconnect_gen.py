@@ -572,11 +572,12 @@ class InterconnectGenerator(object):
 
         ret = self.create_link_compound('bc'+str(c.uid), sch_x, sch_y)
 
-        self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
+        pwm = self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
                                        nn1=c.node1+'_07',
                                        sch_x=sch_x-4,
                                        sch_y=-sch_y-2,
                                        custom=''))
+
         self.counters['pwm'] += 1
 
         # name of the ring resonator must be found
@@ -591,6 +592,11 @@ class InterconnectGenerator(object):
                 self.cid_gr.format(i=model.nodes[pos[0]][pos[1]].conn_point.uid)+
                 ringdir,
             other_port='port 2'))
+
+        self.gen_lsf(self.conn_frmt.format(i=ret[0],
+                                           this_port='port 1',
+                                           other=pwm,
+                                           other_port='input'))
 
         return ret
 
