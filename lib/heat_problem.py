@@ -12,7 +12,7 @@ class PointHeatSource(object):
 
 class HeatProblem(object):
     # bbox : (left, top, width, height)
-    def __init__(self, N, sources, sinks, conductance,
+    def __init__(self, N, sources, sinks, resistance,
                  src_val=1., sink_val=0.):
 
         def scalar_iter(obj):
@@ -34,10 +34,12 @@ class HeatProblem(object):
         for s in self.sinks:
             self.sink_idxs |= {idx for idx in s}
 
-        self.conductance = conductance
+        self.resistance = resistance
         self.src_val = src_val
         self.sink_val = sink_val
 
+    def get_r(self, n1, n2):
+        return self.resistance(self.N, n1, n2)
 
     # def source_iter(self):
         # if isinstance(self.sources, list):
