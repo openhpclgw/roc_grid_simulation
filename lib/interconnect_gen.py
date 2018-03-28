@@ -335,7 +335,10 @@ class InterconnectGenerator(object):
 
             sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
 
-        ret = self.create_link_compound('R'+str(r.uid), sch_x, sch_y)
+        ret = self.create_link_compound('R'+str(r.uid), sch_x, sch_y,
+                                        attenuation=r.r,
+                                        power_left=0.,
+                                        power_right=0.)
 
         if isinstance(parent, rm.NortonLoop):
             assert False
@@ -374,7 +377,24 @@ class InterconnectGenerator(object):
 
         sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
 
-        ret = self.create_link_compound('Cur_Source'+str(cs.uid), sch_x, sch_y)
+        right_power = False
+
+        if n1.is_h(n2) and n1.i != 0: # bottom
+            right_power = True
+        if (not n1.is_h(n2)) and n1.j != 0: # right
+            right_power = True
+
+        if right_power:
+            pl, pr = 0, cs.i*4
+        else:
+            pr, pl = 0, cs.i*4
+
+
+        ret = self.create_link_compound('Cur_Source'+str(cs.uid),
+                                        sch_x, sch_y,
+                                        attenuation=0,
+                                        power_left=pl,
+                                        power_right=pr)
 
         self.r_counter += 1
 
@@ -457,7 +477,7 @@ class InterconnectGenerator(object):
                                          uname='',
                                          nn1=v.node1,
                                          nn2=v.node2,
-                                         v=v.v,
+                                         power=v.v,
                                          sch_x=sch_x,
                                          sch_y=0-sch_y,
                                          custom=''))
@@ -549,7 +569,7 @@ class InterconnectGenerator(object):
         '.MODEL "CW Laser" ellipticity=0 "enable RIN"=0\n'
         '+ "orthogonal identifier 1"=1 "label 1"="X" seed=1\n'
         '+ "automatic seed"=1 linewidth=0 "orthogonal identifier 2"=2\n'
-        '+ power=0.001 frequency=193.1T "reference power"=0.001 RIN=-140\n'
+        '+ frequency=193.1T "reference power"=0.001 RIN=-140\n'
         '+ phase=0 "label 2"="Y" azimuth=0\n'
         '+ "number of output signals"={%number of output signals%}\n'
         '+ "output signal mode"={%output signal mode%}\n'
@@ -676,7 +696,7 @@ class InterconnectGenerator(object):
             tmp_name=spar
 
         elif isinstance(c, rm.BoundaryCond):
-            assert False
+            # assert c.v==0
             tmp_name = self.add_v2(c)
 
         elif isinstance(c, rm.CurrentSource):
@@ -796,8 +816,9 @@ class InterconnectGenerator(object):
                                      custom='sch_r=180'))
         self.counters['y'] += 1
 
-        self.gen(self.__v2frmt.format(i=self.counters['cwl'],
+        cwl_right = self.gen(self.__v2frmt.format(i=self.counters['cwl'],
                                       nn1=name+'_01',
+                                      power=power_right,
                                       sch_x=sch_x-3,
                                       sch_y=-sch_y+2,
                                       custom=''))
@@ -811,7 +832,7 @@ class InterconnectGenerator(object):
         self.counters['pwm'] += 1
 
         self.gen(self.__r2frmt.format(i=self.counters['fiber'],
-                                      r=0.1,
+                                      r=attenuation,
                                       uname='',
                                       nn1=name+'_06',
                                       nn2=name+'_05',
@@ -845,8 +866,9 @@ class InterconnectGenerator(object):
                                        custom=''))
         self.counters['pwm'] += 1
 
-        self.gen(self.__v2frmt.format(i=self.counters['cwl'],
+        cwl_left = self.gen(self.__v2frmt.format(i=self.counters['cwl'],
                                       nn1=name+'_09',
+                                      power=power_left,
                                       sch_x=sch_x-1,
                                       sch_y=-sch_y-2,
                                       custom=''))
