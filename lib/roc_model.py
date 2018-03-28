@@ -154,6 +154,9 @@ class ConnectionPoint(object):
     def components(self):
         for d,r in self.rs.items():
             yield r
+    
+    def get_spar_file(self):
+        return '{},{}'.format(self.coord[0], self.coord[1])
 
 class NodeBlock(object):
     def __init__(self, coord, mesh_size, cntrs):

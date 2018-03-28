@@ -94,7 +94,7 @@ class InterconnectGenerator(object):
         self.sparam_lsf_format = ('addelement("Optical N Port S-Parameter");\n'
                                   'set("name","SPAR_'+cg+'");\n'
                                   'set("load from file",true);\n'
-                                  'set("s parameters filename","spar.txt");\n'
+                                  'set("s parameters filename","{f}.txt");\n'
                                   'set("x position", {sch_x:4.2f});\n'
                                   'set("y position", {sch_y:4.2f});\n'
                                   '{conns}\n')
@@ -675,6 +675,7 @@ class InterconnectGenerator(object):
             spar = self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
                                                   sch_y=200*sch_y,
+                                                  f=c.get_spar_file(),
                                                   conns=conns))
 
             # connection to node oscillators
