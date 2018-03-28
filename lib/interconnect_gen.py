@@ -114,7 +114,11 @@ class InterconnectGenerator(object):
             self.file = open(self.rel_in_path(suffix), 'w')
             self.lsffile = open(self.rel_lsf_path(suffix), 'w')
         # mesh size
-        self.mesh_size = len(roc_model.mesh)+1
+        if roc_model.norton:
+            self.mesh_size = len(roc_model.mesh)+1
+        else:
+            self.mesh_size = len(roc_model.mesh)
+
         self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
 
         self.add_block_comment('Auto-generated for Interconnect')
