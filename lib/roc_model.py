@@ -489,6 +489,17 @@ class NortonLoop(object):
             else:
                 yield c
 
+    def mesh_resistances(self):
+        for c in self._components:
+            if isinstance(c, MeshResistance):
+                yield c
+
+    def other_components(self):
+        for c in self._components:
+            if not isinstance(c, MeshResistance):
+                yield c
+
+
     def curmeters(self):
         for c in self._components:
             if isinstance(c, MeshResistance):

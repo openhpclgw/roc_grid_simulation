@@ -3,6 +3,7 @@ import roc_model as rm
 import itertools as it
 import numpy as np
 import subprocess as sp
+from common import *
 
 coord_to_sch_ratio = 20.
 mid_distance = coord_to_sch_ratio/2
@@ -113,7 +114,7 @@ class InterconnectGenerator(object):
             self.file = open(self.rel_in_path(suffix), 'w')
             self.lsffile = open(self.rel_lsf_path(suffix), 'w')
         # mesh size
-        self.mesh_size = len(roc_model.mesh)
+        self.mesh_size = len(roc_model.mesh)+1
         self.set_id_pads(int(np.log10(self.mesh_size**2*4)+1))
 
         self.add_block_comment('Auto-generated for Interconnect')
@@ -130,6 +131,7 @@ class InterconnectGenerator(object):
                 self.component_codegen(c, r)
 
         # generate nodes 
+        # print(full_range)
         self.add_block_comment("Node subcircuits")
         for i, j in it.product(full_range, full_range):
             n = roc_model.nodes[i][j]
@@ -141,16 +143,57 @@ class InterconnectGenerator(object):
             if n.ic != 0.:
                 self.ic_codegen(n.sname, n.ic)
 
-        # generate source
-        self.add_block_comment("Sources")
-        for v in roc_model.src:
-            self.component_codegen(v, model=roc_model)
+        if not roc_model.norton:
+            # generate source
+            self.add_block_comment("Sources")
+            for v in roc_model.src:
+                self.component_codegen(v, model=roc_model)
 
-        # generate sink
-        self.add_block_comment("Sinks")
-        for s in roc_model.snk:
-            self.component_codegen(s, model=roc_model)
+            # generate sink
+            self.add_block_comment("Sinks")
+            for s in roc_model.snk:
+                self.component_codegen(s, model=roc_model)
+        else:
+            # generate loop components for Norton circuit
+            self.add_block_comment('Loop Components')
+            for loop in roc_model.iter_loops():
+                self.add_comment('Loop ' + str(loop.coord))
+                for mr in loop.mesh_resistances():
+                    self.add_comment('Loop resistance '+mr.node1+' '+
+                                                        mr.node2)
+                    for c in mr.components():
+                        # print('loop res ', mr.node1, mr.node2)
+                        self.component_codegen(c, model=roc_model, parent=mr)
+                        # print('Sname = ', c.sname)
 
+                        if isinstance(c, rm.Resistance):
+                            left_coord = self.nodename_to_coord(mr.node1)
+                            right_coord = self.nodename_to_coord(mr.node2)
+
+                            print('Mesh resistance btw ',
+                                  left_coord, right_coord)
+
+                            left_dir = mr.node1[-1]
+                            right_dir = mr.node2[-1]
+
+                            left_conn_id = self.cid_gr.format(i=roc_model.nodes[left_coord[0]][left_coord[1]].conn_point.uid)
+                            right_conn_id = self.cid_gr.format(i=roc_model.nodes[right_coord[0]][right_coord[1]].conn_point.uid)
+
+                            
+                            self.gen_lsf(self.conn_frmt.format(
+                                            i=c.sname[0],
+                                            this_port='port 1',
+                                            other='RING'+left_conn_id+left_dir,
+                                            other_port='port 2'))
+
+                            self.gen_lsf(self.conn_frmt.format(
+                                            i=c.sname[1],
+                                            this_port='port 1',
+                                            other='RING'+right_conn_id+right_dir,
+                                            other_port='port 2'))
+                for c in loop.other_components():
+                    self.add_comment('Loop component')
+                    self.component_codegen(c, model=roc_model, parent=loop)
 
         # self.generate measurement/analysis components
         self.add_block_comment("Analysis code")
@@ -168,8 +211,13 @@ class InterconnectGenerator(object):
             self.lsffile.close()
 
     def nodename_to_coord(self, name):
-        coord_str = name[1:].split('_')
-        return (int(coord_str[0]), int(coord_str[1]))
+        tmp_name = name
+        if name[-1:].isalpha():
+            tmp_name = name[:-1]
+        coord_str = tmp_name[1:].split('_')
+        print('Nodename = ', name, ' Coord = ',
+              str((int(coord_str[0]), int(coord_str[1]))))
+        return Coord(int(coord_str[0]), int(coord_str[1]))
 
     #
     # codegen Functions
@@ -214,6 +262,11 @@ class InterconnectGenerator(object):
 
             sym = 'V('+node.sname+')'
             node.potential = result_dict[sym]
+
+        if roc_model.norton:
+            for loop in roc_model.iter_loops():
+                for c in loop.curmeters():
+                    c.current = result_dict[c.sname]
 
     def generate_result_dict(self, suffix, cached_file=False):
         header_regexp = '^Index\s+time\s+(.*)$'
@@ -266,32 +319,117 @@ class InterconnectGenerator(object):
         return (coord[1]*coord_to_sch_ratio,
                 coord[0]*coord_to_sch_ratio)
 
-    def add_r2(self, r, parent=None):
+    def add_r2(self, r, model=None, parent=None):
         custom = ''
+        sch_x, sch_y = 0, 0
+
         if parent is not None:
-            node1_sch = self.node_sch_coord(parent.nodeblock1.coord)
-            node2_sch = self.node_sch_coord(parent.nodeblock2.coord)
+            if not isinstance(parent, rm.NortonLoop):
+                node1_sch = self.node_sch_coord(parent.nodeblock1.coord)
+                node2_sch = self.node_sch_coord(parent.nodeblock2.coord)
+                if parent.orientation == 'V':
+                    custom = '"rotated"=true'
+            else:
+                node1_sch = self.node_sch_coord(parent.coord)
+                node2_sch = self.node_sch_coord(parent.coord)
+
             sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
-
-            if parent.orientation == 'V':
-                custom = '"rotated"=true'
-        else:
-            sch_x, sch_y = 0, 0
-
-        
-
-        # ret = self.gen(self.__r2frmt.format(i=r.uid,
-                                     # uname='', # FIXME
-                                     # nn1=r.node1,
-                                     # nn2=r.node2,
-                                     # r=r.r,
-                                     # sch_x=sch_x,
-                                     # sch_y=0-sch_y,
-                                     # custom=custom))
 
         ret = self.create_link_compound('R'+str(r.uid), sch_x, sch_y)
 
+        if isinstance(parent, rm.NortonLoop):
+            assert False
+            pos = self.nodename_to_coord(r.node2)
+            if pos[1] == 0:
+                ringdir = 'W'
+            else:
+                ringdir = 'E'
+
+            self.gen_lsf(self.conn_frmt.format(i=ret[1],
+                this_port='port 1',
+                other='RING'+
+                    self.cid_gr.format(i=model.nodes[pos[0]][pos[1]].conn_point.uid)+ ringdir,
+                other_port='port 2'))
+
         self.r_counter += 1
+        return ret
+
+    def conn_uid_str(self, model, coord):
+        return self.cid_gr.format(i=model.nodes[coord[0]][coord[1]].conn_point.uid)
+
+    def add_current_source(self, cs, model=None, parent=None):
+
+        assert model is not None
+        assert parent is not None
+
+        custom = ''
+        sch_x, sch_y = 0, 0
+
+        n1 = self.nodename_to_coord(cs.node1)
+        n2 = self.nodename_to_coord(cs.node2)
+        pos = parent.coord
+
+        node1_sch = self.node_sch_coord(n1)
+        node2_sch = self.node_sch_coord(n2)
+
+        sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
+
+        ret = self.create_link_compound('Cur_Source'+str(cs.uid), sch_x, sch_y)
+
+        self.r_counter += 1
+
+
+        # print('Node coords ', n1, n2)
+
+        if n1.is_h(n2):
+            if n1.i == 0:
+                # source is on top of the loop (and the whole mesh)
+                self.gen_lsf(self.conn_frmt.format(i=ret[0],
+                  this_port='port 1',
+                  other='RING'+self.conn_uid_str(model,(pos[0],pos[1]))+'E',
+                  other_port='port 2'))
+
+                self.gen_lsf(self.conn_frmt.format(i=ret[1],
+                  this_port='port 1',
+                  other='RING'+self.conn_uid_str(model,(pos[0],pos[1]+1))+'W',
+                  other_port='port 2'))
+
+            else:
+                # it must be on the bottom
+                self.gen_lsf(self.conn_frmt.format(i=ret[0],
+                  this_port='port 1',
+                  other='RING'+self.conn_uid_str(model,(pos[0]+1,pos[1]))+'E',
+                  other_port='port 2'))
+
+                self.gen_lsf(self.conn_frmt.format(i=ret[1],
+                  this_port='port 1',
+                  other='RING'+self.conn_uid_str(model,(pos[0]+1,pos[1]+1))+'W',
+                  other_port='port 2'))
+        else:
+            if n1.j == 0:
+                # source is on left of the loop (and the whole mesh)
+                self.gen_lsf(self.conn_frmt.format(i=ret[0],
+                  this_port='port 1',
+                  other='RING'+self.conn_uid_str(model,(pos[0]+1,pos[1]))+'N',
+                  other_port='port 2'))
+
+                self.gen_lsf(self.conn_frmt.format(i=ret[1],
+                  this_port='port 1',
+                  other='RING'+self.conn_uid_str(model,(pos[0],pos[1]))+'S',
+                  other_port='port 2'))
+
+            else:
+                # it must be on the right
+                self.gen_lsf(self.conn_frmt.format(i=ret[0],
+                  this_port='port 1',
+                  other='RING'+self.conn_uid_str(model,(pos[0]+1,pos[1]+1))+'N',
+                  other_port='port 2'))
+
+                self.gen_lsf(self.conn_frmt.format(i=ret[0],
+                  this_port='port 1',
+                  other='RING'+self.conn_uid_str(model,(pos[0],pos[1]+1))+'S',
+                  other_port='port 2'))
+
         return ret
 
 
@@ -352,7 +490,7 @@ class InterconnectGenerator(object):
 
                 conn_p = parent.resistance.sname[3]
 
-            elif isinstance(parent, rm.NodeBlock):
+            elif isinstance(parent, rm.NodeBlock) or isinstance(parent, rm.NortonLoop):
                 print(parent.coord)
                 sch_x, sch_y = self.node_sch_coord(parent.coord)
                 d = osc.node1[-1]
@@ -373,6 +511,7 @@ class InterconnectGenerator(object):
 
         else:
             sch_x, sch_y = 0, 0
+
         ret = ''
         ret = self.gen(
                 self.__oscfrmt.format(i=osc.uid,
@@ -463,7 +602,7 @@ class InterconnectGenerator(object):
         # This is a subtle but still ugly workaround for now.
         if isinstance(c, rm.CurrentMeter):
             tmp_name = self.add_osc(c, parent)
-        elif isinstance(c, rm.ConnectionPoint):
+        elif isinstance(c, rm.ConnectionPoint): #creates lsf
             # This is what it is going to look like for Electrical
             # for item in c.components():
                 # self.component_codegen(item)
@@ -480,6 +619,7 @@ class InterconnectGenerator(object):
             dir_to_port = { 'E':'1', 'W':'2', 'N':'3', 'S':'4' }
             dir_to_port_fiber = { 'E':0, 'W':1, 'N':1, 'S':0 }
 
+            print('coord ', c.coord, ' id ', c.uid)
 
             resonators = {
             'E': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid),
@@ -536,13 +676,18 @@ class InterconnectGenerator(object):
             tmp_name=spar
 
         elif isinstance(c, rm.BoundaryCond):
-            # tmp_name = self.add_v2(c)
-            tmp_name = self.add_source_compound(c, model)
+            tmp_name = self.add_v2(c)
+
+        elif isinstance(c, rm.CurrentSource):
+            print('Current Source btw ', c.node1, c.node2)
+            tmp_name = self.add_current_source(c, model, parent)
         elif isinstance(c, rm.Resistance):
-            tmp_name = self.add_r2(c, parent)
+            tmp_name = self.add_r2(c, model, parent)
         else:
             tmp_name = ''
-            print("error")
+            print(c)
+            print("unrecognized type error")
+            assert False
         print(tmp_name)
         c.sname = tmp_name
 
@@ -550,6 +695,7 @@ class InterconnectGenerator(object):
 
         size = len(model.mesh)
         pos = self.nodename_to_coord(c.node1)
+        print(c.node1, ' > ', pos, ' > ', model.nodes[pos[0]][pos[1]].conn_point.uid)
         sch_x, sch_y = self.node_sch_coord(pos)
         
         if pos[1] == 0:
@@ -572,31 +718,54 @@ class InterconnectGenerator(object):
 
         ret = self.create_link_compound('bc'+str(c.uid), sch_x, sch_y)
 
-        pwm = self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
-                                       nn1=c.node1+'_07',
-                                       sch_x=sch_x-4,
-                                       sch_y=-sch_y-2,
-                                       custom=''))
+        if not model.norton:
+            pwm = self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
+                                           nn1=c.node1+'_07',
+                                           sch_x=sch_x-4,
+                                           sch_y=-sch_y-2,
+                                           custom=''))
 
-        self.counters['pwm'] += 1
+            self.counters['pwm'] += 1
 
         # name of the ring resonator must be found
-        if pos[1] == 0:
-            ringdir = 'W'
+        if not model.norton:
+            if pos[1] == 0:
+                ringdir = 'W'
+            else:
+                ringdir = 'E'
+
+            self.gen_lsf(self.conn_frmt.format(i=ret[1],
+                this_port='port 1',
+                other='RING'+
+                    self.cid_gr.format(i=model.nodes[pos[0]][pos[1]].conn_point.uid)+
+                    ringdir,
+                other_port='port 2'))
+
+            self.gen_lsf(self.conn_frmt.format(i=ret[0],
+                                               this_port='port 1',
+                                               other=pwm,
+                                               other_port='input'))
+
         else:
-            ringdir = 'E'
+            # the source is connected to two nodes in Norton circuits.
+            # For now assume that the current source will always be on
+            # the west boundary of the loop:
 
-        self.gen_lsf(self.conn_frmt.format(i=ret[1],
-            this_port='port 1',
-            other='RING'+
-                self.cid_gr.format(i=model.nodes[pos[0]][pos[1]].conn_point.uid)+
-                ringdir,
-            other_port='port 2'))
+            self.gen_lsf(self.conn_frmt.format(i=ret[0],
+                this_port='port 1',
+                other='RING'+
+                    self.cid_gr.format(i=model.nodes[pos[0]][pos[1]].conn_point.uid)+
+                    'S',
+                other_port='port 2'))
 
-        self.gen_lsf(self.conn_frmt.format(i=ret[0],
-                                           this_port='port 1',
-                                           other=pwm,
-                                           other_port='input'))
+            self.gen_lsf(self.conn_frmt.format(i=ret[1],
+                this_port='port 1',
+                other='RING'+
+                    self.cid_gr.format(i=model.nodes[pos[0]+1][pos[1]].conn_point.uid)+
+                    'S',
+                other_port='port 2'))
+            
+
 
         return ret
 
