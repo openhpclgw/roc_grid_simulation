@@ -675,36 +675,38 @@ class ROCModel(object):
         short_range = range(self.w-1)
 
         if self.norton:
-            res = 1.0/self.prob_conductance
+            res = lambda x: 1.0/x
         else:
-            res = self.prob_conductance
+            res = lambda x: x
 
         # generate row resistors
         for i, j in it.product(full_range, short_range):
             if self.norton:
                 if i == 0 or i == self.w-1:
                     continue
-            self.links.append(MeshResistance(res,
-                                             self.nodes[i][j],
-                                             self.nodes[i][j+1],
-                                             self.cntrs,
-                                             self.norton))
+            self.links.append(MeshResistance(
+                                    res(self.res_func((i,j),(i,j+1))),
+                                    self.nodes[i][j],
+                                    self.nodes[i][j+1],
+                                    self.cntrs,
+                                    self.norton))
 
         # generate column resistors
         for i, j in it.product(short_range, full_range):
             if self.norton:
                 if j == 0 or j == self.w-1:
                     continue
-            self.links.append(MeshResistance(res,
-                                             self.nodes[i][j],
-                                             self.nodes[i+1][j],
-                                             self.cntrs,
-                                             self.norton))
+            self.links.append(MeshResistance(
+                                    res(self.res_func((i,j),(i+1,j))),
+                                    self.nodes[i][j],
+                                    self.nodes[i+1][j],
+                                    self.cntrs,
+                                    self.norton))
 
     def load_problem(self, hp):
         self.hp = hp
         grid = hp.gen_matrix()
-        self.prob_conductance = hp.conductance
+        self.res_func = hp.get_r
         self.init_mesh(grid)
 
     def get_snk_neighbor(my_idx):

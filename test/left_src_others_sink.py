@@ -4,14 +4,19 @@ from roc_model import ROCModel
 from heat_problem import HeatProblem
 from analysis_utils import *
 
+def resistance(size, n1, n2):
+    if n1[0]/size<0.5:
+        return 0.002
+    else:
+        return 0.001
+
 size = int(sys.argv[1])
 N = size
 mesh_size = size
 source = (0, 0, 1, size)
 # sink = [(2, 0, size-2, 1), (size-1, 0, 1, size-1), (2, size-1, size-2, 1)]
 sink = [(size-1, 0, 1, size)]
-conductance = 10**-3  # this'll be used as resistance directly
-hp = HeatProblem(N, source, sink, conductance)
+hp = HeatProblem(N, source, sink, resistance)
 
 interconnect = True
 norton = True
