@@ -679,7 +679,8 @@ class InterconnectGenerator(object):
             spar = self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
                                                   sch_y=200*sch_y,
-                                                  f=c.get_spar_file(),
+                                                  # f=c.get_spar_file(),
+                                                  f='spar',
                                                   conns=conns))
 
             # connection to node oscillators
