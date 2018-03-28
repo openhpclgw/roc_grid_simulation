@@ -81,7 +81,7 @@ class InterconnectGenerator(object):
         self.__nfrmt = 'N{n[0]:}_{n[1]:}'
         self.__rfrmt = 'R'+cg+'{uname} '+ng(1)+' '+ng(2)+' {r}'
         self.__vfrmt = 'V'+cg+'{uname} '+ng(1)+' '+ng(2)+' DC {v}'
-        self.__v2frmt = 'X_CWL_'+cg+' {nn1} \"CW Laser\" \"internal seed\"=7434 '+self.__schfrmt
+        self.__v2frmt = 'X_CWL_'+cg+' {nn1} \"CW Laser\" \"internal seed\"=7434 power={power} '+self.__schfrmt
         self.__r2frmt = 'X_FIBER_'+cg+'{uname} {nn1} {nn2} \"Optical Linear Fiber\" attenuation={r} ' + self.__schfrmt
         self.__pvfrmt = 'V'+cg+'{uname} N{n[0]:}_{n[1]:} 0 DC {v}'
 
@@ -676,6 +676,7 @@ class InterconnectGenerator(object):
             tmp_name=spar
 
         elif isinstance(c, rm.BoundaryCond):
+            assert False
             tmp_name = self.add_v2(c)
 
         elif isinstance(c, rm.CurrentSource):
@@ -769,7 +770,10 @@ class InterconnectGenerator(object):
 
         return ret
 
-    def create_link_compound(self, name, sch_x, sch_y):
+    def create_link_compound(self, name, sch_x, sch_y,
+                             attenuation=0.,
+                             power_left=0.,
+                             power_right=0.):
 
 
         # first Y branch
