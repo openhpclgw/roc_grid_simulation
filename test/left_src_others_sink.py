@@ -5,10 +5,11 @@ from heat_problem import HeatProblem
 from analysis_utils import *
 
 def resistance(size, n1, n2):
-    if n1[0]/size<0.5:
-        return 0.002
-    else:
-        return 0.001
+    # if n1[0]/size<0.5:
+        # return 0.002
+    # else:
+        # return 0.001
+    return 0.001
 
 size = int(sys.argv[1])
 N = size
