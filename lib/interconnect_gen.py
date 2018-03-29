@@ -100,6 +100,9 @@ class InterconnectGenerator(object):
                                   '{conns}\n')
         self.conn_frmt = ('connect("{i}","{this_port}",'
                                   ' "{other}", "{other_port}");\n')
+
+        self.coll_frmt = 'getresult("{element}", "{prop}")'
+
         self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
         self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
         self.__ringfrmt = 'X_RING_'+cg+' {nn1} {nn2} \"Single Bus Ring Resonator\" frequency=230T '+self.__schfrmt
@@ -113,6 +116,7 @@ class InterconnectGenerator(object):
         if not self.cache_only:
             self.file = open(self.rel_in_path(suffix), 'w')
             self.lsffile = open(self.rel_lsf_path(suffix), 'w')
+            self.collectorlsf = open(self.rel_lsf_path(suffix+'coll'), 'w')
         # mesh size
         if roc_model.norton:
             self.mesh_size = len(roc_model.mesh)+1
@@ -339,6 +343,7 @@ class InterconnectGenerator(object):
 
             sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
 
+        print('Creating link compound for ', parent.curmeter.sname)
         ret = self.create_link_compound('R'+str(r.uid), sch_x, sch_y,
                                         attenuation=r.r,
                                         power_left=0.,
@@ -618,6 +623,9 @@ class InterconnectGenerator(object):
             m = reobj.match(line)
             if m:
                 return m.group(1)
+
+    def gen_collect(self, element, prop):
+        self.collectorlsf.write('{}\n'.format(s))
 
     # TODO this should be recursive
     def component_codegen(self, c, parent=None, model=None):
