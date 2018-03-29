@@ -866,6 +866,7 @@ class InterconnectGenerator(object):
                                      custom=''))
         self.counters['y'] += 1
 
+        # this measures the current from the left
         self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
                                        nn1=name+'_10',
                                        sch_x=sch_x-1,
