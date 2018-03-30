@@ -1140,23 +1140,33 @@ class ROCModel(object):
 
     def run_interconnect_solver(self, filename='', 
                          cleanup=False, virtualize=False,
-                         vstep_size=0):
+                         vstep_size=0, gen_script=True,
+                         run=False, get_results=False):
         if virtualize:
             print('Virtualization with Interconnect is not supported')
-        mesh_size = self.h
-        grid_size = self.hp.N
 
         ig = InterconnectGenerator(filename=filename)
-        ig.create_script(self)
-        # sg.run()
-        # sg.get_results(self)
-        # grid = self.create_grid()
-        # count = 0
 
-        # self.final_grid = grid
+        # script must still be generated to initialize the component
+        # snames
+        if gen_script or get_results:
+            mesh_size = self.h
+            grid_size = self.hp.N
+
+            ig.create_script(self)
+
+            print('script generated')
+
+        if run:
+            assert False
+            ig.run()
+
+        if get_results:
+            ig.get_results(self)
+            self.final_grid = self.create_grid()
 
         if cleanup:
-            sg.rm_tmp_files()
+            ig.rm_tmp_files()
 
     def run_spice_solver(self, filename='', 
                          cleanup=False, virtualize=False,

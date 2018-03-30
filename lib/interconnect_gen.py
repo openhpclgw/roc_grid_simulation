@@ -101,7 +101,7 @@ class InterconnectGenerator(object):
         self.conn_frmt = ('connect("{i}","{this_port}",'
                                   ' "{other}", "{other_port}");\n')
 
-        self.coll_frmt = 'write("result.dat", "{element}");\nwrite("result.dat", num2str(getresult("{element}", "{prop}")));'
+        self.coll_frmt = 'write("'+self.filename+'.out", "{element}");\nwrite("result.dat", num2str(getresult("{element}", "{prop}")));'
 
         self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
         self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
@@ -263,25 +263,37 @@ class InterconnectGenerator(object):
                     cached_file=False):
 
         result_dict = self.generate_result_dict(suffix, cached_file)
+        print(result_dict)
+
+        def get_cur_for_mr(mr):
+            print('sname of mesh resistance ', mr.sname)
+            from_left = result_dict[mr.sname[4]]
+            from_right = result_dict[mr.sname[5]]
+            return 10**from_left - 10**from_right
+
 
         for mr in roc_model.links:
-            mr.ammeter.current = result_dict[mr.ammeter.sname]
+            mr.curmeter.current = get_cur_for_mr(mr)
 
-        for node in roc_model.iter_nodes():
-            for _,a in node.ammeters.items():
-                a.current = result_dict[a.sname]
+        # for node in roc_model.iter_nodes():
+            # for _,a in node.ammeters.items():
+                # a.current = result_dict[a.sname]
 
-            sym = 'V('+node.sname+')'
-            node.potential = result_dict[sym]
+            # sym = 'V('+node.sname+')'
+            # node.potential = result_dict[sym]
 
         if roc_model.norton:
             for loop in roc_model.iter_loops():
-                for c in loop.curmeters():
-                    c.current = result_dict[c.sname]
+                # for c in loop.curmeters():
+                for mr in loop.mesh_resistances():
+                    mr.curmeter.current = get_cur_for_mr(mr)
 
     def generate_result_dict(self, suffix, cached_file=False):
-        header_regexp = '^Index\s+time\s+(.*)$'
-        value_regexp = '^0\s+\d[.]\d+e[+-]\d+\s+(\-?\d[.]\d+e[+-]\d+)'
+
+        assert not cached_file
+
+        header_regexp = '^X_OPWM_(\d*)$'
+        value_regexp = '^-?\d+([.]\d+)?'
         header_regobj = re.compile(header_regexp)
         value_regobj = re.compile(value_regexp)
 
@@ -290,19 +302,21 @@ class InterconnectGenerator(object):
         looking_for_header = True
         name = ''
         val = 0.
-        fname = self.filename+'.out' if cached_file else self.rel_out_path(suffix)
+        fname = 'interconnect_test.out'
 
         with open(fname) as f:
             for line in f:
                 if looking_for_header:
                     m = header_regobj.match(line)
                     if m:
-                        name = m.group(1).split('#')[0].strip().upper()
+                        # name = m.group(1).split('#')[0].strip().upper()
+                        name = line.strip()
                         looking_for_header = False;
                 else:
                     m = value_regobj.match(line)
                     if m:
-                        val = float(m.group(1))
+                        # print(line, ' ', m.groups())
+                        val = float(line)
                         result_dict[name] = val
                         looking_for_header = True;
 
@@ -351,6 +365,7 @@ class InterconnectGenerator(object):
                                         power_left=0.,
                                         power_right=0.)
         print('Creating link compound for ', ret)
+        parent.sname = ret
 
         if isinstance(parent, rm.NortonLoop):
             assert False
