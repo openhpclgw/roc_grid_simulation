@@ -50,7 +50,7 @@ class InterconnectGenerator(object):
                                          suffix)
     def rel_lsf_path(self, suffix=''):
         if self.user_fname:
-            return '{}.lsf'.format(self.filename)
+            return '{}.lsf'.format(self.filename+suffix)
         else:
             return '{}/{}_{}.lsf'.format(self.tmp_folder,
                                          self.filename,
@@ -101,7 +101,7 @@ class InterconnectGenerator(object):
         self.conn_frmt = ('connect("{i}","{this_port}",'
                                   ' "{other}", "{other_port}");\n')
 
-        self.coll_frmt = 'getresult("{element}", "{prop}")'
+        self.coll_frmt = 'write("result.dat", "{element}");\nwrite("result.dat", num2str(getresult("{element}", "{prop}")));'
 
         self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
         self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
@@ -116,7 +116,9 @@ class InterconnectGenerator(object):
         if not self.cache_only:
             self.file = open(self.rel_in_path(suffix), 'w')
             self.lsffile = open(self.rel_lsf_path(suffix), 'w')
+
             self.collectorlsf = open(self.rel_lsf_path(suffix+'coll'), 'w')
+            print(self.rel_lsf_path(suffix+'coll'))
         # mesh size
         if roc_model.norton:
             self.mesh_size = len(roc_model.mesh)+1
@@ -217,6 +219,7 @@ class InterconnectGenerator(object):
         if not self.cache_only:
             self.file.close()
             self.lsffile.close()
+            self.collectorlsf.close()
 
     def nodename_to_coord(self, name):
         tmp_name = name
@@ -343,11 +346,11 @@ class InterconnectGenerator(object):
 
             sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
 
-        print('Creating link compound for ', parent.curmeter.sname)
         ret = self.create_link_compound('R'+str(r.uid), sch_x, sch_y,
                                         attenuation=r.r,
                                         power_left=0.,
                                         power_right=0.)
+        print('Creating link compound for ', ret)
 
         if isinstance(parent, rm.NortonLoop):
             assert False
@@ -624,7 +627,7 @@ class InterconnectGenerator(object):
             if m:
                 return m.group(1)
 
-    def gen_collect(self, element, prop):
+    def gen_collect(self, s):
         self.collectorlsf.write('{}\n'.format(s))
 
     # TODO this should be recursive
@@ -839,12 +842,15 @@ class InterconnectGenerator(object):
         self.counters['cwl'] += 1
 
         # this measures the current from the right
-        self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
+        r_pwm = self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
                                        nn1=name+'_02',
                                        sch_x=sch_x-3,
                                        sch_y=-sch_y,
                                        custom=''))
         self.counters['pwm'] += 1
+
+        self.gen_collect(self.coll_frmt.format(element=r_pwm,
+                                               prop='sum/power'))
 
         self.gen(self.__r2frmt.format(i=self.counters['fiber'],
                                       r=attenuation,
@@ -875,12 +881,15 @@ class InterconnectGenerator(object):
         self.counters['y'] += 1
 
         # this measures the current from the left
-        self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
+        l_pwm = self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
                                        nn1=name+'_10',
                                        sch_x=sch_x-1,
                                        sch_y=-sch_y-4,
                                        custom=''))
         self.counters['pwm'] += 1
+
+        self.gen_collect(self.coll_frmt.format(element=l_pwm,
+                                               prop='sum/power'))
 
         cwl_left = self.gen(self.__v2frmt.format(i=self.counters['cwl'],
                                       nn1=name+'_09',
@@ -890,7 +899,7 @@ class InterconnectGenerator(object):
                                       custom=''))
         self.counters['cwl'] += 1
 
-        return left, right, name+'_07', name+'_04'
+        return left, right, name+'_07', name+'_04', l_pwm, r_pwm
 
         
     def ic_codegen(self, node, val):
