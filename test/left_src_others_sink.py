@@ -54,11 +54,12 @@ surface3d = False
 # print_current_splits(splits)
 # generate_sparams_from_splits(splits)
 
-if norton:
-    t = generate_loop_current_table(m)
-    print(t)
-    plot_heatmap_from_grid(t)
-elif not surface3d:
-    plot_heatmap(m, current_flow_plot=None)
-else:
-    plot_surface(m)
+if get_results:
+    if norton:
+        t = generate_loop_current_table(m)
+        print(t)
+        plot_heatmap_from_grid(t)
+    elif not surface3d:
+        plot_heatmap(m, current_flow_plot=None)
+    else:
+        plot_surface(m)

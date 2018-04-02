@@ -417,11 +417,12 @@ class InterconnectGenerator(object):
             pr, pl = 0, cs.i*4
 
 
+        # 4/2 swapped current direction
         ret = self.create_link_compound('Cur_Source'+str(cs.uid),
                                         sch_x, sch_y,
                                         attenuation=0,
-                                        power_left=pl,
-                                        power_right=pr)
+                                        power_left=pr,
+                                        power_right=pl)
 
         self.r_counter += 1
 
@@ -705,8 +706,8 @@ class InterconnectGenerator(object):
             spar = self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
                                                   sch_y=200*sch_y,
-                                                  # f=c.get_spar_file(),
-                                                  f='spar',
+                                                  f=c.get_spar_file(),
+                                                  # f='spar',
                                                   conns=conns))
 
             # connection to node oscillators
