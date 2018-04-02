@@ -86,21 +86,6 @@ def plot_heatmap_from_grid(grid, filename='', current_flow_plot=None):
     fig, axes = plt.subplots(1, 1)
     axes.imshow(grid, cmap='hot', interpolation='nearest')
 
-    # we probably don't care about current flows anymore
-    # if current_flow_plot is not None:
-        # U, V = aggregate_current_vectors(m)
-        # if current_flow_plot == 'stream':
-            # axes.streamplot(np.array([i for i in range(ms)]),
-                            # np.array([i for i in range(ms)]),
-                            # U, -V, color='green', linewidth=1,
-                            # density=1)
-        # elif current_flow_plot == 'quiver':
-            # axes.quiver(np.array([i for i in range(ms)]),
-                        # np.array([i for i in range(ms)]),
-                        # U, V, color='green')
-        # else:
-            # print('Unrecognized current_flow_plot')
-
     __plt_help(filename)
 
 def plot_surface(m, filename=''):
