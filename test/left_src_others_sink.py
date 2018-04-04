@@ -22,7 +22,7 @@ sink = [(size-1, 0, 1, size)]
 hp = HeatProblem(N, source, sink, resistance)
 
 interconnect = True
-norton = True
+norton = False
 
 
 if interconnect:

@@ -706,8 +706,8 @@ class InterconnectGenerator(object):
             spar = self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
                                                   sch_y=200*sch_y,
-                                                  f=c.get_spar_file(),
-                                                  # f='spar',
+                                                  # f=c.get_spar_file(),
+                                                  f='spar',
                                                   conns=conns))
 
             # connection to node oscillators
@@ -731,6 +731,13 @@ class InterconnectGenerator(object):
         elif isinstance(c, rm.BoundaryCond):
             # assert c.v==0
             tmp_name = self.add_v2(c)
+            pos = self.nodename_to_coord(c.node1)
+            self.gen_lsf(self.conn_frmt.format(i=tmp_name,
+              this_port='output',
+              other='RING'+self.conn_uid_str(model,(pos[0],pos[1]))+'W',
+              other_port='port 2'))
+
+            # tmp_name = self.add_current_source(c, model, parent)
 
         elif isinstance(c, rm.CurrentSource):
             print('Current Source btw ', c.node1, c.node2)
