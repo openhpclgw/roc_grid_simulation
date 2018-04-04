@@ -361,7 +361,8 @@ class InterconnectGenerator(object):
             sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
 
         ret = self.create_link_compound('R'+str(r.uid), sch_x, sch_y,
-                                        attenuation=r.r,
+                                        # attenuation=r.r,
+                                        attenuation='att',
                                         power_left=0.,
                                         power_right=0.)
         print('Creating link compound for ', ret)
@@ -505,7 +506,7 @@ class InterconnectGenerator(object):
                                          uname='',
                                          nn1=v.node1,
                                          nn2=v.node2,
-                                         power=v.v,
+                                         power='power',
                                          sch_x=sch_x,
                                          sch_y=0-sch_y,
                                          custom=''))
@@ -630,6 +631,9 @@ class InterconnectGenerator(object):
         '+ "frequency at max power"=1 "input signal index"=1\n'
         '+ "stop time"=1 "start time"=0 sensitivity=100f\n'
         '+ "convert noise bins"=1\n'
+        '\n'
+        '.PARAM att=0.001\n'
+        '.PARAM power=1.0\n'
         )))
 
 
