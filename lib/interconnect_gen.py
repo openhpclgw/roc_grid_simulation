@@ -883,13 +883,13 @@ class InterconnectGenerator(object):
                                      custom='sch_r=180'))
         self.counters['y'] += 1
 
-        cwl_right = self.gen(self.__v2frmt.format(i=self.counters['cwl'],
-                                      nn1=name+'_01',
-                                      power=power_right,
-                                      sch_x=sch_x-3,
-                                      sch_y=-sch_y+2,
-                                      custom=''))
-        self.counters['cwl'] += 1
+        # cwl_right = self.gen(self.__v2frmt.format(i=self.counters['cwl'],
+                                      # nn1=name+'_01',
+                                      # power=power_right,
+                                      # sch_x=sch_x-3,
+                                      # sch_y=-sch_y+2,
+                                      # custom=''))
+        # self.counters['cwl'] += 1
 
         # this measures the current from the right
         r_pwm = self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
@@ -941,13 +941,13 @@ class InterconnectGenerator(object):
         self.gen_collect(self.coll_frmt.format(element=l_pwm,
                                                prop='sum/power'))
 
-        cwl_left = self.gen(self.__v2frmt.format(i=self.counters['cwl'],
-                                      nn1=name+'_09',
-                                      power=power_left,
-                                      sch_x=sch_x-1,
-                                      sch_y=-sch_y-2,
-                                      custom=''))
-        self.counters['cwl'] += 1
+        # cwl_left = self.gen(self.__v2frmt.format(i=self.counters['cwl'],
+                                      # nn1=name+'_09',
+                                      # power=power_left,
+                                      # sch_x=sch_x-1,
+                                      # sch_y=-sch_y-2,
+                                      # custom=''))
+        # self.counters['cwl'] += 1
 
         return left, right, name+'_07', name+'_04', l_pwm, r_pwm
 
