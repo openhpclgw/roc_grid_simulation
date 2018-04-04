@@ -502,7 +502,7 @@ class InterconnectGenerator(object):
 
 
     # self.node_to_bc = {}
-    def add_v2(self, v, single_laser=False):
+    def add_v2(self, v, model, single_laser=False):
 
         sch_x, sch_y = self.node_sch_coord(
                             self.nodename_to_coord(v.node1))
@@ -531,6 +531,13 @@ class InterconnectGenerator(object):
             
             return ret
         else:
+
+            coord = self.nodename_to_coord(v.node1)
+
+            node = model.nodes[coord[0]][coord[1]]
+
+            print(node)
+
             pass
 
 
@@ -757,7 +764,7 @@ class InterconnectGenerator(object):
 
         elif isinstance(c, rm.BoundaryCond):
             # assert c.v==0
-            tmp_name = self.add_v2(c)
+            tmp_name = self.add_v2(c, model)
             # pos = self.nodename_to_coord(c.node1)
             # self.gen_lsf(self.conn_frmt.format(i=tmp_name,
               # this_port='output',
@@ -891,6 +898,8 @@ class InterconnectGenerator(object):
                                       # custom=''))
         # self.counters['cwl'] += 1
 
+        right_power_port = name+'_01'
+
         # this measures the current from the right
         r_pwm = self.gen(self.__pwmfrmt.format(i=self.counters['pwm'],
                                        nn1=name+'_02',
@@ -949,7 +958,10 @@ class InterconnectGenerator(object):
                                       # custom=''))
         # self.counters['cwl'] += 1
 
-        return left, right, name+'_07', name+'_04', l_pwm, r_pwm
+        left_power_port = name+'_09'
+
+        return left, right, name+'_07', name+'_04', l_pwm, r_pwm,
+                left_power_port, right_power_port
 
         
     def ic_codegen(self, node, val):
