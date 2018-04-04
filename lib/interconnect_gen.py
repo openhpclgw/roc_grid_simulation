@@ -286,26 +286,51 @@ class InterconnectGenerator(object):
         print(result_dict)
 
         def get_cur_for_mr(mr):
-            print('sname of mesh resistance ', mr.sname)
+            # print('sname of mesh resistance ', mr.sname)
             from_left = result_dict[mr.sname[4]]
             from_right = result_dict[mr.sname[5]]
             return from_left, from_right
             # return 10**from_left - 10**from_right
 
+        def dbm_to_watt(dbm):
+            if dbm == 0 : return 0.0 # an artefact of result collection
+            if dbm == -100 : return 0.0  # noise
+            return 10**((dbm-30)/10)
+            # return dbm
+
 
         for mr in roc_model.links:
-            l,r = get_cur_for_mr(mr)
-            mr.curmeter.current = 10**l-10**r
+            # l,r = get_cur_for_mr(mr)
+            r,l = get_cur_for_mr(mr)
+            mr.curmeter.current = 10**l-10**r  # FIXME dbm_to_watt
 
-            print(mr.nodeblock1, mr.nodeblock2, l, r)
-            if mr.orientation=='H':
-                mr.nodeblock1.potential += r
-                if mr.nodeblock2 is not None:
-                    mr.nodeblock2.potential += l
+            if mr.sidelink_d is not None:
+                assert l*r==0           # one must be 0
+
+                if l != 0:
+                    side_cur = l
+                elif r != 0:
+                    side_cur = r
+                else:
+                    print('Both current readings on resistance is 0')
+                    assert False
+
+                if side_cur == -100.0:
+                    print('Noise')
+                    side_cur = 0.0
+
+                print(mr.nodeblock1, mr.nodeblock2, side_cur)
+
+
+            if mr.sidelink_d is not None:
+                mr.nodeblock1.potential += dbm_to_watt(side_cur)
             else:
-                mr.nodeblock1.potential += l
-                if mr.nodeblock2 is not None:
-                    mr.nodeblock2.potential += r
+                if mr.orientation=='H':
+                    mr.nodeblock1.potential += dbm_to_watt(l)
+                    mr.nodeblock2.potential += dbm_to_watt(r)
+                else:
+                    mr.nodeblock1.potential += dbm_to_watt(r)
+                    mr.nodeblock2.potential += dbm_to_watt(l)
 
 
         # for node in roc_model.iter_nodes():
