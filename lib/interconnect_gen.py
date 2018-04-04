@@ -101,7 +101,17 @@ class InterconnectGenerator(object):
         self.conn_frmt = ('connect("{i}","{this_port}",'
                                   ' "{other}", "{other_port}");\n')
 
-        self.coll_frmt = 'write("'+self.filename+'.out", "{element}");\nwrite("'+self.filename+'.out", num2str(getresult("{element}", "{prop}")));'
+        self.coll_frmt = (
+                'write("'+self.filename+'.out", "{element}");\n'
+                'if(haveresult("{element}", "sum/power")) {{\n'
+                  '\twrite("'+self.filename+'.out", '
+                    'num2str(getresult("{element}", "sum/power")));\n'
+                '}}\n'
+                'else\n'
+                '{{\n'
+                  '\twrite("'+self.filename+'.out",  "0.0");\n'
+                '}}\n'
+                )
 
         self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
         self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
@@ -280,10 +290,12 @@ class InterconnectGenerator(object):
             print(mr.nodeblock1, mr.nodeblock2, l, r)
             if mr.orientation=='H':
                 mr.nodeblock1.potential += r
-                mr.nodeblock2.potential += l
+                if mr.nodeblock2 is not None:
+                    mr.nodeblock2.potential += l
             else:
                 mr.nodeblock1.potential += l
-                mr.nodeblock2.potential += r
+                if mr.nodeblock2 is not None:
+                    mr.nodeblock2.potential += r
 
 
         # for node in roc_model.iter_nodes():
@@ -531,15 +543,31 @@ class InterconnectGenerator(object):
             
             return ret
         else:
+            if v.v != 0:
 
-            coord = self.nodename_to_coord(v.node1)
+                coord = self.nodename_to_coord(v.node1)
 
-            node = model.nodes[coord[0]][coord[1]]
+                node = model.nodes[coord[0]][coord[1]]
+                for d in ('E', 'W', 'N', 'S'):
+                    link = model.get_adjacent_link(node, d)
+                    pd = link.sname[6]
+                    if d == 'E' or d == 'S':
+                        port_side = 'right'
+                    else:
+                        port_side = 'left'
 
-            print(node)
-
-            pass
-
+                    spice_port = pd['{}_power_port'.format(port_side)]
+                    sch_coord = pd['{}_power_sch'.format(port_side)]
+                    ret = self.gen(
+                            self.__v2frmt.format(i=v.uid,
+                                                 uname='',
+                                                 nn1=spice_port,
+                                                 nn2=v.node2, # dummy
+                                                 power=v.v,
+                                                 sch_x=sch_coord[0],
+                                                 sch_y=sch_coord[1],
+                                                 custom=''))
+                    self.v_counter += 1
 
     def add_osc(self, osc, parent=None):
         custom=''
@@ -869,6 +897,8 @@ class InterconnectGenerator(object):
                              power_left=0.,
                              power_right=0.):
 
+        ports_dict = {}
+
 
         # first Y branch
         right = self.gen(self.__yfrmt.format(i=self.counters['y'],
@@ -898,6 +928,9 @@ class InterconnectGenerator(object):
                                       # custom=''))
         # self.counters['cwl'] += 1
 
+        ports_dict['left_power_port'] = name+'_01'
+        ports_dict['left_power_sch'] = (sch_x-3, -sch_y+2)
+
         right_power_port = name+'_01'
 
         # this measures the current from the right
@@ -908,8 +941,9 @@ class InterconnectGenerator(object):
                                        custom=''))
         self.counters['pwm'] += 1
 
-        self.gen_collect(self.coll_frmt.format(element=r_pwm,
-                                               prop='sum/power'))
+        print(r_pwm)
+        self.gen_collect(self.coll_frmt.format(element=r_pwm))
+                                               # prop='sum/power'))
 
         self.gen(self.__r2frmt.format(i=self.counters['fiber'],
                                       r=attenuation,
@@ -947,8 +981,7 @@ class InterconnectGenerator(object):
                                        custom=''))
         self.counters['pwm'] += 1
 
-        self.gen_collect(self.coll_frmt.format(element=l_pwm,
-                                               prop='sum/power'))
+        self.gen_collect(self.coll_frmt.format(element=l_pwm))
 
         # cwl_left = self.gen(self.__v2frmt.format(i=self.counters['cwl'],
                                       # nn1=name+'_09',
@@ -957,11 +990,12 @@ class InterconnectGenerator(object):
                                       # sch_y=-sch_y-2,
                                       # custom=''))
         # self.counters['cwl'] += 1
+        ports_dict['right_power_port'] = name+'_09'
+        ports_dict['right_power_sch'] = (sch_x-1, -sch_y-2)
 
         left_power_port = name+'_09'
 
-        return left, right, name+'_07', name+'_04', l_pwm, r_pwm,
-                left_power_port, right_power_port
+        return left, right, name+'_07', name+'_04', l_pwm, r_pwm, ports_dict
 
         
     def ic_codegen(self, node, val):
