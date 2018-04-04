@@ -22,6 +22,8 @@ class InterconnectGenerator(object):
 
         self.cache_only = cache_only
 
+        self.use_sparams_and_resonators=False
+
         # create file handle
         if filename == '':
             self.user_fname = False
@@ -87,6 +89,14 @@ class InterconnectGenerator(object):
 
         self.__oscfrmt = 'X_OOSC_'+cg+' {nn2} \"Optical Oscilloscope\"  '+ self.__schfrmt
         self.__sparamfrmt = 'X_SPAR_'+cg+' '+ng(1)+' '+ng(2)+' '+ng(3)+' '+ng(4)+' \"Optical N Port S-Parameter\" \"s parameters filename\"=\"{coord}.txt\" '+ self.__schfrmt
+        self.__wxfrmt = ('X_WX_'+cg+'{uname} {nn1} {nn2} {nn3} {nn4} '
+                         '"Waveguide Crossing" '
+                         '"transmission 2"={tr2} '
+                         '"transmission 1"={tr1} '
+                         '"cross talk 2"={ct2} '
+                         '"cross talk 1"={ct1} '
+                         ''+self.__schfrmt
+                        )
 
         self.__tranfrmt = '.TRAN 1NS 501NS 100NS 100NS'
         self.__printfrmt = '.PRINT TRAN {typ}({symbol})'
@@ -116,7 +126,7 @@ class InterconnectGenerator(object):
         self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
         self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
         self.__ringfrmt = 'X_RING_'+cg+' {nn1} {nn2} \"Single Bus Ring Resonator\" frequency=230T '+self.__schfrmt
-        self.ring_lsf_format = ('addelement("Single Bus Ring Resonator");\n'
+        self.ring_lsf_frmt = ('addelement("Single Bus Ring Resonator");\n'
                                 'set("name","RING'+cg+'{ringdir}");\n'
                                 'set("x position", {sch_x:4.2f});\n'
                                 'set("y position", {sch_y:4.2f});\n'
@@ -721,74 +731,114 @@ class InterconnectGenerator(object):
             ooscs = model.nodes[c.coord[0]][c.coord[1]].curmeters
 
 
-            conns = ''
-
             dir_to_port = { 'E':'1', 'W':'2', 'N':'3', 'S':'4' }
-            dir_to_port_fiber = { 'E':0, 'W':1, 'N':1, 'S':0 }
 
-            print('coord ', c.coord, ' id ', c.uid)
 
-            resonators = {
-            'E': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid),
-                                 ringdir='E',
-                                 sch_x=200*(sch_x+q_distance),
-                                 sch_y=200*sch_y, conns='')),
-            'W': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid),
-                                 ringdir='W',
-                                 sch_x=200*(sch_x-q_distance),
-                                 sch_y=200*sch_y, conns='')),
-            'N': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid),
-                                 ringdir='N',
-                                 sch_x=200*sch_x,
-                                 sch_y=200*(sch_y-q_distance), conns='')),
-            'S': self.gen_lsf(self.ring_lsf_format.format(i=str(c.uid),
-                                 ringdir='S',
-                                 sch_x=200*sch_x,
-                                 sch_y=200*(sch_y+q_distance), conns=''))}
+            if not self.use_sparams_and_resonators:
+                port_idx = { 'E':2, 'W':3, 'N':3, 'S':2 }
+                i = c.coord[0]
+                j = c.coord[1]
+                if c.coord in model.src_idxs:
+                    tr1 = 1.0
+                    ct1 = 0.0
+                elif c.coord in model.snk_idxs:
+                    tr1 = 0.0
+                    ct1 = 0.0
+                else:
+                    tr1 = 0.333333
+                    ct1 = 0.333333
 
-            if c.coord in model.snk_idxs:
-                spar_f = 'spar_gnd'
+                nl = model.get_adjacent_link(model.nodes[i][j], 
+                                             'N').resistance.sname
+                wl = model.get_adjacent_link(model.nodes[i][j], 
+                                             'W').resistance.sname
+                el = model.get_adjacent_link(model.nodes[i][j], 
+                                             'E').resistance.sname
+                sl = model.get_adjacent_link(model.nodes[i][j], 
+                                             'S').resistance.sname
+                tmp_name = self.gen(self.__wxfrmt.format(i=c.uid,
+                                        uname='',
+                                        nn1=nl[port_idx['N']],
+                                        nn2=wl[port_idx['W']],
+                                        nn3=el[port_idx['E']],
+                                        nn4=sl[port_idx['S']],
+                                        tr2=0.0,
+                                        tr1=tr1,
+                                        ct2=0.0,
+                                        ct1=ct1,
+                                        sch_x=sch_x,
+                                        sch_y=-sch_y,
+                                        custom=''))
+
             else:
-                # spar_f=c.get_spar_file(),
-                spar_f = 'spar'
+                port_idx = { 'E':0, 'W':1, 'N':1, 'S':0 }
+                conns = ''
+                resonators = {
+                'E':self.gen_lsf(self.ring_lsf_frmt.format(i=str(c.uid),
+                                    ringdir='E',
+                                    sch_x=200*(sch_x+q_distance),
+                                    sch_y=200*sch_y,
+                                    conns='')),
+                'W':self.gen_lsf(self.ring_lsf_frmt.format(i=str(c.uid),
+                                    ringdir='W',
+                                    sch_x=200*(sch_x-q_distance),
+                                    sch_y=200*sch_y,
+                                    conns='')),
+                'N':self.gen_lsf(self.ring_lsf_frmt.format(i=str(c.uid),
+                                    ringdir='N',
+                                    sch_x=200*sch_x,
+                                    sch_y=200*(sch_y-q_distance),
+                                    conns='')),
+                'S':self.gen_lsf(self.ring_lsf_frmt.format(i=str(c.uid),
+                                    ringdir='S',
+                                    sch_x=200*sch_x,
+                                    sch_y=200*(sch_y+q_distance),
+                                    conns=''))}
 
-            # connection to adjacent links
-            for d,p in dir_to_port.items():
-                l = model.get_adjacent_link(parent, d=d)
-                if l is not None:
-                    print('helloo')
-                    print('sname ', l.resistance.sname)
+                if c.coord in model.snk_idxs:
+                    spar_f = 'spar_gnd'
+                else:
+                    # spar_f=c.get_spar_file(),
+                    spar_f = 'spar'
+
+                # connection to adjacent links
+                for d,p in dir_to_port.items():
+                    l = model.get_adjacent_link(parent, d=d)
+                    if l is not None:
+                        print('helloo')
+                        print('sname ', l.resistance.sname)
+                        conns += self.conn_frmt.format(
+                                i=resonators[d],
+                                this_port='port 2',
+                                other=l.resistance.sname[port_idx[d]],
+                                other_port='port 1')
+
+
+                spar = self.gen_lsf(self.sparam_lsf_format.format(
+                                                      i=c.uid,
+                                                      sch_x=200*sch_x,
+                                                      sch_y=200*sch_y,
+                                                      f=spar_f,
+                                                      conns=conns))
+
+                # connection to node oscillators
+                # TODO move this above the gen_lsf call above
+                for d, oosc in ooscs.items():
                     conns += self.conn_frmt.format(
-                            i=resonators[d],
-                            this_port='port 2',
-                            other=l.resistance.sname[dir_to_port_fiber[d]],
-                            other_port='port 1')
+                                      i=spar,
+                                      this_port='port '+dir_to_port[d],
+                                      other=oosc.sname,
+                                      other_port='input')
 
+                for d,p in dir_to_port.items():
+                    self.gen_lsf(self.conn_frmt.format(i=spar,
+                                this_port='port '+str(dir_to_port[d]),
+                                other=resonators[d],
+                                other_port='port 1'))
 
-            spar = self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
-                                                  sch_x=200*sch_x,
-                                                  sch_y=200*sch_y,
-                                                  f=spar_f,
-                                                  conns=conns))
-
-            # connection to node oscillators
-            # TODO move this above the gen_lsf call above
-            for d, oosc in ooscs.items():
-                conns += self.conn_frmt.format(
-                                    i=spar,
-                                    this_port='port '+dir_to_port[d],
-                                    other=oosc.sname,
-                                    other_port='input')
-
-            for d,p in dir_to_port.items():
-                self.gen_lsf(self.conn_frmt.format(i=spar,
-                            this_port='port '+str(dir_to_port[d]),
-                            other=resonators[d],
-                            other_port='port 1'))
-
-            
-                                                  
-            tmp_name=spar
+                
+                                                      
+                tmp_name=spar
 
         elif isinstance(c, rm.BoundaryCond):
             # assert c.v==0
