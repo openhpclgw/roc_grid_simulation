@@ -694,6 +694,12 @@ class InterconnectGenerator(object):
                                  sch_x=200*sch_x,
                                  sch_y=200*(sch_y+q_distance), conns=''))}
 
+            if c.coord in model.snk_idxs:
+                spar_f = 'spar_gnd'
+            else:
+                # spar_f=c.get_spar_file(),
+                spar_f = 'spar'
+
             # connection to adjacent links
             for d,p in dir_to_port.items():
                 l = model.get_adjacent_link(parent, d=d)
@@ -710,8 +716,7 @@ class InterconnectGenerator(object):
             spar = self.gen_lsf(self.sparam_lsf_format.format(i=c.uid,
                                                   sch_x=200*sch_x,
                                                   sch_y=200*sch_y,
-                                                  # f=c.get_spar_file(),
-                                                  f='spar',
+                                                  f=spar_f,
                                                   conns=conns))
 
             # connection to node oscillators
