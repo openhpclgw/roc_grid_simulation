@@ -101,7 +101,7 @@ class InterconnectGenerator(object):
         self.conn_frmt = ('connect("{i}","{this_port}",'
                                   ' "{other}", "{other_port}");\n')
 
-        self.coll_frmt = 'write("'+self.filename+'.out", "{element}");\nwrite("result.dat", num2str(getresult("{element}", "{prop}")));'
+        self.coll_frmt = 'write("'+self.filename+'.out", "{element}");\nwrite("'+self.filename+'.out", num2str(getresult("{element}", "{prop}")));'
 
         self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
         self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
@@ -269,11 +269,22 @@ class InterconnectGenerator(object):
             print('sname of mesh resistance ', mr.sname)
             from_left = result_dict[mr.sname[4]]
             from_right = result_dict[mr.sname[5]]
-            return 10**from_left - 10**from_right
+            return from_left, from_right
+            # return 10**from_left - 10**from_right
 
 
         for mr in roc_model.links:
-            mr.curmeter.current = get_cur_for_mr(mr)
+            l,r = get_cur_for_mr(mr)
+            mr.curmeter.current = 10**l-10**r
+
+            print(mr.nodeblock1, mr.nodeblock2, l, r)
+            if mr.orientation=='H':
+                mr.nodeblock1.potential += r
+                mr.nodeblock2.potential += l
+            else:
+                mr.nodeblock1.potential += l
+                mr.nodeblock2.potential += r
+
 
         # for node in roc_model.iter_nodes():
             # for _,a in node.ammeters.items():

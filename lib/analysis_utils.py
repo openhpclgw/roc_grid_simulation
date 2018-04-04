@@ -84,6 +84,7 @@ def plot_heatmap_from_grid(grid, filename='', current_flow_plot=None):
     import matplotlib.pyplot as plt
 
     fig, axes = plt.subplots(1, 1)
+    print(grid)
     axes.imshow(grid, cmap='hot', interpolation='nearest')
 
     # we probably don't care about current flows anymore
