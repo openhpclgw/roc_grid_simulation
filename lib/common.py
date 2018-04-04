@@ -35,6 +35,26 @@ class Coord(object):
     def idx(self):
         return self.__coord
 
+    def west(self):
+        return (self.i, self.j-1)
+
+    def east(self):
+        return (self.i, self.j+1)
+
+    def north(self):
+        return (self.i-1, self.j)
+
+    def south(self):
+        return (self.i+1, self.j)
+
+    def neighbor(self, d):
+        if d == 'E': return self.east()
+        if d == 'W': return self.west()
+        if d == 'N': return self.north()
+        if d == 'S': return self.south()
+
+        print('Unrecognized direction: ', d)
+        assert False
 
 class BoundingBox(object):
     # bbox : (left, top, width, height)

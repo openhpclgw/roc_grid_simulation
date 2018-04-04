@@ -362,7 +362,15 @@ class InterconnectGenerator(object):
         if parent is not None:
             if not isinstance(parent, rm.NortonLoop):
                 node1_sch = self.node_sch_coord(parent.nodeblock1.coord)
-                node2_sch = self.node_sch_coord(parent.nodeblock2.coord)
+
+                if parent.nodeblock2 is None:
+                    node2_sch = self.node_sch_coord(
+                             parent.nodeblock1.coord.neighbor(
+                                 parent.sidelink_d))
+                else:
+                    node2_sch = self.node_sch_coord(
+                             parent.nodeblock2.coord)
+
                 if parent.orientation == 'V':
                     custom = '"rotated"=true'
             else:
@@ -494,8 +502,7 @@ class InterconnectGenerator(object):
 
 
     # self.node_to_bc = {}
-    def add_v2(self, v):
-        ret = ''
+    def add_v2(self, v, single_laser=False):
 
         sch_x, sch_y = self.node_sch_coord(
                             self.nodename_to_coord(v.node1))
@@ -509,9 +516,7 @@ class InterconnectGenerator(object):
         else:
             sch_y += sch_offset*2
 
-
-
-        if v.v >= 0:
+        if single_laser:
             ret = self.gen(
                     self.__v2frmt.format(i=v.uid,
                                          uname='',
@@ -521,25 +526,26 @@ class InterconnectGenerator(object):
                                          sch_x=sch_x,
                                          sch_y=0-sch_y,
                                          custom=''))
-        elif v.v < 0:
-            print("How?")
-            self.__v2frmt.format(i=v.uid,
-                                uname='',
-                                nn1=v.node2,
-                                nn2=v.node1,
-                                v=v.v)
-        self.v_counter += 1
+            self.v_counter += 1
 
-        
-        # self.node_to_bc[v.node1] = ret
-        return ret
+            
+            return ret
+        else:
+            pass
+
 
     def add_osc(self, osc, parent=None):
         custom=''
         if parent is not None:
             if isinstance(parent, rm.MeshResistance):
                 node1_sch = self.node_sch_coord(parent.nodeblock1.coord)
-                node2_sch = self.node_sch_coord(parent.nodeblock2.coord)
+                if parent.nodeblock2 is None:
+                    node2_sch = self.node_sch_coord(
+                             parent.nodeblock1.coord.neighbor(
+                                 parent.sidelink_d))
+                else:
+                    node2_sch = self.node_sch_coord(
+                             parent.nodeblock2.coord)
                 sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
 
                 if parent.orientation == 'H':
@@ -731,6 +737,7 @@ class InterconnectGenerator(object):
                                                   conns=conns))
 
             # connection to node oscillators
+            # TODO move this above the gen_lsf call above
             for d, oosc in ooscs.items():
                 conns += self.conn_frmt.format(
                                     i=spar,
@@ -751,11 +758,11 @@ class InterconnectGenerator(object):
         elif isinstance(c, rm.BoundaryCond):
             # assert c.v==0
             tmp_name = self.add_v2(c)
-            pos = self.nodename_to_coord(c.node1)
-            self.gen_lsf(self.conn_frmt.format(i=tmp_name,
-              this_port='output',
-              other='RING'+self.conn_uid_str(model,(pos[0],pos[1]))+'W',
-              other_port='port 2'))
+            # pos = self.nodename_to_coord(c.node1)
+            # self.gen_lsf(self.conn_frmt.format(i=tmp_name,
+              # this_port='output',
+              # other='RING'+self.conn_uid_str(model,(pos[0],pos[1]))+'W',
+              # other_port='port 2'))
 
             # tmp_name = self.add_current_source(c, model, parent)
 

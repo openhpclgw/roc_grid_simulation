@@ -75,34 +75,57 @@ class CurrentMeter(object):
 
 # MeshResistances must connect two node block objects
 class MeshResistance(object):
-    def __init__(self, r, nodeblock1, nodeblock2, cntrs, norton=False): 
-        # check if nodeblock2 comes "after" nodeblock1
-        if nodeblock1 > nodeblock2:
-            self.nodeblock1 = nodeblock2
-            self.nodeblock2 = nodeblock1
+    def __init__(self, r, nodeblock1, nodeblock2=None, sidelink_d=None,
+                 cntrs=None, norton=False): 
 
-        elif nodeblock2 > nodeblock1:
+        def orient():
+            if sidelink_d is None:
+                if self.nodeblock1.is_h(self.nodeblock2):
+                    return 'H'
+                else:
+                    return 'V'
+            else:
+                if sidelink_d == 'E' or sidelink_d == 'W':
+                    return 'H'
+                else:
+                    return 'V'
+
+        assert cntrs is not None
+
+        self.sidelink_d = sidelink_d
+        if nodeblock2 is None:
+            # this must be a side "link component"
+            assert r==0
+            assert self.sidelink_d is not None
+
             self.nodeblock1 = nodeblock1
-            self.nodeblock2 = nodeblock2
+            self.nodeblock2 = None
         else:
-            print('Legs of MeshResistance cannot be same')
+            # check if nodeblock2 comes "after" nodeblock1
+            if nodeblock1 > nodeblock2:
+                self.nodeblock1 = nodeblock2
+                self.nodeblock2 = nodeblock1
 
-        # get corresponding terminals between NodeBlocks
-        ts = nodeblock1.get_facing_subnodes(nodeblock2)
-        if ts is None:
-            print('MeshResistance can be created only between\
-                    neighboring NodeBlocks')
+            elif nodeblock2 > nodeblock1:
+                self.nodeblock1 = nodeblock1
+                self.nodeblock2 = nodeblock2
+            else:
+                print('Legs of MeshResistance cannot be same')
 
+            # get corresponding terminals between NodeBlocks
+            ts = nodeblock1.get_facing_subnodes(nodeblock2)
+            if ts is None:
+                print('MeshResistance can be created only between\
+                        neighboring NodeBlocks')
 
-        # if not norton:
-        self.node1, self.node2 = ts
-        # else:
-            # set offset nodes
-            # offset_node_frmt='{node}_off'
-            # self.node1 = offset_node_frmt.format(node=ts[0])
-            # self.node2 = offset_node_frmt.format(node=ts[1])
+        if sidelink_d is None:
+            self.node1, self.node2 = ts
+        else:
+            self.node1 = self.nodeblock1.subnodes[sidelink_d]
+            self.node2 = '0'
 
-        self.orientation = 'H' if nodeblock1.is_h(nodeblock2) else 'V'
+        self.orientation = orient()
+        print('Orientation ', self.orientation)
         self.resistance = Resistance(r, self.node1, self.node2,
                                      cntrs)
 
@@ -185,7 +208,8 @@ class NodeBlock(object):
                                               in_dirs,
                                               cntrs)
 
-        for d in in_dirs:
+        # for d in in_dirs:
+        for d in self.directions:
             tmp_subnode = gen_node_name(coord, d)
             self.subnodes[d] = tmp_subnode
             self.curmeters[d] = CurrentMeter(node1=tmp_subnode,
@@ -659,7 +683,7 @@ class ROCModel(object):
         self.nodes = [[NodeBlock(Coord(i, j), self.h, self.cntrs)
                       for j in wr] for i in hr]
 
-    def init_links(self):
+    def init_links(self, generate_sidelinks=True):
         # assert h = w
 
         # In norton circuit, we leave the edges un connected.
@@ -685,11 +709,11 @@ class ROCModel(object):
                 if i == 0 or i == self.w-1:
                     continue
             self.links.append(MeshResistance(
-                                    res(self.res_func((i,j),(i,j+1))),
-                                    self.nodes[i][j],
-                                    self.nodes[i][j+1],
-                                    self.cntrs,
-                                    self.norton))
+                                r=res(self.res_func((i,j),(i,j+1))),
+                                nodeblock1=self.nodes[i][j],
+                                nodeblock2=self.nodes[i][j+1],
+                                cntrs=self.cntrs,
+                                norton=self.norton))
 
         # generate column resistors
         for i, j in it.product(short_range, full_range):
@@ -697,11 +721,41 @@ class ROCModel(object):
                 if j == 0 or j == self.w-1:
                     continue
             self.links.append(MeshResistance(
-                                    res(self.res_func((i,j),(i+1,j))),
-                                    self.nodes[i][j],
-                                    self.nodes[i+1][j],
-                                    self.cntrs,
-                                    self.norton))
+                                r=res(self.res_func((i,j),(i+1,j))),
+                                nodeblock1=self.nodes[i][j],
+                                nodeblock2=self.nodes[i+1][j],
+                                cntrs=self.cntrs,
+                                norton=self.norton))
+
+        if generate_sidelinks and self.norton:
+            print(('WARNING: Sidelinks requested but the model is '
+                    'norton'))
+
+        if not self.norton and generate_sidelinks:
+            # sides
+            for i in full_range:
+                self.links.append(MeshResistance(
+                                    r=0,
+                                    nodeblock1=self.nodes[i][0],
+                                    sidelink_d='W',
+                                    cntrs=self.cntrs))
+                self.links.append(MeshResistance(
+                                    r=0,
+                                    nodeblock1=self.nodes[i][self.w-1],
+                                    sidelink_d='E',
+                                    cntrs=self.cntrs))
+            for j in full_range:
+                self.links.append(MeshResistance(
+                                    r=0,
+                                    nodeblock1=self.nodes[0][j],
+                                    sidelink_d='N',
+                                    cntrs=self.cntrs))
+                self.links.append(MeshResistance(
+                                    r=0,
+                                    nodeblock1=self.nodes[self.w-1][j],
+                                    sidelink_d='S',
+                                    cntrs=self.cntrs))
+                                    
 
     def load_problem(self, hp):
         self.hp = hp
@@ -989,24 +1043,39 @@ class ROCModel(object):
     def get_adjacent_link(self, nodeblock, d=''):
         assert d != ''
 
+        # this logic needs serious refactoring. OTOH if I move on to
+        # using some graph/mesh/grid library, it may be removed
+        # altogether
         if d == 'E':
             for l in self.links:
-                if l.orientation == 'H':
+                if l.sidelink_d == d:
+                    if l.nodeblock1 == nodeblock:
+                        return l
+                if l.nodeblock2 is not None and l.orientation == 'H':
                     if l.nodeblock1 == nodeblock:
                         return l
         elif d == 'W':
             for l in self.links:
-                if l.orientation == 'H':
+                if l.sidelink_d == d:
+                    if l.nodeblock1 == nodeblock:
+                        return l
+                if l.nodeblock2 is not None and l.orientation == 'H':
                     if l.nodeblock2 == nodeblock:
                         return l
         elif d == 'N':
             for l in self.links:
-                if l.orientation == 'V':
+                if l.sidelink_d == d:
+                    if l.nodeblock1 == nodeblock:
+                        return l
+                if l.nodeblock2 is not None and l.orientation == 'V':
                     if l.nodeblock2 == nodeblock:
                         return l
         elif d == 'S':
             for l in self.links:
-                if l.orientation == 'V':
+                if l.sidelink_d == d:
+                    if l.nodeblock1 == nodeblock:
+                        return l
+                if l.nodeblock2 is not None and l.orientation == 'V':
                     if l.nodeblock1 == nodeblock:
                         return l
 
