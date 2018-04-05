@@ -15,7 +15,7 @@ source = (0, 0, 1, size)
 sink = [(size-1, 0, 1, size)]
 hp = HeatProblem(N, source, sink, resistance)
 
-gen_interconnect_script = True
+gen_interconnect_script = False
 # assert not gen_interconnect_script
 
 
@@ -38,7 +38,8 @@ if not gen_interconnect_script:
     # print(normalize_grid(m1.final_grid))
     # print(m2.final_grid)
 
-    plot_errmap(normed_m1_grid, normed_m2_grid)
+    plot_errmap(normed_m1_grid, normed_m2_grid,
+                filename='test/optical_comparison/opt_minus_elec')
 
     max_err = (normed_m1_grid-normed_m2_grid).max()
     print(normed_m1_grid)

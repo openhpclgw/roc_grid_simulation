@@ -390,7 +390,7 @@ class InterconnectGenerator(object):
         looking_for_header = True
         name = ''
         val = 0.
-        fname = 'interconnect_test.out'
+        fname = self.filename+'.out'
 
         with open(fname) as f:
             for line in f:
