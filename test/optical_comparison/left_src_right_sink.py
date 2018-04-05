@@ -49,6 +49,7 @@ def main():
         plot_errmap(normed_m1_grid, normed_m2_grid,
                     filename=filename.format('opt_minus_elec'))
 
+        err = np.absolute(normed_m1_grid-normed_m2_grid)
         max_err = np.absolute(normed_m1_grid-normed_m2_grid).max()
 
         rect = 0.1,0.2,0.8,0.7
@@ -83,7 +84,7 @@ def main():
 
         print('Report')
         print('Max error : ', max_err)
-        print('Mean error : ', np.mean(normed_m1_grid-normed_m2_grid))
+        print('Mean error : ', np.mean(err))
 
 
 
