@@ -268,8 +268,9 @@ class InterconnectGenerator(object):
             self.file.close()
             self.lsffile.close()
             self.collectorlsf.close()
-            self.hcollectorlsf.close()
-            self.vcollectorlsf.close()
+            if gen_nice_collectors:
+                self.hcollectorlsf.close()
+                self.vcollectorlsf.close()
 
     def nodename_to_coord(self, name):
         tmp_name = name
@@ -1105,12 +1106,15 @@ class InterconnectGenerator(object):
         self.counters['pwm'] += 1
 
         self.gen_collect(self.coll_frmt.format(element=l_pwm))
-        if orientation=='H':
-            self.gen_hcollect(self.nice_collfrmt.format(element1=l_pwm,
+        if gen_nice_collectors:
+            if orientation=='H':
+                self.gen_hcollect(self.nice_collfrmt.format(
+                                                        element1=l_pwm,
                                                         element2=r_pwm,
                                                         d='H'))
-        elif orientation=='V':
-            self.gen_vcollect(self.nice_collfrmt.format(element1=l_pwm,
+            elif orientation=='V':
+                self.gen_vcollect(self.nice_collfrmt.format(
+                                                        element1=l_pwm,
                                                         element2=r_pwm,
                                                         d='V'))
 
