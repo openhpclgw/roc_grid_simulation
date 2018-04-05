@@ -125,7 +125,6 @@ class MeshResistance(object):
             self.node2 = '0'
 
         self.orientation = orient()
-        print('Orientation ', self.orientation)
         self.resistance = Resistance(r, self.node1, self.node2,
                                      cntrs)
 
