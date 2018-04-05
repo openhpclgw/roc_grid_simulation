@@ -10,7 +10,7 @@ mid_distance = coord_to_sch_ratio/2
 q_distance = mid_distance/2
 sch_offset = 0.8
 
-gen_nice_collectors = True
+gen_nice_collectors = False
 
 class InterconnectGenerator(object):
 
