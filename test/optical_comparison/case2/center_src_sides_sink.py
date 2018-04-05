@@ -23,7 +23,7 @@ def main():
 
     hp = HeatProblem(N, source, sink, resistance)
 
-    filename = 'test/optical_comparison/{}_'+str(size)
+    filename = 'test/optical_comparison/case2/{}_'+str(size)
 
     gen_interconnect_script = False
     # assert not gen_interconnect_script
