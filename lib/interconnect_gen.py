@@ -294,11 +294,13 @@ class InterconnectGenerator(object):
 
         def dbm_to_watt(dbm):
             if dbm == 0 : return 0.0 # an artefact of result collection
-            if dbm == -100 : return 0.0  # noise
-            return 10**((dbm-30)/10)
-            # return dbm
+            # if dbm == -100 : return 0.0  # noise
+            # return 10**((dbm-30)/10)
+            return dbm
 
 
+        # length = 0.0001
+        # att = 1000
         for mr in roc_model.links:
             # l,r = get_cur_for_mr(mr)
             r,l = get_cur_for_mr(mr)
@@ -695,7 +697,7 @@ class InterconnectGenerator(object):
         '+ "number of fir taps"=64 "dispersion slope"=80\n'
         '+ "single tap filter"=0 "run diagnostic"=0\n'
         '+ configuration="bidirectional" "reference frequency"=193.1T\n'
-        '+ "diagnostic size"=1024 length=0.001\n'
+        '+ "diagnostic size"=1024 length=0.0001\n'
         '+ "estimate number of taps"=1 dispersion=16u modes="X,Y" \n'
         '+ "window function"="rectangular"\n'
         '\n'
@@ -719,7 +721,7 @@ class InterconnectGenerator(object):
         '+ "stop time"=1 "start time"=0 sensitivity=100f\n'
         '+ "convert noise bins"=1\n'
         '\n'
-        '.PARAM att=0.001\n'
+        '.PARAM att=10000\n'
         '.PARAM power=1.0\n'
         )))
 
