@@ -29,28 +29,26 @@ def main():
     # assert not gen_interconnect_script
 
 
-    # m1 = ROCModel(mesh_size)
-    # m1.load_problem(hp)
-    # m1.run_interconnect_solver(filename='interconnect_'+str(size),
-                              # gen_script=gen_interconnect_script,
-                              # get_results=not gen_interconnect_script)
+    m1 = ROCModel(mesh_size)
+    m1.load_problem(hp)
+    m1.run_interconnect_solver(filename='opt_case2_'+str(size),
+                              gen_script=gen_interconnect_script,
+                              get_results=not gen_interconnect_script)
 
-    # plot_heatmap(m1, current_flow_plot=None)
 
     if not gen_interconnect_script:
         m2 = ROCModel(mesh_size, sidelinks=False)
         m2.load_problem(hp)
         m2.run_spice_solver()
 
-        # normed_m1_grid = normalize_grid(m1.final_grid)
+        normed_m1_grid = normalize_grid(m1.final_grid)
         normed_m2_grid = normalize_grid(m2.final_grid)
 
 
-        # plot_heatmap_from_grid(normed_m1_grid,
-                               # filename=filename.format('opt'))
+        plot_heatmap_from_grid(normed_m1_grid,
+                               filename=filename.format('opt'))
         plot_heatmap_from_grid(normed_m2_grid,
                                filename=filename.format('elec'))
-        assert False
         plot_errmap(normed_m1_grid, normed_m2_grid,
                     filename=filename.format('opt_minus_elec'))
 

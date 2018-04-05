@@ -359,8 +359,8 @@ class InterconnectGenerator(object):
                     mr.nodeblock1.potential += dbm_to_watt(l)
                     mr.nodeblock2.potential += dbm_to_watt(r)
                 else:
-                    mr.nodeblock1.potential += dbm_to_watt(r)
-                    mr.nodeblock2.potential += dbm_to_watt(l)
+                    mr.nodeblock1.potential += dbm_to_watt(l)
+                    mr.nodeblock2.potential += dbm_to_watt(r)
 
 
         # for node in roc_model.iter_nodes():
