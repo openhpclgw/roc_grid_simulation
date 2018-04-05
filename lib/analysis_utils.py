@@ -269,6 +269,19 @@ def load_grid_from_comsol_csv(filename):
 
         return grid
 
+
+def normalize_grid(grid, high=1.0, low=0.0):
+    if isinstance(grid, list):
+        arr=np.array(grid)
+    elif isinstance(grid, np.ndarray):
+        arr=grid
+
+    arr_max = arr.max()
+    arr_min = arr.min()
+
+    return (arr-arr_min)/(arr_max-arr_min)
+
+
 # this function should be included in the interconnect generator in the
 # future
 def generate_sparams_from_splits(splits, dirname='tmp',

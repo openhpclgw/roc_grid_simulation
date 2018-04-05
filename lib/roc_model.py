@@ -182,7 +182,7 @@ class ConnectionPoint(object):
         return '{},{}'.format(self.coord[0], self.coord[1])
 
 class NodeBlock(object):
-    def __init__(self, coord, mesh_size, cntrs):
+    def __init__(self, coord, mesh_size, sidelinks, cntrs):
         def gen_node_name(coord, d=''):
             return 'N{}_{}{}'.format(coord[0], coord[1], d)
 
@@ -208,13 +208,21 @@ class NodeBlock(object):
                                               in_dirs,
                                               cntrs)
 
-        # for d in in_dirs:
-        for d in self.directions:
-            tmp_subnode = gen_node_name(coord, d)
-            self.subnodes[d] = tmp_subnode
-            self.curmeters[d] = CurrentMeter(node1=tmp_subnode,
-                                       node2=self.nodename+'cp',
-                                       cntrs=cntrs)
+        # FIXME
+        if sidelinks:
+            for d in self.directions:
+                tmp_subnode = gen_node_name(coord, d)
+                self.subnodes[d] = tmp_subnode
+                self.curmeters[d] = CurrentMeter(node1=tmp_subnode,
+                                           node2=self.nodename+'cp',
+                                           cntrs=cntrs)
+        else:
+            for d in in_dirs:
+                tmp_subnode = gen_node_name(coord, d)
+                self.subnodes[d] = tmp_subnode
+                self.curmeters[d] = CurrentMeter(node1=tmp_subnode,
+                                           node2=self.nodename+'cp',
+                                           cntrs=cntrs)
 
     def __eq__(self, o):
         return self.coord == o.coord
@@ -534,10 +542,12 @@ class NortonLoop(object):
             
 
 class ROCModel(object):
-    def __init__(self, N, norton=False):
+    def __init__(self, N, sidelinks=True, norton=False):
         self.norton = norton
         self.h = N
         self.w = N
+
+        self.sidelinks = sidelinks
 
         if self.norton:
             self.h += 1
@@ -680,10 +690,11 @@ class ROCModel(object):
         print(hr)
         print(wr)
 
-        self.nodes = [[NodeBlock(Coord(i, j), self.h, self.cntrs)
+        self.nodes = [[NodeBlock(Coord(i, j), self.h, 
+                                 self.sidelinks, self.cntrs)
                       for j in wr] for i in hr]
 
-    def init_links(self, generate_sidelinks=True):
+    def init_links(self):
         # assert h = w
 
         # In norton circuit, we leave the edges un connected.
@@ -727,11 +738,11 @@ class ROCModel(object):
                                 cntrs=self.cntrs,
                                 norton=self.norton))
 
-        if generate_sidelinks and self.norton:
+        if self.sidelinks and self.norton:
             print(('WARNING: Sidelinks requested but the model is '
                     'norton'))
 
-        if not self.norton and generate_sidelinks:
+        if not self.norton and self.sidelinks:
             # sides
             for i in full_range:
                 self.links.append(MeshResistance(

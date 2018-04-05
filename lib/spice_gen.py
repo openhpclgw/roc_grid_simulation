@@ -149,7 +149,7 @@ class SpiceGenerator(object):
 
     def add_vprintstmt(self, n):
         self.gen(self.__printfrmt.format(typ='V',
-                                         symbol=self.__nfrmt.format(n=n)))
+                                         symbol=self.__nfrmt.format(n=n)+'cp'))
 
     def add_block_comment(self, comment):
         self.gen(self.__bcommentfrmt.format(c=comment))
@@ -178,7 +178,7 @@ class SpiceGenerator(object):
             for _,a in node.curmeters.items():
                 a.current = result_dict[a.sname]
 
-            sym = 'V('+node.sname+')'
+            sym = 'V('+node.sname+'CP)'
             node.potential = result_dict[sym]
 
         if roc_model.norton:
@@ -236,13 +236,15 @@ class SpiceGenerator(object):
 
         self.r_counter += 1
 
-    def add_v2(self, v):
+    def add_v2(self, v, to_cp):
         ret = ''
+
+        suffix = 'cp' if to_cp else ''
         if v.v >= 0:
             ret = self.gen(
                     self.__v2frmt.format(i=v.uid,
                                         uname='',
-                                        nn1=v.node1,
+                                        nn1=v.node1+suffix,
                                         nn2=v.node2,
                                         v=v.v))
         elif v.v < 0:
@@ -264,18 +266,22 @@ class SpiceGenerator(object):
 
     def component_codegen(self, c):
         if isinstance(c, rm.BoundaryCond):
-            tmp_name = self.add_v2(c)
+            tmp_name = self.add_v2(c, to_cp=True)
         elif isinstance(c, rm.Resistance):
             tmp_name = self.add_r2(c)
         elif isinstance(c, rm.CurrentMeter):
             # Currently, current meter fields are still corresponfing to
             # the same names in the BoundaryCond, therefore a current
             # meter instance can be passed to add_v2 directly.
-            tmp_name = self.add_v2(c)
+            tmp_name = self.add_v2(c, to_cp=False)
         elif isinstance(c, rm.CurrentSource):
             tmp_name = self.add_i(c)
+        elif isinstance(c, rm.ConnectionPoint):
+            tmp_name=''
+            pass
         else:
             tmp_name = ''
+            print(type(c))
             print("error")
         c.sname = tmp_name
         

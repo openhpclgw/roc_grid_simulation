@@ -60,6 +60,8 @@ if get_results:
         print(t)
         plot_heatmap_from_grid(t)
     elif not surface3d:
-        plot_heatmap(m, current_flow_plot=None)
+        print('hello')
+        normalize_grid(m.final_grid)
+        # plot_heatmap(m, current_flow_plot=None)
     else:
         plot_surface(m)
