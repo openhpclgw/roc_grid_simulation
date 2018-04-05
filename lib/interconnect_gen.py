@@ -334,7 +334,7 @@ class InterconnectGenerator(object):
         # att = 1000
         for mr in roc_model.links:
             # l,r = get_cur_for_mr(mr)
-            r,l = get_cur_for_mr(mr)
+            l,r = get_cur_for_mr(mr)
             mr.curmeter.current = 10**l-10**r  # FIXME dbm_to_watt
 
             if mr.sidelink_d is not None:
