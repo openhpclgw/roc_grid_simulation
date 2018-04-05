@@ -10,6 +10,8 @@ mid_distance = coord_to_sch_ratio/2
 q_distance = mid_distance/2
 sch_offset = 0.8
 
+gen_nice_collectors = True
+
 class InterconnectGenerator(object):
 
     def __init__(self, cache_only=False, filename=''):
@@ -122,6 +124,26 @@ class InterconnectGenerator(object):
                   '\twrite("'+self.filename+'.out",  "0.0");\n'
                 '}}\n'
                 )
+        self.nice_collfrmt = (
+                # 'write("'+self.filename+'.out", "{element}");\n'
+            'tmp="";\n'
+            'if(haveresult("{element1}", "sum/power")) {{\n'
+            '\ttmp=tmp+num2str(getresult("{element1}","sum/power"));\n'
+            '}}\n'
+            'else\n'
+            '{{\n'
+            '\ttmp=tmp+"-100.0";\n'
+            '}}\n'
+            'tmp=tmp+" ";\n'
+            'if(haveresult("{element2}", "sum/power")) {{\n'
+            '\ttmp=tmp+num2str(getresult("{element2}","sum/power"));\n'
+            '}}\n'
+            'else\n'
+            '{{\n'
+            '\ttmp=tmp+"-100.0";\n'
+            '}}\n'
+            'write("'+self.filename+'{d}.out", tmp);\n'
+            )
 
         self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
         self.__yfrmt = 'X_Y_'+cg+' {nn1} {nn2} {nn3} \"Waveguide Y Branch\"'+self.__schfrmt
@@ -137,7 +159,13 @@ class InterconnectGenerator(object):
             self.file = open(self.rel_in_path(suffix), 'w')
             self.lsffile = open(self.rel_lsf_path(suffix), 'w')
 
-            self.collectorlsf = open(self.rel_lsf_path(suffix+'coll'), 'w')
+            self.collectorlsf = open(self.rel_lsf_path(suffix+'coll'),
+                                     'w')
+            if gen_nice_collectors:
+                self.hcollectorlsf = open(self.rel_lsf_path(suffix+'H'),
+                                          'w')
+                self.vcollectorlsf = open(self.rel_lsf_path(suffix+'V'),
+                                          'w')
             print(self.rel_lsf_path(suffix+'coll'))
         # mesh size
         if roc_model.norton:
@@ -240,6 +268,8 @@ class InterconnectGenerator(object):
             self.file.close()
             self.lsffile.close()
             self.collectorlsf.close()
+            self.hcollectorlsf.close()
+            self.vcollectorlsf.close()
 
     def nodename_to_coord(self, name):
         tmp_name = name
@@ -428,11 +458,18 @@ class InterconnectGenerator(object):
 
             sch_x, sch_y = self.midpoint(node1_sch, node2_sch)
 
+        if parent.nodeblock2 is not None:
+            orientation=parent.orientation
+        else:
+            orientation=None
+
         ret = self.create_link_compound('R'+str(r.uid), sch_x, sch_y,
                                         # attenuation=r.r,
                                         attenuation='att',
                                         power_left=0.,
-                                        power_right=0.)
+                                        power_right=0.,
+                                        orientation=orientation)
+
         print('Creating link compound for ', ret)
         parent.sname = ret
 
@@ -477,8 +514,10 @@ class InterconnectGenerator(object):
 
         if n1.is_h(n2) and n1.i != 0: # bottom
             right_power = True
+            orientation='H'
         if (not n1.is_h(n2)) and n1.j != 0: # right
             right_power = True
+            orientation='V'
 
         if right_power:
             pl, pr = 0, cs.i*4
@@ -491,7 +530,8 @@ class InterconnectGenerator(object):
                                         sch_x, sch_y,
                                         attenuation=0,
                                         power_left=pr,
-                                        power_right=pl)
+                                        power_right=pl,
+                                        orientation=orientation)
 
         self.r_counter += 1
 
@@ -739,6 +779,12 @@ class InterconnectGenerator(object):
     def gen_collect(self, s):
         self.collectorlsf.write('{}\n'.format(s))
 
+    def gen_hcollect(self, s):
+        self.hcollectorlsf.write('{}\n'.format(s))
+
+    def gen_vcollect(self, s):
+        self.vcollectorlsf.write('{}\n'.format(s))
+
     # TODO this should be recursive
     def component_codegen(self, c, parent=None, model=None):
         # In interconnect, we need to catch some subclasses first to
@@ -972,7 +1018,8 @@ class InterconnectGenerator(object):
     def create_link_compound(self, name, sch_x, sch_y,
                              attenuation=0.,
                              power_left=0.,
-                             power_right=0.):
+                             power_right=0.,
+                             orientation=None):
 
         ports_dict = {}
 
@@ -1020,7 +1067,6 @@ class InterconnectGenerator(object):
 
         print(r_pwm)
         self.gen_collect(self.coll_frmt.format(element=r_pwm))
-                                               # prop='sum/power'))
 
         self.gen(self.__r2frmt.format(i=self.counters['fiber'],
                                       r=attenuation,
@@ -1059,6 +1105,14 @@ class InterconnectGenerator(object):
         self.counters['pwm'] += 1
 
         self.gen_collect(self.coll_frmt.format(element=l_pwm))
+        if orientation=='H':
+            self.gen_hcollect(self.nice_collfrmt.format(element1=l_pwm,
+                                                        element2=r_pwm,
+                                                        d='H'))
+        elif orientation=='V':
+            self.gen_vcollect(self.nice_collfrmt.format(element1=l_pwm,
+                                                        element2=r_pwm,
+                                                        d='V'))
 
         # cwl_left = self.gen(self.__v2frmt.format(i=self.counters['cwl'],
                                       # nn1=name+'_09',
