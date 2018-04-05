@@ -348,11 +348,8 @@ class InterconnectGenerator(object):
                     print('Both current readings on resistance is 0')
                     assert False
 
-                # if side_cur == -100.0:
-                    # print('Noise')
-                    # side_cur = 0.0
 
-            print(mr.nodeblock1, mr.nodeblock2, l, r)
+            # print(mr.nodeblock1, mr.nodeblock2, l, r)
 
 
             if mr.sidelink_d is not None:
