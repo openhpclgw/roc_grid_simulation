@@ -14,10 +14,10 @@ def main():
     N = size
     mesh_size = size
     source = (0, 0, 1, size)
-    sink = [(size-1, 0, 1, size)]
+    sink = [(2, 0, size-2, 1), (size-1, 0, 1, size-1), (2, size-1, size-2, 1)]
     hp = HeatProblem(N, source, sink, resistance)
 
-    filename = 'test/optical_comparison/{}_'+str(size)
+    filename = 'test/optical_comparison/case1/{}_'+str(size)
 
     gen_interconnect_script = False
     # assert not gen_interconnect_script
