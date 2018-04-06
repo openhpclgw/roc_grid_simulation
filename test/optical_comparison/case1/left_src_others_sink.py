@@ -25,7 +25,7 @@ def main():
 
     m1 = ROCModel(mesh_size)
     m1.load_problem(hp)
-    m1.run_interconnect_solver(filename='interconnect_'+str(size),
+    m1.run_interconnect_solver(filename='opt_case1_'+str(size),
                               gen_script=gen_interconnect_script,
                               get_results=not gen_interconnect_script)
 
