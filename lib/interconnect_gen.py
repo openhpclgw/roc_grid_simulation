@@ -11,6 +11,8 @@ q_distance = mid_distance/2
 sch_offset = 0.8
 
 gen_nice_collectors = False
+use_programmable_power = False
+use_programmable_att = False
 
 class InterconnectGenerator(object):
 
@@ -461,9 +463,13 @@ class InterconnectGenerator(object):
         else:
             orientation=None
 
+        if use_programmable_att:
+            attenuation='att'
+        else:
+            attenuation=r.r
         ret = self.create_link_compound('R'+str(r.uid), sch_x, sch_y,
                                         # attenuation=r.r,
-                                        attenuation='att',
+                                        attenuation=attenuation,
                                         power_left=0.,
                                         power_right=0.,
                                         orientation=orientation)
@@ -603,13 +609,18 @@ class InterconnectGenerator(object):
         else:
             sch_y += sch_offset*2
 
+        if use_programmable_power:
+            power='power'
+        else:
+            power=v.v
+
         if single_laser:
             ret = self.gen(
                     self.__v2frmt.format(i=v.uid,
                                          uname='',
                                          nn1=v.node1,
                                          nn2=v.node2,
-                                         power='power',
+                                         power=power,
                                          sch_x=sch_x,
                                          sch_y=0-sch_y,
                                          custom=''))
