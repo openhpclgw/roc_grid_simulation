@@ -79,7 +79,7 @@ Every source and sink must be a rectangle and must fit into a mesh node
 when discretized. if you want to do complex shapes, as the sink in this
 example you can pass a list of tuples.
 
-#Environment Setup after Cloning
+# Environment Setup after Cloning
 ```
 git clone https://github.com/openhpclgw/roc_grid_simulation.git
 cd roc_grid_simulation/
@@ -98,7 +98,7 @@ sudo apt-get install python3-matplotlib
 python3 test.py 20
 ```
 
-#Questions about the problem Setup
+# Questions about the problem Setup
 
 ```
 #Not allowed, problem dimesions can only go to a minium of 10
@@ -135,4 +135,5 @@ conductance = 10**cond_exp
 mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
 hp = HeatProblem(N, source, sink, conductance, src_val=10.0)
+
 ```
