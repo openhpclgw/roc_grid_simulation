@@ -78,3 +78,61 @@ condition. The tuple is in form (left_pos, top_pos, width, height).
 Every source and sink must be a rectangle and must fit into a mesh node
 when discretized. if you want to do complex shapes, as the sink in this
 example you can pass a list of tuples.
+
+#Environment Setup after Cloning
+```
+git clone https://github.com/openhpclgw/roc_grid_simulation.git
+cd roc_grid_simulation/
+unset PYTHONPATH
+source setenv.sh
+cd test/
+python3 test.py 20
+sudo apt-get install python3-numpy
+python3 test.py 20
+ls
+mkdir tmp
+python3 test.py 20
+sudo apt-get install ngspice
+python3 test.py 20
+sudo apt-get install python3-matplotlib
+python3 test.py 20
+```
+
+#Questions about the problem Setup
+
+```
+#Not allowed, problem dimesions can only go to a minium of 10
+#assume square problem dimensions of 5 by 5
+#N = 5
+#assume square problem dimensions of 25 by 25
+N = 25
+#assume square problem dimensions of 125 by 125
+#N = 125
+
+#Grid Layout
+
+#0
+#1
+#2
+#3
+#.
+#.
+#.
+#   0   1   2   ...
+
+# The tuple is in form (left_pos, top_pos, width, height)
+
+source = (0, 0, 25, 1)
+sink = (0, 5, 1, 5)
+
+# sink = [(11, 2, 1, 10), (5, 15, 2, 2)]
+# source = (4, 4, 4, 12)
+
+cond_exp = -3
+conductance = 10**cond_exp
+
+#mesh dimension entered by user
+mesh_size = int(sys.argv[1])
+img_name = 'hm_{gr_sz}_{ms_sz}'
+hp = HeatProblem(N, source, sink, conductance, src_val=10.0)
+```
