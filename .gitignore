@@ -9,6 +9,8 @@ __pycache__
 *.tar.gz
 *.zip
 *.pptx
+*.xlsx
+*.icp
 tests
 img
 notes
