@@ -10,37 +10,33 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('mesh_size', type=int)
 parser.add_argument('multiplier', type=int, default=10000)
+parser.add_argument('--generate', action='store_true')
 
 args = parser.parse_args()
 
 mesh_size = args.mesh_size
 multiplier = args.multiplier
+gen_interconnect_script = args.generate
 base_att = int(0.001*multiplier)
 
 def main():
     def resistance(size, n1, n2):
         return 0.001*multiplier
 
-    size = int(sys.argv[1])
-
-    N = size
-    mesh_size = size
+    size = mesh_size
     source = (0, 0, 1, size)
     sink = [(1, 0, size-1, 1), (size-1, 0, 1, size-1), (1, size-1, size-1, 1)]
     hp = HeatProblem(N, source, sink, resistance)
 
     working_dir = 'test/attenuation_sweep/case1/size'+str(mesh_size)+'/'
+    scr_name = working_dir+'opt_case1_'+str(size)+'_att'+str(base_att)
 
-
-    filename = working_dir+'{}_'+str(size)
-
-    gen_interconnect_script = True
-    # assert not gen_interconnect_script
+    out_filename = working_dir+'att'+str(base_att)+'/{}_'+str(size)
 
 
     m1 = ROCModel(mesh_size)
     m1.load_problem(hp)
-    m1.run_interconnect_solver(filename=working_dir+'opt_case1_'+str(size)+'_att'+str(base_att),
+    m1.run_interconnect_solver(filename=scr_name,
                               gen_script=gen_interconnect_script,
                               get_results=not gen_interconnect_script)
 
@@ -58,11 +54,11 @@ def main():
         # print(m2.final_grid)
 
         plot_heatmap_from_grid(normed_m1_grid,
-                               filename=filename.format('opt'))
+                               filename=out_filename.format('opt'))
         plot_heatmap_from_grid(normed_m2_grid,
-                               filename=filename.format('elec'))
-        plot_errmap(normed_m1_grid, normed_m2_grid,
-                    filename=filename.format('opt_minus_elec'))
+                               filename=out_filename.format('elec'))
+        plot_errmap(normed_m1_grid, normed_m2_grid, lim=1.0,
+                    filename=out_filename.format('opt_minus_elec'))
 
         err = np.absolute(normed_m1_grid-normed_m2_grid)
         max_err = np.absolute(normed_m1_grid-normed_m2_grid).max()
@@ -78,14 +74,15 @@ def main():
                     label='Electrical')
 
         plt.legend(handles=datasets)
-        do_plots(filename=filename.format('opt_vs_elec_midrow'))
+        do_plots(filename=out_filename.format('opt_vs_elec_midrow'))
 
         ax.clear()
 
         
         data1 = normed_m1_grid[:,int(size/2)]
         data2 = normed_m2_grid[:,int(size/2)]
-        y_lim = max(data1.max(), data2.max())
+        # y_lim = max(data1.max(), data2.max())
+        y_lim = 1.0
         print(y_lim)
         init_ax(ax, x_lim=size, y_lim=y_lim)
         custom_plot(ax, range(0,size), normed_m1_grid[:,int(size/2)],
@@ -95,14 +92,12 @@ def main():
 
 
         plt.legend()
-        do_plots(filename=filename.format('opt_vs_elec_midcol'))
+        do_plots(filename=out_filename.format('opt_vs_elec_midcol'))
 
         print('Report')
         print('Max error : ', max_err)
         print('Mean error : ', np.mean(err))
         print('Median error : ', np.median(err))
-
-
 
 
 # plot functions

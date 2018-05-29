@@ -125,14 +125,20 @@ def plot_surface(m, filename=''):
 
     __plt_help(filename)
 
-def plot_errmap(data1, data2, filename=''):
+def plot_errmap(data1, data2, lim=0, filename=''):
     err = data1-data2
+
+    if lim == 0:
+        vmin = -np.absolute(err).min()
+        vmax = np.absolute(err).max()
+    else:
+        vmin = -lim
+        vmax = lim
 
     import matplotlib.pyplot as plt
     fig, axes = plt.subplots(1, 1)
 
-    colors = axes.imshow(err, cmap='bwr', vmin=-np.absolute(err).max(), 
-                         vmax=np.absolute(err).max(),
+    colors = axes.imshow(err, cmap='bwr', vmin=vmin, vmax=vmax,
                          interpolation='nearest')
     fig.colorbar(colors)
 
