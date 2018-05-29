@@ -4,10 +4,22 @@ from roc_model import ROCModel
 import matplotlib.pyplot as plt
 from heat_problem import HeatProblem
 from analysis_utils import *
+import argparse
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('mesh_size', type=int)
+parser.add_argument('multiplier', type=int, default=10000)
+
+args = parser.parse_args()
+
+mesh_size = args.mesh_size
+multiplier = args.multiplier
+base_att = int(0.001*multiplier)
 
 def main():
     def resistance(size, n1, n2):
-        return 0.001
+        return 0.001*multiplier
 
     size = int(sys.argv[1])
 
@@ -23,15 +35,17 @@ def main():
 
     hp = HeatProblem(N, source, sink, resistance)
 
-    filename = 'test/optical_comparison/case2/{}_'+str(size)
+    working_dir = 'test/attenuation_sweep/case2/size'+str(mesh_size)+'/'
+    filename = working_dir+'{}_'+str(size)
 
-    gen_interconnect_script = False
+
+    gen_interconnect_script = True
     # assert not gen_interconnect_script
 
 
     m1 = ROCModel(mesh_size)
     m1.load_problem(hp)
-    m1.run_interconnect_solver(filename='opt_case2_'+str(size),
+    m1.run_interconnect_solver(filename=working_dir+'opt_case2_'+str(size)+'_att'+str(base_att),
                               gen_script=gen_interconnect_script,
                               get_results=not gen_interconnect_script)
 
@@ -88,6 +102,7 @@ def main():
         print('Report')
         print('Max error : ', max_err)
         print('Mean error : ', np.mean(err))
+        print('Median error : ', np.median(err))
 
 
 
