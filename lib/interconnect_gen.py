@@ -115,15 +115,16 @@ class InterconnectGenerator(object):
         self.conn_frmt = ('connect("{i}","{this_port}",'
                                   ' "{other}", "{other_port}");\n')
 
+        filename_only = self.filename.split('/')[-1]
         self.coll_frmt = (
-                'write("'+self.filename+'.out", "{element}");\n'
+                'write("'+filename_only+'.out", "{element}");\n'
                 'if(haveresult("{element}", "sum/power")) {{\n'
-                  '\twrite("'+self.filename+'.out", '
+                  '\twrite("'+filename_only+'.out", '
                     'num2str(getresult("{element}", "sum/power")));\n'
                 '}}\n'
                 'else\n'
                 '{{\n'
-                  '\twrite("'+self.filename+'.out",  "0.0");\n'
+                  '\twrite("'+filename_only+'.out",  "0.0");\n'
                 '}}\n'
                 )
         self.nice_collfrmt = (
@@ -144,7 +145,7 @@ class InterconnectGenerator(object):
             '{{\n'
             '\ttmp=tmp+"-100.0";\n'
             '}}\n'
-            'write("'+self.filename+'{d}.out", tmp);\n'
+            'write("'+filename_only+'{d}.out", tmp);\n'
             )
 
         self.__pwmfrmt = 'X_OPWM_'+cg+' {nn1} \"Optical Power Meter\"'+self.__schfrmt
