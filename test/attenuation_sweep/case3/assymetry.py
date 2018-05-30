@@ -25,7 +25,7 @@ sink = (size-1, size-int(size/4), 1, int(size/4))
 hp = HeatProblem(size, source, sink, resistance)
 
 working_dir = 'test/attenuation_sweep/case3/size'+str(mesh_size)+'/'
-out_filename = working_dir+'{}_'+str(size)
+out_filename = working_dir+'att'+str(base_att)+'/{}_'+str(size)
 scr_name = working_dir+'opt_case3_'+str(size)+'_att'+str(base_att)
 
 att_sweep(hp, scr_name, out_filename)
