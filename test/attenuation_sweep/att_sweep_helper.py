@@ -10,11 +10,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('mesh_size', type=int)
 parser.add_argument('multiplier', type=int, default=10000)
 parser.add_argument('--generate', action='store_true')
+parser.add_argument('--include-boundary-conditions', action='store_true')
 
 args = parser.parse_args()
 
 mesh_size = args.mesh_size
 multiplier = args.multiplier
+include_boundary_conditions = args.include_boundary_conditions
 gen_interconnect_script = args.generate
 base_att = int(0.001*multiplier)
 
@@ -83,10 +85,50 @@ def att_sweep(hp, scr_name, out_filename):
         plt.legend()
         do_plots(filename=out_filename.format('opt_vs_elec_midcol'))
 
+        except_idxs = m2.src_idxs | m2.snk_idxs
+
         print('Report')
         print('Max error : ', max_err)
-        print('Mean error : ', np.mean(err))
-        print('Median error : ', np.median(err))
+        print('Mean error : ', mean_except_idxs(err, except_idxs))
+        print('Median error : ', median_except_idxs(err, except_idxs))
+
+def mean_except_idxs(data, except_idxs):
+    if include_boundary_conditions:
+        return np.mean(data)
+    else:
+        if not isinstance(except_idxs, set):
+            print('Except_idxs must be a set')
+
+        val_sum = 0.
+        val_count = 0
+
+        for idx, val in np.ndenumerate(data):
+            if idx not in except_idxs:
+                val_sum += val
+                val_count += 1
+
+        return val_sum/val_count
+
+def median_except_idxs(data, except_idxs):
+    if include_boundary_conditions:
+        return np.median(data)
+    else:
+        if not isinstance(except_idxs, set):
+            print('Except_idxs must be a set')
+
+        valid_values = []
+        for idx, val in np.ndenumerate(data):
+            if idx not in except_idxs:
+                valid_values.append(val)
+
+        valid_values.sort()
+        val_count = len(valid_values)
+
+        if val_count % 2 == 1:
+            return valid_values[val_count//2+1]
+        else:
+            return (valid_values[val_count//2]+
+                    valid_values[val_count//2+1])/2
 
 
 # plot functions
