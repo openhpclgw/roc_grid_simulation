@@ -16,4 +16,4 @@ scr_name = working_dir+'opt_case1_'+str(size)+'_att'+str(base_att)
 out_filename = working_dir+'att'+str(base_att)+'/{}_'+str(size)
 
 
-att_sweep(hp, scr_name, out_filename)
+att_sweep(hp, scr_name, out_filename, working_dir)

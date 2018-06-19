@@ -11,16 +11,18 @@ parser.add_argument('mesh_size', type=int)
 parser.add_argument('multiplier', type=int, default=10000)
 parser.add_argument('--generate', action='store_true')
 parser.add_argument('--include-boundary-conditions', action='store_true')
+parser.add_argument('--save-to-file', action='store_true')
 
 args = parser.parse_args()
 
 mesh_size = args.mesh_size
 multiplier = args.multiplier
+save_to_file = args.save_to_file
 include_boundary_conditions = args.include_boundary_conditions
 gen_interconnect_script = args.generate
 base_att = int(0.001*multiplier)
 
-def att_sweep(hp, scr_name, out_filename):
+def att_sweep(hp, scr_name, out_filename, working_dir):
     
     # quick workaround. size refers to problem size
     size=mesh_size
@@ -88,9 +90,16 @@ def att_sweep(hp, scr_name, out_filename):
         except_idxs = m2.src_idxs | m2.snk_idxs
 
         print('Report')
-        print('Max error : ', max_err)
-        print('Mean error : ', mean_except_idxs(err, except_idxs))
-        print('Median error : ', median_except_idxs(err, except_idxs))
+        if save_to_file:
+            with open(working_dir+'errors', 'a') as f:
+                f.write('{} {} {}\n'.format(max_err,
+                               mean_except_idxs(err, except_idxs),
+                               median_except_idxs(err, except_idxs)))
+        else:
+            print('Max error : ', max_err)
+            print('Mean error : ', mean_except_idxs(err, except_idxs))
+            print('Median error : ',
+                    median_except_idxs(err, except_idxs))
 
 def mean_except_idxs(data, except_idxs):
     if include_boundary_conditions:
