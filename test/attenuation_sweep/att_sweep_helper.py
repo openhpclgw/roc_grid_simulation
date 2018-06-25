@@ -42,25 +42,25 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
 
         normed_m1_grid = normalize_grid(m1.final_grid)
         normed_m2_grid = normalize_grid(m2.final_grid)
-        normed_iter_grid = hp.numerical_solve(num_steps=1000,
-                                            initial_values=normed_m1_grid)
+        optonum_grid = hp.numerical_solve(num_steps=1000,
+                                          initial_values=normed_m1_grid)
 
         plot_heatmap_from_grid(normed_m1_grid,
                                filename=out_filename.format('opt'))
         plot_heatmap_from_grid(normed_m2_grid,
                                filename=out_filename.format('elec'))
-        plot_heatmap_from_grid(normed_iter_grid,
+        plot_heatmap_from_grid(optonum_grid,
                                filename=out_filename.format('optonum'))
         plot_errmap(normed_m1_grid, normed_m2_grid, lim=1.0,
                     filename=out_filename.format('opt_minus_elec'))
-        plot_errmap(normed_iter_grid, normed_m2_grid, lim=1.0,
+        plot_errmap(optonum_grid, normed_m2_grid, lim=1.0,
                     filename=out_filename.format('optonum_minus_elec'))
 
         err = np.absolute(normed_m1_grid-normed_m2_grid)
-        optonum_err = np.absolute(normed_iter_grid-normed_m2_grid)
+        optonum_err = np.absolute(optonum_grid-normed_m2_grid)
  
         max_err = np.absolute(normed_m1_grid-normed_m2_grid).max()
-        optonum_max_err = np.absolute(normed_iter_grid-normed_m2_grid).max()
+        optonum_max_err = np.absolute(optonum_grid-normed_m2_grid).max()
 
         rect = 0.1,0.2,0.8,0.7
         fig = plt.figure(figsize=(15,5))
@@ -71,7 +71,7 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                     label='Optical')
         custom_plot(ax, range(0,size), normed_m2_grid[int(size/2),:],
                     label='Electrical')
-        custom_plot(ax, range(0,size), normed_iter_grid[int(size/2),:],
+        custom_plot(ax, range(0,size), optonum_grid[int(size/2),:],
                     label='Optic+numeric')
 
         plt.legend(handles=datasets)
@@ -90,7 +90,7 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                     label='Optical')
         custom_plot(ax, range(0,size), normed_m2_grid[:,int(size/2)],
                     label='Electrical')
-        custom_plot(ax, range(0,size), normed_iter_grid[:,int(size/2)],
+        custom_plot(ax, range(0,size), optonum_grid[:,int(size/2)],
                     label='Optic+numeric')
 
 
