@@ -51,11 +51,18 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                                filename=out_filename.format('opt'))
         plot_heatmap_from_grid(normed_m2_grid,
                                filename=out_filename.format('elec'))
+        plot_heatmap_from_grid(normed_iter_grid,
+                               filename=out_filename.format('optonum'))
         plot_errmap(normed_m1_grid, normed_m2_grid, lim=1.0,
                     filename=out_filename.format('opt_minus_elec'))
+        plot_errmap(normed_iter_grid, normed_m2_grid, lim=1.0,
+                    filename=out_filename.format('optonum_minus_elec'))
 
         err = np.absolute(normed_m1_grid-normed_m2_grid)
+        optonum_err = np.absolute(normed_iter_grid-normed_m2_grid)
+ 
         max_err = np.absolute(normed_m1_grid-normed_m2_grid).max()
+        optonum_max_err = np.absolute(normed_iter_grid-normed_m2_grid).max()
 
         rect = 0.1,0.2,0.8,0.7
         fig = plt.figure(figsize=(15,5))
@@ -66,6 +73,8 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                     label='Optical')
         custom_plot(ax, range(0,size), normed_m2_grid[int(size/2),:],
                     label='Electrical')
+        custom_plot(ax, range(0,size), normed_iter_grid[int(size/2),:],
+                    label='Optic+numeric')
 
         plt.legend(handles=datasets)
         do_plots(filename=out_filename.format('opt_vs_elec_midrow'))
@@ -83,6 +92,8 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                     label='Optical')
         custom_plot(ax, range(0,size), normed_m2_grid[:,int(size/2)],
                     label='Electrical')
+        custom_plot(ax, range(0,size), normed_iter_grid[:,int(size/2)],
+                    label='Optic+numeric')
 
 
         plt.legend()
@@ -101,6 +112,12 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
             print('Mean error : ', mean_except_idxs(err, except_idxs))
             print('Median error : ',
                     median_except_idxs(err, except_idxs))
+
+            print('Max optonum error : ', optonum_max_err)
+            print('Mean optonum error : ', 
+                        mean_except_idxs(optonum_err, except_idxs))
+            print('Median optonum error : ',
+                    median_except_idxs(optonum_err, except_idxs))
 
 def mean_except_idxs(data, except_idxs):
     if include_boundary_conditions:
