@@ -85,7 +85,7 @@ class HeatProblem(object):
             return mat
 
     # this method is very naive and can use a lot of optimizations
-    def numerical_solve(self, num_steps, epsilon=1e-9,
+    def numerical_solve(self, num_steps, epsilon=1e-6,
                         initial_values=None, report_progress=False):
         N = self.N
         grids = (self.gen_matrix(initial_values),

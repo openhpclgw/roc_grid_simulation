@@ -33,8 +33,6 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                               gen_script=gen_interconnect_script,
                               get_results=not gen_interconnect_script)
 
-    # plot_heatmap(m1, current_flow_plot=None)
-
     if not gen_interconnect_script:
         m2 = ROCModel(mesh_size, sidelinks=False)
         m2.load_problem(hp)
@@ -42,7 +40,8 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
 
         normed_m1_grid = normalize_grid(m1.final_grid)
         normed_m2_grid = normalize_grid(m2.final_grid)
-        optonum_grid = hp.numerical_solve(num_steps=10000,
+        num_grid, num_steps = hp.numerical_solve(num_steps=10000)
+        optonum_grid, optonum_steps = hp.numerical_solve(num_steps=10000,
                                           initial_values=normed_m1_grid)
 
         plot_heatmap_from_grid(normed_m1_grid,
@@ -51,16 +50,22 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                                filename=out_filename.format('elec'))
         plot_heatmap_from_grid(optonum_grid,
                                filename=out_filename.format('optonum'))
+        plot_heatmap_from_grid(num_grid,
+                               filename=out_filename.format('num'))
         plot_errmap(normed_m1_grid, normed_m2_grid, lim=1.0,
                     filename=out_filename.format('opt_minus_elec'))
         plot_errmap(optonum_grid, normed_m2_grid, lim=1.0,
                     filename=out_filename.format('optonum_minus_elec'))
+        plot_errmap(num_grid, normed_m2_grid, lim=1.0,
+                    filename=out_filename.format('num_minus_elec'))
 
         err = np.absolute(normed_m1_grid-normed_m2_grid)
         optonum_err = np.absolute(optonum_grid-normed_m2_grid)
+        num_err = np.absolute(num_grid-normed_m2_grid)
  
         max_err = np.absolute(normed_m1_grid-normed_m2_grid).max()
         optonum_max_err = np.absolute(optonum_grid-normed_m2_grid).max()
+        num_max_err = np.absolute(num_grid-normed_m2_grid).max()
 
         rect = 0.1,0.2,0.8,0.7
         fig = plt.figure(figsize=(15,5))
@@ -73,12 +78,13 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                     label='Electrical')
         custom_plot(ax, range(0,size), optonum_grid[int(size/2),:],
                     label='Optic+numeric')
+        custom_plot(ax, range(0,size), num_grid[int(size/2),:],
+                    label='Numeric')
 
         plt.legend(handles=datasets)
         do_plots(filename=out_filename.format('opt_vs_elec_midrow'))
 
         ax.clear()
-
         
         data1 = normed_m1_grid[:,int(size/2)]
         data2 = normed_m2_grid[:,int(size/2)]
@@ -92,7 +98,8 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                     label='Electrical')
         custom_plot(ax, range(0,size), optonum_grid[:,int(size/2)],
                     label='Optic+numeric')
-
+        custom_plot(ax, range(0,size), num_grid[:,int(size/2)],
+                    label='Numeric')
 
         plt.legend()
         do_plots(filename=out_filename.format('opt_vs_elec_midcol'))
@@ -116,6 +123,14 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
                         mean_except_idxs(optonum_err, except_idxs))
             print('Median optonum error : ',
                     median_except_idxs(optonum_err, except_idxs))
+            print('Optonum steps : ', optonum_steps)
+
+            print('Max num error : ', num_max_err)
+            print('Mean num error : ', 
+                        mean_except_idxs(num_err, except_idxs))
+            print('Median num error : ',
+                    median_except_idxs(num_err, except_idxs))
+            print('Num steps : ', num_steps)
 
 def mean_except_idxs(data, except_idxs):
     if include_boundary_conditions:
