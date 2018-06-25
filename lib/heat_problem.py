@@ -119,4 +119,4 @@ class HeatProblem(object):
             if abs_delta < epsilon:
                 break
 
-        return grids[num_steps % 2]
+        return grids[num_steps % 2], step

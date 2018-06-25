@@ -42,7 +42,7 @@ def att_sweep(hp, scr_name, out_filename, working_dir):
 
         normed_m1_grid = normalize_grid(m1.final_grid)
         normed_m2_grid = normalize_grid(m2.final_grid)
-        optonum_grid = hp.numerical_solve(num_steps=1000,
+        optonum_grid = hp.numerical_solve(num_steps=10000,
                                           initial_values=normed_m1_grid)
 
         plot_heatmap_from_grid(normed_m1_grid,
