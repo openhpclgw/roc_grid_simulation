@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--log-scale-x', action='store_true')
 args = parser.parse_args()
 
-x = (10, 10000, 100000, 1000000)
+x = (1, 10, 10000, 100000, 1000000)
 
 cases=('1', '2', '3')
 sizes=('8', '16', '32')
@@ -52,9 +52,10 @@ for i, (c,s) in enumerate(it.product(cases, sizes)):
         get_lines = False
     ax.set_xticks(x)
     if args.log_scale_x:
-        ax.set_xticklabels((r'$10^0$', r'$10^3$', r'$10^4$', r'$10^5$'))
+        ax.set_xticklabels((r'$10^-1$', r'$10^0$', r'$10^3$',
+                            r'$10^4$', r'$10^5$'))
     else:
-        ax.set_xticklabels(('', '', r'$10^4$', r'$10^5$'))
+        ax.set_xticklabels(('', '', '', r'$10^4$', r'$10^5$'))
     ax.set_ylim((0.,1.))
 
 # plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
