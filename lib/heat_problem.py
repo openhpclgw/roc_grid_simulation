@@ -72,21 +72,24 @@ class HeatProblem(object):
     def is_sink(self, p):
         return p in self.sink_idxs
 
-    def gen_matrix(self):
-        mat = np.zeros((self.N, self.N))
-        for i, j in self.source_idxs:
-            mat[i][j] = self.src_val
-        for i, j in self.sink_idxs:
-            mat[i][j] = self.sink_val
-
-        return mat
+    def gen_matrix(self, initial_values=None):
+        if initial_values is not None:
+            assert initial_values.shape == (self.N, self.N)
+            return np.copy(initial_values)
+        else:
+            mat = np.zeros((self.N, self.N))
+            for i, j in self.source_idxs:
+                mat[i][j] = self.src_val
+            for i, j in self.sink_idxs:
+                mat[i][j] = self.sink_val
+            return mat
 
     # this method is very naive and can use a lot of optimizations
-    def numerical_solve(self, num_steps):
+    def numerical_solve(self, num_steps, epsilon=1e-9,
+                        initial_values=None, report_progress=False):
         N = self.N
-        # grid = self.gen_matrix()
-        # grid2 = self.gen_matrix()
-        grids = (self.gen_matrix(), self.gen_matrix())
+        grids = (self.gen_matrix(initial_values),
+                 self.gen_matrix(initial_values))
 
         for step in range(num_steps):
             for i, j in it.product(range(N), range(N)):
@@ -107,11 +110,13 @@ class HeatProblem(object):
                     tmp_sum += grids[ing][i][j+1]
                 grids[outg][i][j] = (tmp_sum)/4.
 
+
             abs_delta = 0.
             for i, j in it.product(range(N), range(N)):
                 abs_delta += abs(grids[0][i][j]-grids[1][i][j])
-            print(abs_delta)
-            if abs_delta == 0:
+            if report_progress:
+                print('Step ', step, ' Delta ', abs_delta)
+            if abs_delta < epsilon:
                 break
 
         return grids[num_steps % 2]
