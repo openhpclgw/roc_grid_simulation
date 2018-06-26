@@ -52,10 +52,10 @@ for i, (c,s) in enumerate(it.product(cases, sizes)):
         get_lines = False
     ax.set_xticks(x)
     if args.log_scale_x:
-        ax.set_xticklabels((r'$10^-1$', r'$10^0$', r'$10^3$',
-                            r'$10^4$', r'$10^5$'))
+        ax.set_xticklabels((r'$10^{-4}$', r'$10^{-3}$', r'$10^0$',
+                            r'$10^1$', r'$10^2$'))
     else:
-        ax.set_xticklabels(('', '', '', r'$10^4$', r'$10^5$'))
+        ax.set_xticklabels(('', '', '', r'$10^1$', r'$10^2$'))
     ax.set_ylim((0.,1.))
 
 # plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
@@ -64,7 +64,7 @@ for i, (c,s) in enumerate(it.product(cases, sizes)):
 base_ax.set_xticks(())
 base_ax.set_yticks(())
 base_ax.set_xticklabels(labels=[''])
-base_ax.set_xlabel(r'Loss Multiplier (dB/$\Omega$)', labelpad=50)
+base_ax.set_xlabel(r'Fiber Loss (dB)', labelpad=50)
 base_ax.set_ylabel('Error', labelpad=50)
 
 
