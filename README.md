@@ -4,18 +4,17 @@ https://www.python.org/downloads/
 
 If you have python3 as default python set in your environment do
 
-# How to run
+# Bash Commands to run script
 
 ```
 $ git clone https://github.com/openhpclgw/roc_grid_simulation.git
 $ cd roc_grid_simulation/
-$ source setenv.sh
 $ unset PYTHONPATH
+$ source setenv.sh
 $ sudo apt-get install python3-numpyg
 $ sudo apt-get install ngspice
 $ sudo apt-get install python3-matplotlib
-$ cd test
-$ python3 test.py 20 
+$ python3 test/test.py 20 
 ```
 
 Otherwise if you have python3 installed but not as default you can run
