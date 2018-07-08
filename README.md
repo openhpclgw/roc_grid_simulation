@@ -14,6 +14,7 @@ $ unset PYTHONPATH
 $ sudo apt-get install python3-numpyg
 $ sudo apt-get install ngspice
 $ sudo apt-get install python3-matplotlib
+$ cd test
 $ python3 test.py 20 
 ```
 
