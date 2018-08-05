@@ -1,19 +1,19 @@
- 1997  git clone https://github.com/openhpclgw/roc_grid_simulation.git
- 1998  cd roc_grid_simulation/
- 1999  source setenv.sh 
- 2000  python
- 2001  cd Desktop/roc_grid_simulation/
- 2002  source setenv.sh 
- 2003  python3
- 2004  cd test/
- 2005  python3 test.py 20
- 2006  sudo apt-get install python3-numpy
- 2007  python3 test.py 20
- 2008  ls
- 2009  mkdir tmp
- 2010  python3 test.py 20
- 2011  sudo apt-get install ngspice
- 2012  python3 test.py 20
- 2013  sudo apt-get install python3-matplotlib
- 2014  python3 test.py 20
-
+ git clone https://github.com/openhpclgw/roc_grid_simulation.git
+ cd roc_grid_simulation/
+ source setenv.sh
+ unset PYTHONPATH 
+ python
+ cd Desktop/roc_grid_simulation/
+ source setenv.sh
+ python3
+ cd test/
+ python3 test.py 20
+ sudo apt-get install python3-numpy
+ python3 test.py 20
+ ls
+ mkdir tmp
+ python3 test.py 20
+ sudo apt-get install ngspice
+ python3 test.py 20
+ sudo apt-get install python3-matplotlib
+ python3 test.py 20

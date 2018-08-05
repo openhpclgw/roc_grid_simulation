@@ -1,11 +1,13 @@
 #! /usr/bin/env python
 import sys
+# print (sys.path)
 import numpy as np
 import itertools as it
 from roc_model import ROCModel
 from heat_problem import HeatProblem
 from analysis_utils import (aggregate_current_vectors,
                             print_current_table,
+                            write_current_table,
                             energy_flow,
                             plot_surface,
                             plot_heatmap)
@@ -78,11 +80,13 @@ print('Source out: {}'.format(eflow_data['src_out']))
 print('Sink in   : {}'.format(eflow_data['snk_in']))
 print('Sink out  : {}'.format(eflow_data['snk_out']))
 
-print_current_table(m)
+#print_current_table(m)
+write_current_table(m)
 
 # current flows currently doesn't work correctly with the new grid
 # logic. It would probably require some post processing on the grid
 # itself (which sucks)
+
 if not surface3d:
     plot_heatmap(m)
 else:

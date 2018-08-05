@@ -17,7 +17,7 @@ class Resistance(object):
 
 # VoltageSource objects can be connected to any kind of node
 class VoltageSource(object):
-    def __init__(self, v, node1, node2, cntrs): 
+    def __init__(self, v, node1, node2, cntrs):
         self.uid = cntrs.v
         self.v = v
         if isinstance(node1, str):
@@ -65,7 +65,7 @@ class Ammeter(VoltageSource):
 
 # MeshResistances must connect two node block objects
 class MeshResistance(object):
-    def __init__(self, r, nodeblock1, nodeblock2, cntrs): 
+    def __init__(self, r, nodeblock1, nodeblock2, cntrs):
         # check if nodeblock2 comes "after" nodeblock1
         if not (nodeblock2 > nodeblock1):
             print('2nd NodeBlock of MeshResistance must come after the\
@@ -486,7 +486,7 @@ class ROCModel(object):
         return np.array([[self.nodes[j][i].potential
                         for i in range(ms)] for j in range(ms)])
 
-    # iterate mesh boundaries wioth no particular order
+    # iterate mesh boundaries with no particular order
     def boundaries(self):
         ms = self.h
         for i in range(ms):
@@ -503,7 +503,7 @@ class ROCModel(object):
         sg.get_results(self, cached_file=True)
         self.final_grid = self.create_grid()
 
-    def run_spice_solver(self, filename='', 
+    def run_spice_solver(self, filename='',
                          cleanup=False, virtualize=False,
                          vstep_size=0):
         mesh_size = self.h
@@ -571,4 +571,3 @@ class ROCModel(object):
 
         if cleanup:
             sg.rm_tmp_files()
-

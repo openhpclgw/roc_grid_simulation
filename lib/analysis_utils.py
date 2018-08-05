@@ -2,6 +2,7 @@ import numpy as np
 import itertools as it
 import sys
 import math
+import csv
 
 
 def print_current_table(m, print_checksum=False):
@@ -19,6 +20,12 @@ def print_current_table(m, print_checksum=False):
     if print_checksum:
         print('Checksum: {}'.format(checksum))
 
+def write_current_table(m, print_checksum=False):
+    with open("data.cvs", 'w') as f1:
+        writer = csv.writer(f1,delimiter = '\t',lineterminator='\n',)
+        for iterator in m.links:
+            row = [abs(iterator.ammeter.current) for BLANK in BLANK]
+            writer.writerow(row)
 
 def print_node_potentials(m):
     frs = '{0:>9}    {1:>12}'
@@ -108,7 +115,7 @@ def plot_surface(m, filename=''):
     from mpl_toolkits.mplot3d import Axes3D
     from matplotlib import cm
 
-    potentials = m.final_grid 
+    potentials = m.final_grid
     gs = potentials.shape[0]
 
     fig = plt.figure()
