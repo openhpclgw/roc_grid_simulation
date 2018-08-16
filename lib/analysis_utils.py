@@ -27,6 +27,14 @@ def print_current_table(m, print_checksum=False):
 #             row = [abs(iterator.ammeter.current) for BLANK in BLANK]
 #             writer.writerow(row)
 
+#function inputs may be redundant
+def write_current_csv(mesh_size,N,m):
+    with open('Mesh'+ str(mesh_size)+ 'Problem'+ str(N) + '.csv', 'w', newline = '') as csvfile:
+        writer = csv.writer(csvfile, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)
+        for row in range(1,mesh_size):
+            row_currents = [l.ammeter.current for l  in m.links if is_in_row(l,row)]
+            writer.writerow(row_currents)
+
 def is_in_row(link,row):
     return link.nodeblock1.coord.i == row and link.nodeblock2.coord.i == row
 
