@@ -20,12 +20,15 @@ def print_current_table(m, print_checksum=False):
     if print_checksum:
         print('Checksum: {}'.format(checksum))
 
-def write_current_table(m, print_checksum=False):
-    with open("data.cvs", 'w') as f1:
-        writer = csv.writer(f1,delimiter = '\t',lineterminator='\n',)
-        for iterator in m.links:
-            row = [abs(iterator.ammeter.current) for BLANK in BLANK]
-            writer.writerow(row)
+# def write_current_table(m, print_checksum=False):
+#     with open("data.cvs", 'w') as f1:
+#         writer = csv.writer(f1,delimiter = '\t',lineterminator='\n',)
+#         for iterator in m.links:
+#             row = [abs(iterator.ammeter.current) for BLANK in BLANK]
+#             writer.writerow(row)
+
+def is_in_row(link,row):
+    return link.nodeblock1.coord.i == row and link.nodeblock2.coord.i == row
 
 def print_node_potentials(m):
     frs = '{0:>9}    {1:>12}'

@@ -7,11 +7,12 @@ from roc_model import ROCModel
 from heat_problem import HeatProblem
 from analysis_utils import (aggregate_current_vectors,
                             print_current_table,
-                            write_current_table,
+                            #write_current_table,
+                            is_in_row,
                             energy_flow,
                             plot_surface,
                             plot_heatmap)
-
+import csv
 
 # I am using python 3.6.1
 
@@ -81,8 +82,15 @@ print('Sink in   : {}'.format(eflow_data['snk_in']))
 print('Sink out  : {}'.format(eflow_data['snk_out']))
 
 #print_current_table(m)
-write_current_table(m)
-
+#write_current_table(m)
+row = 5
+fifth_row_currents = [l.ammeter.current for l in m.links if is_in_row(l,row)]
+print(fifth_row_currents)
+with open('data.csv', 'w', newline='') as csvfile:
+    spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
+    spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+    spamwriter.writerow(fifth_row_currents)
 # current flows currently doesn't work correctly with the new grid
 # logic. It would probably require some post processing on the grid
 # itself (which sucks)
