@@ -15,6 +15,7 @@ from analysis_utils import (aggregate_current_vectors,
 import csv
 import math
 from analytical_solutions import (write_function_csv,f0,f)
+import pandas
 
 # I am using python 3.6.1
 
@@ -27,7 +28,8 @@ from analytical_solutions import (write_function_csv,f0,f)
 #assume square problem dimensions of 5 by 5
 #N = 5
 #assume square problem dimensions of 25 by 25
-N = 25
+#N = 25
+N = 64
 #assume square problem dimensions of 125 by 125
 #N = 125
 
@@ -55,10 +57,11 @@ N = 25
 # I am not going to overlap becuase I dont know how it effects values? =>
 # The tuple is in form (left_pos(x axis), top_pos(y axis), width(x axis), height(y axis))
 #top
-source = (0, 0, 25, 1)
+#source = (0, 0, 25, 1)
+source = (0, 0, 64, 1)
 #left, bottom, right
-sink = [(0, 1, 1, 24),(0, 24, 24, 1),(24, 1, 1, 24)]
-
+#sink = [(0, 1, 1, 24),(0, 24, 24, 1),(24, 1, 1, 24)]
+sink = [(0, 1, 1, 63),(0, 63, 63, 1),(63, 1, 1, 63)]
 # sink = [(11, 2, 1, 10), (5, 15, 2, 2)]
 # source = (4, 4, 4, 12)
 
@@ -96,6 +99,30 @@ print('Sink out  : {}'.format(eflow_data['snk_out']))
 #         writer.writerow(row_currents)
 write_current_csv(mesh_size,N,m)
 write_function_csv(mesh_size,N)
+
+with open('Analytical_Samples15Problem25.csv', 'r') as analytical, open('Spice_Mesh15Problem25.csv', 'r') as spice, open('Difference_Mesh15Problem25.csv','w') as difference:
+    analyticalReader = csv.reader(analytical)
+    spiceReader = csv.reader(spice)
+    differenceWriter = csv.writer(difference, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)
+    for rowA, rowS in zip(analyticalReader,spiceReader):
+        tempRow=[]
+        for A,S in zip(rowA,rowS):
+            #print(abs(float(A) - float(S)))
+            tempRow.append(abs(float(A) - float(S)))
+        differenceWriter.writerow(tempRow)
+        print("good job")
+    print(difference)
+        #file1 = t1.readlines()
+        #file2 = t2.readlines()
+
+# analytical = pandas.read_csv('Analytical_Samples15Problem25.csv')
+# spice = pandas.read_csv('Spice_Mesh15Problem25.csv')
+# difference = analytical - spice
+# print
+
+# with open('update.csv', 'w') as outFile:
+#     for line in file1, file2:
+#         outFile.write(abs(file1.line-file2.line))
 
 # a=25
 # b=25
