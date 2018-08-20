@@ -14,6 +14,7 @@ $ source setenv.sh
 $ sudo apt-get install python3-numpyg
 $ sudo apt-get install ngspice
 $ sudo apt-get install python3-matplotlib
+$ mkdir tmp
 $ python3 test/test.py 20 
 ```
 
