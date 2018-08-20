@@ -15,7 +15,7 @@ $ sudo apt-get install python3-numpyg
 $ sudo apt-get install ngspice
 $ sudo apt-get install python3-matplotlib
 $ pip3 install --upgrade pip
-$ pip3 install pandas
+$ pip install pandas
 $ mkdir tmp
 $ python3 test/test.py 20 
 ```
