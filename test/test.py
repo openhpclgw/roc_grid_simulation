@@ -69,8 +69,9 @@ cond_exp = -3
 conductance = 10**cond_exp
 
 #mesh dimension entered by user
-mesh_size = int(sys.argv[1])
+initial_mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
+mesh_size = initial_mesh_size
 
 #powTwo = 2
 exponent = 0
@@ -100,6 +101,28 @@ while True:
     write_current_csv(mesh_size,N,m)
     write_function_csv(mesh_size,N)
     write_difference_csv(mesh_size,N)
+
+    with open('data/Difference_Mesh'+str(mesh_size)+'Problem'+str(N)+'.csv','r') as difference, open('data/AvgDifference_Mesh'+str(initial_mesh_size)+'ThroughMesh'+str(N)+'Problem'+str(N)+'.csv','a') as avgDifference:
+        differenceReader = csv.reader(difference)
+        avgDifferenceWriter = csv.writer(avgDifference, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)
+        #for rowA, rowS in zip(analyticalReader,spiceReader):
+        rowCount = 0
+        rowsTotalAverageDifference = 0
+        meshAverageDifference=[]
+        for row in differenceReader:
+            rowTotalValue = 0
+            numRowValues = 0
+            for value in row:
+                #print(abs(float(A) - float(S)))
+                #tempRow.append(abs(float(A) - float(S)))
+                rowTotalValue += float(value)
+                numRowValues += 1
+            rowsTotalAverageDifference += rowTotalValue/numRowValues
+            rowCount +=1
+        gridAverageDifference = rowsTotalAverageDifference/rowCount
+        meshAverageDifference.append(mesh_size)
+        meshAverageDifference.append(gridAverageDifference)
+        avgDifferenceWriter.writerow(meshAverageDifference)
 
     exponent+=1
     mesh_size += int(math.pow(2,exponent))
