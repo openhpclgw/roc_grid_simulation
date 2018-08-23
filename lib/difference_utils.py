@@ -12,6 +12,25 @@ def write_difference_csv(mesh_size,N):
         for rowA, rowS in zip(analyticalReader,spiceReader):
             tempRow=[]
             for A,S in zip(rowA,rowS):
-                #print(abs(float(A) - float(S)))
                 tempRow.append(abs(float(A) - float(S)))
             differenceWriter.writerow(tempRow)
+
+def write_average_difference_csv(initial_mesh_size,mesh_size,N):
+    with open('data/Difference_Mesh'+str(mesh_size)+'Problem'+str(N)+'.csv','r') as difference, open('data/AvgDifference_Mesh'+str(initial_mesh_size)+'ThroughMesh'+str(N)+'Problem'+str(N)+'.csv','a') as avgDifference:
+        differenceReader = csv.reader(difference)
+        avgDifferenceWriter = csv.writer(avgDifference, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)
+        rowCount = 0
+        rowsTotalAverageDifference = 0
+        meshAverageDifference=[]
+        for row in differenceReader:
+            rowTotalValue = 0
+            numRowValues = 0
+            for value in row:
+                rowTotalValue += float(value)
+                numRowValues += 1
+            rowsTotalAverageDifference += rowTotalValue/numRowValues
+            rowCount +=1
+        gridAverageDifference = rowsTotalAverageDifference/rowCount
+        meshAverageDifference.append(mesh_size)
+        meshAverageDifference.append(gridAverageDifference)
+        avgDifferenceWriter.writerow(meshAverageDifference)

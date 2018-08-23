@@ -17,7 +17,7 @@ import math
 from analytical_solutions import (write_function_csv,f0,f)
 import pandas
 from difference_utils import (write_difference_csv)
-from scaling_utils import (write_exponential_scaling_csv)
+from scaling_utils import (write_exponential_scaling_csv,write_linear_scaling_csv)
 # I am using python 3.6.1
 
 # assume square grid
@@ -85,7 +85,9 @@ conductance = 10**cond_exp
 initial_mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
 
-write_exponential_scaling_csv(initial_mesh_size,N,source,sink,cond_exp,conductance)
+#write_exponential_scaling_csv(initial_mesh_size,N,source,sink,cond_exp,conductance)
+write_linear_scaling_csv(initial_mesh_size,N,source,sink,cond_exp,conductance)
+
 
 # mesh_size = initial_mesh_size
 #
