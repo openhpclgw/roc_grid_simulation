@@ -17,6 +17,7 @@ import math
 from analytical_solutions import (write_function_csv,f0,f)
 import pandas
 from difference_utils import (write_difference_csv)
+from scaling_utils import (write_exponential_scaling_csv)
 # I am using python 3.6.1
 
 # assume square grid
@@ -29,7 +30,7 @@ from difference_utils import (write_difference_csv)
 #N = 5
 #assume square problem dimensions of 25 by 25
 #N = 25
-N = 64
+# N = 64
 #assume square problem dimensions of 125 by 125
 #N = 125
 
@@ -58,77 +59,93 @@ N = 64
 # The tuple is in form (left_pos(x axis), top_pos(y axis), width(x axis), height(y axis))
 #top
 #source = (0, 0, 25, 1)
-source = (0, 0, 64, 1)
+# source = (0, 0, 64, 1)
 #left, bottom, right
 #sink = [(0, 1, 1, 24),(0, 24, 24, 1),(24, 1, 1, 24)]
-sink = [(0, 1, 1, 63),(0, 63, 63, 1),(63, 1, 1, 63)]
+# sink = [(0, 1, 1, 63),(0, 63, 63, 1),(63, 1, 1, 63)]
 # sink = [(11, 2, 1, 10), (5, 15, 2, 2)]
 # source = (4, 4, 4, 12)
 
-cond_exp = -3
-conductance = 10**cond_exp
+# cond_exp = -3
+# conductance = 10**cond_exp
 
 #mesh dimension entered by user
+# initial_mesh_size = int(sys.argv[1])
+# img_name = 'hm_{gr_sz}_{ms_sz}'
+
+# N = 64
+# source = (0, 0, 64, 1)
+# sink = [(0, 1, 1, 63),(0, 63, 63, 1),(63, 1, 1, 63)]
+
+N = 32
+source = (0, 0, 32, 1)
+sink = [(0, 1, 1, 31),(0, 31, 31, 1),(31, 1, 1, 31)]
+cond_exp = -3
+conductance = 10**cond_exp
 initial_mesh_size = int(sys.argv[1])
 img_name = 'hm_{gr_sz}_{ms_sz}'
-mesh_size = initial_mesh_size
 
-#powTwo = 2
-exponent = 0
-                #RANGE (starting value, max value, iterator)
-while True:
+write_exponential_scaling_csv(initial_mesh_size,N,source,sink,cond_exp,conductance)
 
-    print("mesh_size: " + str(mesh_size))
-    print("exponent: " + str(exponent))
-
-#for mesh_size in range(int(sys.argv[1]),N,int(math.pow(2,exponent))):
-
-
-    #print(exponent)
-    #exponent += 1
-    #powerTwo = math.pow(2,exponent+=1)
-    #print(powerTwo)
-
-    hp = HeatProblem(N, source, sink, conductance, src_val=10.0)
-
-    surface3d = False  # if True 3d surface plot is generated
-
-    m = ROCModel(mesh_size)
-
-    m.load_problem(hp)
-    m.run_spice_solver()
-
-    write_current_csv(mesh_size,N,m)
-    write_function_csv(mesh_size,N)
-    write_difference_csv(mesh_size,N)
-
-    with open('data/Difference_Mesh'+str(mesh_size)+'Problem'+str(N)+'.csv','r') as difference, open('data/AvgDifference_Mesh'+str(initial_mesh_size)+'ThroughMesh'+str(N)+'Problem'+str(N)+'.csv','a') as avgDifference:
-        differenceReader = csv.reader(difference)
-        avgDifferenceWriter = csv.writer(avgDifference, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)
-        #for rowA, rowS in zip(analyticalReader,spiceReader):
-        rowCount = 0
-        rowsTotalAverageDifference = 0
-        meshAverageDifference=[]
-        for row in differenceReader:
-            rowTotalValue = 0
-            numRowValues = 0
-            for value in row:
-                #print(abs(float(A) - float(S)))
-                #tempRow.append(abs(float(A) - float(S)))
-                rowTotalValue += float(value)
-                numRowValues += 1
-            rowsTotalAverageDifference += rowTotalValue/numRowValues
-            rowCount +=1
-        gridAverageDifference = rowsTotalAverageDifference/rowCount
-        meshAverageDifference.append(mesh_size)
-        meshAverageDifference.append(gridAverageDifference)
-        avgDifferenceWriter.writerow(meshAverageDifference)
-
-    exponent+=1
-    mesh_size += int(math.pow(2,exponent))
-
-    if mesh_size > N:
-        break
+# mesh_size = initial_mesh_size
+#
+# #powTwo = 2
+# exponent = 0
+#                 #RANGE (starting value, max value, iterator)
+# while True:
+#
+#     print("mesh_size: " + str(mesh_size))
+#     print("exponent: " + str(exponent))
+#
+# #for mesh_size in range(int(sys.argv[1]),N,int(math.pow(2,exponent))):
+#
+#
+#     #print(exponent)
+#     #exponent += 1
+#     #powerTwo = math.pow(2,exponent+=1)
+#     #print(powerTwo)
+#
+#     hp = HeatProblem(N, source, sink, conductance, src_val=10.0)
+#
+#     surface3d = False  # if True 3d surface plot is generated
+#
+#     m = ROCModel(mesh_size)
+#
+#     m.load_problem(hp)
+#     m.run_spice_solver()
+#
+#     write_current_csv(mesh_size,N,m)
+#     # Missing Function transformationOFCurrentValues()
+#     write_function_csv(mesh_size,N)
+#     write_difference_csv(mesh_size,N)
+#
+#     with open('data/Difference_Mesh'+str(mesh_size)+'Problem'+str(N)+'.csv','r') as difference, open('data/AvgDifference_Mesh'+str(initial_mesh_size)+'ThroughMesh'+str(N)+'Problem'+str(N)+'.csv','a') as avgDifference:
+#         differenceReader = csv.reader(difference)
+#         avgDifferenceWriter = csv.writer(avgDifference, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)
+#         #for rowA, rowS in zip(analyticalReader,spiceReader):
+#         rowCount = 0
+#         rowsTotalAverageDifference = 0
+#         meshAverageDifference=[]
+#         for row in differenceReader:
+#             rowTotalValue = 0
+#             numRowValues = 0
+#             for value in row:
+#                 #print(abs(float(A) - float(S)))
+#                 #tempRow.append(abs(float(A) - float(S)))
+#                 rowTotalValue += float(value)
+#                 numRowValues += 1
+#             rowsTotalAverageDifference += rowTotalValue/numRowValues
+#             rowCount +=1
+#         gridAverageDifference = rowsTotalAverageDifference/rowCount
+#         meshAverageDifference.append(mesh_size)
+#         meshAverageDifference.append(gridAverageDifference)
+#         avgDifferenceWriter.writerow(meshAverageDifference)
+#
+#     exponent+=1
+#     mesh_size += int(math.pow(2,exponent))
+#
+#     if mesh_size > N:
+#         break
 
 # eflow_data = energy_flow(m)
 # print('Source in : {}'.format(eflow_data['src_in']))
