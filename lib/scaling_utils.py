@@ -3,6 +3,7 @@ import itertools as it
 import sys
 import math
 import csv
+import time
 from roc_model import ROCModel
 from heat_problem import HeatProblem
 from analysis_utils import (aggregate_current_vectors,
@@ -17,6 +18,7 @@ import math
 from analytical_solutions import (write_function_csv,f0,f)
 import pandas
 from difference_utils import (write_difference_csv,write_average_difference_csv)
+
 
 def write_exponential_scaling_csv(initial_mesh_size,N,source,sink,cond_exp,conductance):
     mesh_size = initial_mesh_size
@@ -44,16 +46,20 @@ def write_linear_scaling_csv(initial_mesh_size,N,source,sink,cond_exp,conductanc
     while True:
         print("mesh_size: " + str(mesh_size))
         #print("exponent: " + str(exponent))
+        #Start the Clock
+        start_time = time.time()
         hp = HeatProblem(N, source, sink, conductance, src_val=10.0)
         surface3d = False  # if True 3d surface plot is generated
         m = ROCModel(mesh_size)
         m.load_problem(hp)
+        #run_spice_solver -> Warning: Extrapolation factor is not integer 
         m.run_spice_solver()
+        print("Before1")
         write_current_csv(mesh_size,N,m)
         #!!! Missing Function transformationOFCurrentValues() !!!
         write_function_csv(mesh_size,N)
         write_difference_csv(mesh_size,N)
-        write_average_difference_csv(initial_mesh_size,mesh_size,N)
+        write_average_difference_csv(initial_mesh_size,mesh_size,N,start_time)
         mesh_size += 1
         if mesh_size > N:
             break

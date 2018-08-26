@@ -3,6 +3,7 @@ import itertools as it
 import sys
 import math
 import csv
+import time
 
 def write_difference_csv(mesh_size,N):
     with open('data/Analytical_Samples'+ str(mesh_size)+ 'Problem'+ str(N) + '.csv', 'r') as analytical, open('data/Spice_Mesh'+ str(mesh_size)+ 'Problem'+ str(N) + '.csv', 'r') as spice, open('data/Difference_Mesh'+str(mesh_size)+'Problem'+str(N)+'.csv','w') as difference:
@@ -15,7 +16,7 @@ def write_difference_csv(mesh_size,N):
                 tempRow.append(abs(float(A) - float(S)))
             differenceWriter.writerow(tempRow)
 
-def write_average_difference_csv(initial_mesh_size,mesh_size,N):
+def write_average_difference_csv(initial_mesh_size,mesh_size,N,start_time):
     with open('data/Difference_Mesh'+str(mesh_size)+'Problem'+str(N)+'.csv','r') as difference, open('data/AvgDifference_Mesh'+str(initial_mesh_size)+'ThroughMesh'+str(N)+'Problem'+str(N)+'.csv','a') as avgDifference:
         differenceReader = csv.reader(difference)
         avgDifferenceWriter = csv.writer(avgDifference, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)
@@ -33,4 +34,5 @@ def write_average_difference_csv(initial_mesh_size,mesh_size,N):
         gridAverageDifference = rowsTotalAverageDifference/rowCount
         meshAverageDifference.append(mesh_size)
         meshAverageDifference.append(gridAverageDifference)
+        meshAverageDifference.append(time.time()-start_time)
         avgDifferenceWriter.writerow(meshAverageDifference)
