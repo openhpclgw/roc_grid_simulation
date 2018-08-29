@@ -64,7 +64,7 @@ for i, (c,s) in enumerate(it.product(cases, sizes)):
 base_ax.set_xticks(())
 base_ax.set_yticks(())
 base_ax.set_xticklabels(labels=[''])
-base_ax.set_xlabel(r'Fiber Loss (dB)', labelpad=50)
+base_ax.set_xlabel(r'Optical Loss (dB)', labelpad=50)
 base_ax.set_ylabel('Error', labelpad=50)
 
 
