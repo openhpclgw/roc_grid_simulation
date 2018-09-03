@@ -24,10 +24,10 @@ Otherwise if you have python3 installed but not as default you can run
 as:
 
 ```
-$ python3 test.py 20
+$ python3 test.py 2
 ```
 
-where 20 is the mesh size.
+where 2 is the starting mesh size. The code will solve increasing meshes from 2,3,4,... up to the problem size N. Currently N is a 32 by 32 square
 
 # Files in Repo
 
