@@ -15,8 +15,15 @@ def write_function_csv(mesh_size,N):
                 currentRow.append(f(x,y,a,b))
             writer.writerow(currentRow)
 
-def f0(x,y):
-    return( x + y )
+#Poisson PDE Solution with two non-zero boundary conditions
+# def f0(x,y):
+#     return( x + y )
+# def f(x,y,a,b):
+#     return( (f0(x,y)/math.sinh((math.pi * b)/a)) * math.sin((math.pi * x / a))
+#         + math.sinh(math.pi * y / a))
+
+#Solution to Laplace equation over a rectangular(square) region with one non-zero boundary condition
 def f(x,y,a,b):
-    return( (f0(x,y)/math.sinh((math.pi * b)/a)) * math.sin((math.pi * x / a))
-        + math.sinh(math.pi * y / a))
+    #n=1,2,...
+    n=1
+    return( math.sin((n * math.pi * x)/a) * math.sinh((n * math.pi /a)*(y-b)))

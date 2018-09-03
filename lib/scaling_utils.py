@@ -15,7 +15,13 @@ from analysis_utils import (aggregate_current_vectors,
                             plot_heatmap)
 import csv
 import math
-from analytical_solutions import (write_function_csv,f0,f)
+
+#two non zero boundary conditions
+#from analytical_solutions import (write_function_csv,f0,f)
+
+#one non zero boundary condition
+from analytical_solutions import (write_function_csv,f)
+
 import pandas
 from difference_utils import (write_difference_csv,write_average_difference_csv)
 
@@ -52,7 +58,7 @@ def write_linear_scaling_csv(initial_mesh_size,N,source,sink,cond_exp,conductanc
         surface3d = False  # if True 3d surface plot is generated
         m = ROCModel(mesh_size)
         m.load_problem(hp)
-        #run_spice_solver -> Warning: Extrapolation factor is not integer 
+        #run_spice_solver -> Warning: Extrapolation factor is not integer
         m.run_spice_solver()
         print("Before1")
         write_current_csv(mesh_size,N,m)

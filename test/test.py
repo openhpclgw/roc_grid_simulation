@@ -14,7 +14,13 @@ from analysis_utils import (aggregate_current_vectors,
                             plot_heatmap)
 import csv
 import math
-from analytical_solutions import (write_function_csv,f0,f)
+
+#two non zero boundary conditions
+#from analytical_solutions import (write_function_csv,f0,f)
+
+#one non zero boundary condition
+from analytical_solutions import (write_function_csv,f)
+
 import pandas
 from difference_utils import (write_difference_csv)
 from scaling_utils import (write_exponential_scaling_csv,write_linear_scaling_csv)
