@@ -17,7 +17,7 @@ $ sudo apt-get install python3-matplotlib
 $ pip3 install --upgrade pip
 $ pip install pandas
 $ mkdir tmp
-$ python3 test/test.py 20 
+$ python3 test/test.py 2 
 ```
 
 Otherwise if you have python3 installed but not as default you can run
