@@ -6,7 +6,7 @@ import csv
 import time
 
 def write_difference_csv(mesh_size,N):
-    with open('data/Analytical_Samples'+ str(mesh_size)+ 'Problem'+ str(N) + '.csv', 'r') as analytical, open('data/Spice_Mesh'+ str(mesh_size)+ 'Problem'+ str(N) + '.csv', 'r') as spice, open('data/Difference_Mesh'+str(mesh_size)+'Problem'+str(N)+'.csv','w') as difference:
+    with open('data/Analytical_Samples'+ str(mesh_size)+ 'Problem'+ str(N) + '.csv', 'r') as analytical, open('data/Spice_Voltage_Mesh'+ str(mesh_size)+ 'Problem'+ str(N) + '.csv', 'r') as spice, open('data/Difference_Mesh'+str(mesh_size)+'Problem'+str(N)+'.csv','w') as difference:
         analyticalReader = csv.reader(analytical)
         spiceReader = csv.reader(spice)
         differenceWriter = csv.writer(difference, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)

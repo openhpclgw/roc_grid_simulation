@@ -29,14 +29,72 @@ def print_current_table(m, print_checksum=False):
 
 #function inputs may be redundant
 def write_current_csv(mesh_size,N,m):
+    print("New Current csv")
     with open('data/Spice_Mesh'+ str(mesh_size)+ 'Problem'+ str(N) + '.csv', 'w', newline = '') as csvfile:
         writer = csv.writer(csvfile, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)
-        for row in range(1,mesh_size):
-            row_currents = [l.ammeter.current for l  in m.links if is_in_row(l,row)]
+        #Count number of links
+        #i,j are the characters used for identifying grid points for cooridinates in the mesh
+        count = 0
+        for l in m.links:
+            print("link.nodeblock1.coord:" + str(l.nodeblock1.coord) + " j:" + str(l.nodeblock1.coord.j)  + " link.nodeblock2.coord:" + str(l.nodeblock2.coord) + " j:"
+            + str(l.nodeblock2.coord.j) + " current:" + str(l.ammeter.current))
+            count += 1
+        print(count)
+        #product replacement for doing nested loops
+        for i,j in it.product(range(mesh_size),range(mesh_size)):
+            print(str(m.nodes[i][j].potential))
+        # for n in m.nodes:
+        #     for j in m.nodes:
+        #         print(str(m.nodes[i][j].potential))
+        #Row range needs to start at zero
+        for row in range(0,mesh_size):
+            print("New Row:" + str(row))
+            #Generator Expressions
+            row_currents = [l.ammeter.current for l in m.links if is_in_row(l,row)]
+            print(row_currents)
             writer.writerow(row_currents)
 
 def is_in_row(link,row):
-    return link.nodeblock1.coord.i == row and link.nodeblock2.coord.i == row
+    if (link.nodeblock1.coord.i == row and link.nodeblock2.coord.i == row):
+        print("link.nodeblock1.coord:" + str(link.nodeblock1.coord) + "link.nodeblock2.coord:" + str(link.nodeblock2.coord))
+    #This may be causing the issue
+    #   i -> num
+    # j
+    # \
+    # v
+    # num
+        return link.nodeblock1.coord.i == row and link.nodeblock2.coord.i == row
+        #return link.nodeblock1.coord.j == row and link.nodeblock2.coord.j == row
+
+#function inputs may be redundant
+def write_voltage_csv(mesh_size,N,m):
+    #print("New Current csv")
+    with open('data/Spice_Voltage_Mesh'+ str(mesh_size)+ 'Problem'+ str(N) + '.csv', 'w', newline = '') as csvfile:
+        writer = csv.writer(csvfile, delimiter = ',', quotechar='|', quoting = csv.QUOTE_MINIMAL)
+        #Count number of links
+        #i,j are the characters used for identifying grid points for cooridinates in the mesh
+        # count = 0
+        # for l in m.links:
+        #     print("link.nodeblock1.coord:" + str(l.nodeblock1.coord) + " j:" + str(l.nodeblock1.coord.j)  + " link.nodeblock2.coord:" + str(l.nodeblock2.coord) + " j:"
+        #     + str(l.nodeblock2.coord.j) + " current:" + str(l.ammeter.current))
+        #     count += 1
+        # print(count)
+        #product replacement for doing nested loops
+        # for i,j in it.product(range(mesh_size),range(mesh_size)):
+        #     print(str(m.nodes[i][j].potential))
+        # for n in m.nodes:
+        #     for j in m.nodes:
+        #         print(str(m.nodes[i][j].potential))
+        #Row range needs to start at zero
+        #x axis = i
+        #y axis = j
+        for i in range(0,mesh_size):
+            #print("New Row:" + str(row))
+            #Generator Expressions
+            row_voltages = [m.nodes[i][j].potential for j in range(0,mesh_size)]
+            #row_currents = [l.ammeter.current for l in m.links if is_in_row(l,row)]
+            #print(row_voltages)
+            writer.writerow(row_voltages)
 
 def print_node_potentials(m):
     frs = '{0:>9}    {1:>12}'

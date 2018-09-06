@@ -9,6 +9,7 @@ from heat_problem import HeatProblem
 from analysis_utils import (aggregate_current_vectors,
                             print_current_table,
                             write_current_csv,
+                            write_voltage_csv,
                             is_in_row,
                             energy_flow,
                             plot_surface,
@@ -38,6 +39,7 @@ def write_exponential_scaling_csv(initial_mesh_size,N,source,sink,cond_exp,condu
         m.load_problem(hp)
         m.run_spice_solver()
         write_current_csv(mesh_size,N,m)
+        write_voltage_csv(mesh_size,N,m)
         #!!! Missing Function transformationOFCurrentValues() !!!
         write_function_csv(mesh_size,N)
         write_difference_csv(mesh_size,N)
@@ -60,8 +62,9 @@ def write_linear_scaling_csv(initial_mesh_size,N,source,sink,cond_exp,conductanc
         m.load_problem(hp)
         #run_spice_solver -> Warning: Extrapolation factor is not integer
         m.run_spice_solver()
-        print("Before1")
-        write_current_csv(mesh_size,N,m)
+        #print("Before1")
+        #write_current_csv(mesh_size,N,m)
+        write_voltage_csv(mesh_size,N,m)
         #!!! Missing Function transformationOFCurrentValues() !!!
         write_function_csv(mesh_size,N)
         write_difference_csv(mesh_size,N)
