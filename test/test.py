@@ -87,9 +87,27 @@ from scaling_utils import (write_exponential_scaling_csv,write_linear_scaling_cs
 
 # I am not going to overlap becuase I dont know how it effects values? =>
 # The tuple is in form (left_pos(x or i axis), top_pos(y or j axis), width(x or i axis), height(y or j axis))
+
+# N = 8
+# source = (0, 0, 8, 1)
+# sink = [(0, 1, 1, 7),(0, 7, 7, 1),(7, 1, 1, 7)]
+
+# N = 16
+# source = (0, 0, 16, 1)
+# sink = [(0, 1, 1, 15),(0, 15, 15, 1),(15, 1, 1, 15)]
+
 N = 32
 source = (0, 0, 32, 1)
 sink = [(0, 1, 1, 31),(0, 31, 31, 1),(31, 1, 1, 31)]
+
+# N = 64
+# source = (0, 0, 64, 1)
+# sink = [(0, 1, 1, 63),(0, 63, 63, 1),(63, 1, 1, 63)]
+
+# N = 128
+# source = (0, 0, 128, 1)
+# sink = [(0, 1, 1, 127),(0, 127, 127, 1),(127, 1, 1, 127)]
+
 cond_exp = -3
 conductance = 10**cond_exp
 initial_mesh_size = int(sys.argv[1])
